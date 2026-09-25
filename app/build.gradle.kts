@@ -1,0 +1,95 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jlleitschuh.gradle.ktlint")
+    id("com.github.triplet.play")
+}
+
+// Release signing is injected by CI (see .github/workflows/release.yml); local builds stay debug-only.
+val releaseKeystorePath: String? = System.getenv("RELEASE_KEYSTORE_PATH")
+
+android {
+    namespace = "com.bahikhata"
+    // TODO: revisit compileSdk/minSdk/targetSdk against the PRD's platform requirements.
+    compileSdk = 36
+
+    defaultConfig {
+        // Overridable so contributors can publish a fork to their own Play account.
+        applicationId = providers.gradleProperty("app.applicationId")
+            .getOrElse("com.bahikhata")
+        minSdk = 26
+        targetSdk = 36
+        // CI derives these from the git tag (vX.Y.Z) and run number on release.
+        versionCode = System.getenv("VERSION_CODE")?.toInt() ?: 1
+        versionName = System.getenv("VERSION_NAME") ?: "0.1.0-dev"
+        resValue("string", "app_name", "BahiKhata")
+    }
+
+    signingConfigs {
+        if (releaseKeystorePath != null) {
+            create("release") {
+                storeFile = file(releaseKeystorePath)
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
+        }
+        // PR test builds for the separate "BahiKhata QA" Play app (docs/TESTING_ON_PLAY.md).
+        // Left unsigned: .github/workflows/play-test.yml signs it with the QA upload key.
+        create("qa") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".qa"
+            signingConfig = null
+            matchingFallbacks += "release"
+            resValue("string", "app_name", "BahiKhata QA")
+        }
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    lint {
+        warningsAsErrors = false
+        abortOnError = true
+    }
+}
+
+// Google Play publishing (Gradle Play Publisher). CI supplies the service-account key;
+// see docs/RELEASING.md (production app) and docs/TESTING_ON_PLAY.md (QA app).
+play {
+    serviceAccountCredentials.set(
+        file(System.getenv("PLAY_SERVICE_ACCOUNT_JSON_PATH") ?: "play-service-account.json")
+    )
+    defaultToAppBundles.set(true)
+    track.set("internal")
+}
+
+dependencies {
+    // Minimal Compose shell so the app builds and launches.
+    implementation(platform("androidx.compose:compose-bom:2024.09.00"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.activity:activity-compose:1.9.2")
+
+    // Feature dependencies from docs/DEVELOPMENT_PLAN.md are added during feature work, in the PR that uses them.
+
+    testImplementation("junit:junit:4.13.2")
+}

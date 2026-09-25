@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher icon: a bahi khata (red cloth-bound ledger tied with a string) with a gold ₹.
+     Everything sits inside the adaptive-icon safe zone (the central 66dp circle). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Page block peeking out behind the cover -->
+    <path
+        android:fillColor="#FFFDF7"
+        android:pathData="M43,32H72A3,3 0,0 1,75 35V76A3,3 0,0 1,72 79H43Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#E6D8BC"
+        android:strokeWidth="0.8"
+        android:pathData="M73,35V77M43,77.2H72" />
+    <!-- Cover -->
+    <path
+        android:fillColor="#C62828"
+        android:pathData="M37,29H68A3,3 0,0 1,71 32V73A3,3 0,0 1,68 76H37A3,3 0,0 1,34 73V32A3,3 0,0 1,37 29Z" />
+    <!-- Spine -->
+    <path
+        android:fillColor="#8E1B1B"
+        android:pathData="M37,29H40V76H37A3,3 0,0 1,34 73V32A3,3 0,0 1,37 29Z" />
+    <!-- Rupee sign -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFC940"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M49,42H63M49,47H63M49,42H53C59,42 59,52 53,52H49L60,62" />
+    <!-- String tie with knot -->
+    <path
+        android:fillColor="#FFE8B0"
+        android:pathData="M34,69H71V71.5H34Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFE8B0"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:pathData="M56,70.2L53,75.5M56,70.2L59,75.5" />
+    <path
+        android:fillColor="#FFE8B0"
+        android:pathData="M56,70.2m-2.3,0a2.3,2.3 0,1 1,4.6 0a2.3,2.3 0,1 1,-4.6 0" />
+</vector>
