@@ -16,12 +16,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import com.openhand.khata.BuildConfig
 import com.openhand.khata.R
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.feature.insights.HomeScreen
 import com.openhand.khata.feature.insights.InsightsScreen
-import com.openhand.khata.feature.settings.SettingsScreen
+import com.openhand.khata.feature.settings.SettingsRoute
 import com.openhand.khata.feature.transactions.TransactionsScreen
 
 enum class Destination(
@@ -62,7 +61,7 @@ fun KhataNavigation() {
             Destination.HOME -> HomeScreen(stringResource(R.string.app_name), modifier)
             Destination.TRANSACTIONS -> TransactionsScreen(modifier)
             Destination.INSIGHTS -> InsightsScreen(modifier)
-            Destination.SETTINGS -> SettingsScreen(BuildConfig.VERSION_NAME, modifier)
+            Destination.SETTINGS -> SettingsRoute(modifier)
         }
     }
 }

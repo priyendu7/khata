@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.khata.android.compose)
+    alias(libs.plugins.khata.android.hilt)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.play.publisher)
 }
@@ -89,6 +90,7 @@ dependencies {
     // Compose (BOM, UI, Material 3) comes from the khata.android.compose convention plugin.
     implementation(libs.androidx.activity.compose)
 
+    implementation(project(":core:model"))
     implementation(project(":core:ui"))
     implementation(project(":feature:transactions"))
     implementation(project(":feature:insights"))

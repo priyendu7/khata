@@ -19,6 +19,10 @@ gradlePlugin {
             id = "khata.android.compose"
             implementationClass = "AndroidComposeConventionPlugin"
         }
+        register("androidHilt") {
+            id = "khata.android.hilt"
+            implementationClass = "AndroidHiltConventionPlugin"
+        }
         register("jvmLibrary") {
             id = "khata.jvm.library"
             implementationClass = "JvmLibraryConventionPlugin"

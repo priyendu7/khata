@@ -41,8 +41,9 @@ Each phase is a GitHub milestone, with one issue per checklist item in the devel
 - Kotlin + Jetpack Compose, following standard [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html).
 - Run `./gradlew ktlintCheck lintDebug testDebugUnitTest` before opening a PR — CI runs the same checks and must be green to merge. `./gradlew ktlintFormat` fixes most style issues.
 - Prefer small, single-purpose changes that follow the existing module layout rather than cross-cutting changes.
-- **Modules:** new code goes in the module whose README owns it (see the layout in `README.md`). A new module uses the convention plugins from `build-logic/` (`khata.android.library`, `khata.android.compose` or `khata.jvm.library`) instead of repeating Android/Kotlin setup.
+- **Modules:** new code goes in the module whose README owns it (see the layout in `README.md`). A new module uses the convention plugins from `build-logic/` (`khata.android.library`, `khata.android.compose`, `khata.android.hilt` or `khata.jvm.library`) instead of repeating Android/Kotlin setup.
 - **Versions:** add or change library and plugin versions only in `gradle/libs.versions.toml`.
+- **Dependency injection:** ViewModels are `@HiltViewModel` and screens get them with `hiltViewModel()` in a small `…Route` composable; the screen itself stays a plain, previewable composable that takes state as parameters.
 - **Strings:** a screen's strings live in its own module's `res/values/` and `res/values-hi/`; shared ones (navigation labels) live in `:core:ui`.
 
 ## Testing expectations
