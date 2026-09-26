@@ -41,6 +41,8 @@ class AndroidKeystoreKeyWrapper(private val alias: String = DEFAULT_ALIAS) : Key
         if (keyStore.containsAlias(alias)) keyStore.deleteEntry(alias)
     }
 
+    // A key that can't be read is treated as missing; the caller then creates a new passphrase.
+    @Suppress("SwallowedException")
     private fun existingKey(): SecretKey? = try {
         keyStore.getKey(alias, null) as? SecretKey
     } catch (e: GeneralSecurityException) {
@@ -54,7 +56,7 @@ class AndroidKeystoreKeyWrapper(private val alias: String = DEFAULT_ALIAS) : Key
                     .Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
                     .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                     .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                    .setKeySize(256)
+                    .setKeySize(KEY_BITS)
                     .build()
             )
             generateKey()
@@ -65,5 +67,6 @@ class AndroidKeystoreKeyWrapper(private val alias: String = DEFAULT_ALIAS) : Key
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val GCM_TAG_BITS = 128
+        private const val KEY_BITS = 256
     }
 }

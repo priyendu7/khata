@@ -28,11 +28,12 @@ class SecretHasher(
 
     fun verify(secret: String, stored: String): Boolean {
         val parts = stored.split("$")
-        if (parts.size != 4 || parts[0] != PREFIX) return false
-        val rounds = parts[1].toIntOrNull() ?: return false
-        val expected = decode(parts[3])
+        if (parts.size != PARTS || parts[0] != PREFIX) return false
+        val (roundsText, salt, expected) = parts.drop(1)
+        val rounds = roundsText.toIntOrNull()
         // Constant-time comparison.
-        return MessageDigest.isEqual(expected, derive(secret, decode(parts[2]), rounds))
+        return rounds != null &&
+            MessageDigest.isEqual(decode(expected), derive(secret, decode(salt), rounds))
     }
 
     private fun derive(secret: String, salt: ByteArray, rounds: Int): ByteArray {
@@ -52,6 +53,7 @@ class SecretHasher(
     companion object {
         const val DEFAULT_ITERATIONS = 120_000
         private const val PREFIX = "pbkdf2-sha256"
+        private const val PARTS = 4
         private const val ALGORITHM = "PBKDF2WithHmacSHA256"
         private const val SALT_BYTES = 16
         private const val HASH_BITS = 256

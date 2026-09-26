@@ -36,6 +36,12 @@ jobs:
       - name: ktlint
         run: ./gradlew ktlintCheck
 
+      - name: detekt
+        run: ./gradlew detekt
+
+      - name: No hard-coded UI text (every string needs a Hindi version)
+        run: python3 .github/scripts/check-hardcoded-text.py
+
       - name: Android lint
         run: ./gradlew lintDebug
 
@@ -48,6 +54,9 @@ jobs:
 
       - name: No INTERNET permission (PRD privacy principle 1)
         run: .github/scripts/check-no-internet.sh
+
+      - name: Only allowlisted libraries (PRD privacy principle 2)
+        run: .github/scripts/check-dependency-allowlist.sh
 
       - name: Upload reports
         if: failure()

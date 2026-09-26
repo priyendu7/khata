@@ -39,10 +39,12 @@ Each phase is a GitHub milestone, with one issue per checklist item in the devel
 ## Code style
 
 - Kotlin + Jetpack Compose, following standard [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html).
-- Run `./gradlew ktlintCheck lintDebug testDebugUnitTest` before opening a PR — CI runs the same checks and must be green to merge. `./gradlew ktlintFormat` fixes most style issues.
+- Run `./gradlew ktlintCheck detekt lintDebug testDebugUnitTest` and `python3 .github/scripts/check-hardcoded-text.py` before opening a PR — CI runs the same checks and must be green to merge. `./gradlew ktlintFormat` fixes most style issues. detekt's settings are in `config/detekt/detekt.yml`; prefer fixing a finding, and use a narrow `@Suppress("Rule")` with a comment when the code is deliberate.
 - Prefer small, single-purpose changes that follow the existing module layout rather than cross-cutting changes.
 - **Modules:** new code goes in the module whose README owns it (see the layout in `README.md`). A new module uses the convention plugins from `build-logic/` (`khata.android.library`, `khata.android.compose`, `khata.android.hilt` or `khata.jvm.library`) instead of repeating Android/Kotlin setup.
 - **Versions:** add or change library and plugin versions only in `gradle/libs.versions.toml`.
+- **New libraries:** everything that reaches the app must be in `config/dependency-allowlist.txt` (PRD privacy principle 2), or CI fails. To add one, add a line with the reason, and say in the PR what the library does and that it makes no network connections. Analytics, crash reporting, ads and anything that talks to a server won't be accepted.
+- **No hard-coded UI text:** a screen's text comes from `stringResource()`, never a literal like `Text("Hello")`. Previews go in files named `*Preview.kt`; a rare deliberate literal (e.g. a brand name) needs `// allow-hardcoded-text: <reason>` on its line.
 - **Dependency injection:** ViewModels are `@HiltViewModel` and screens get them with `hiltViewModel()` in a small `…Route` composable; the screen itself stays a plain, previewable composable that takes state as parameters.
 - **Screenshots and screen recording:** "Block screenshots" is on by default in every build (`FLAG_SECURE`). Turn it off in Settings on your test device for store screenshots and bug-report recordings.
 - **Strings:** a screen's strings live in its own module's `res/values/` and `res/values-hi/`; shared ones (navigation labels) live in `:core:ui`.
@@ -70,7 +72,7 @@ You don't need to wait for a merge to put your change in testers' hands. A maint
 
 ## Continuous integration
 
-Every PR and push to `main` runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml): Gradle wrapper validation, ktlint, Android lint, unit tests, a debug build, and the **no-INTERNET-permission check** over every merged manifest. The debug APK is attached to the run as an artifact for quick on-device testing.
+Every PR and push to `main` runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml): Gradle wrapper validation, ktlint, detekt, the hard-coded text check, Android lint, unit tests, debug and release builds, the **no-INTERNET-permission check** over every merged manifest, and the **dependency allowlist** check. The debug APK is attached to the run as an artifact for quick on-device testing.
 
 ## Releasing (maintainers)
 

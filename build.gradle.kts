@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.ktlint) apply false
+    alias(libs.plugins.detekt) apply false
     alias(libs.plugins.play.publisher) apply false
     alias(libs.plugins.hilt) apply false
     alias(libs.plugins.ksp) apply false

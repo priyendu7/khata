@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.khata.android.compose)
     alias(libs.plugins.khata.android.hilt)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt)
     alias(libs.plugins.play.publisher)
 }
 
@@ -104,4 +105,11 @@ dependencies {
     // Feature dependencies from docs/DEVELOPMENT_PLAN.md are added during feature work, in the PR that uses them.
 
     testImplementation(libs.junit)
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+    baseline = file("detekt-baseline.xml")
+    source.setFrom("src/main/java", "src/test/java")
 }

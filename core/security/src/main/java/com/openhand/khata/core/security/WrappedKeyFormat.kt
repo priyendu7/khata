@@ -6,9 +6,11 @@ package com.openhand.khata.core.security
  */
 internal object WrappedKeyFormat {
     const val VERSION: Byte = 1
+    private const val MAX_IV_BYTES = 255
+    private const val BYTE_MASK = 0xFF
 
     fun encode(iv: ByteArray, ciphertext: ByteArray): ByteArray {
-        require(iv.size in 1..255) { "IV must be 1-255 bytes" }
+        require(iv.size in 1..MAX_IV_BYTES) { "IV must be 1-$MAX_IV_BYTES bytes" }
         return byteArrayOf(VERSION, iv.size.toByte()) + iv + ciphertext
     }
 
@@ -19,7 +21,7 @@ internal object WrappedKeyFormat {
         ) {
             throw KeyUnavailableException("Unknown wrapped key format")
         }
-        val ivLength = blob[1].toInt() and 0xFF
+        val ivLength = blob[1].toInt() and BYTE_MASK
         if (ivLength == 0 ||
             blob.size <= 2 + ivLength
         ) {
