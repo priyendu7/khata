@@ -91,6 +91,7 @@ dependencies {
     // Compose (BOM, UI, Material 3) comes from the khata.android.compose convention plugin.
     implementation(libs.androidx.activity.compose)
 
+    implementation(project(":core:database"))
     implementation(project(":core:model"))
     implementation(project(":core:ui"))
     implementation(project(":feature:transactions"))

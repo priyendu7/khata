@@ -17,6 +17,7 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
             extensions.configure<LibraryExtension> {
                 compileSdk = libs.version("compileSdk").toInt()
                 defaultConfig.minSdk = libs.version("minSdk").toInt()
+                defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 compileOptions {
                     sourceCompatibility = KHATA_JAVA_VERSION
                     targetCompatibility = KHATA_JAVA_VERSION
@@ -30,6 +31,8 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
 
             dependencies {
                 add("testImplementation", libs.library("junit"))
+                add("androidTestImplementation", libs.library("androidx-test-runner"))
+                add("androidTestImplementation", libs.library("androidx-test-ext-junit"))
             }
         }
     }

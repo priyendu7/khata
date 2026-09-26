@@ -12,7 +12,9 @@ Khata is free, open-source software published by priyendu7. It has no ads and is
 
 ## Data on your device
 
-Khata stores your transactions, accounts (name, bank, last 4 digits only), payees, categories, tags, notes, settings and — once SMS import is available and you turn it on — the text of bank transaction SMS it recorded. All of it lives in the app's private storage on your phone, in a database encrypted with SQLCipher. The encryption key is generated on your device and kept in the Android Keystore; it never leaves the phone.
+Khata stores your transactions, accounts (name, bank, last 4 digits only), payees, categories, tags, notes, settings and — once SMS import is available and you turn it on — the text of bank transaction SMS it recorded. All of it lives in the app's private storage on your phone, in a database encrypted with SQLCipher. Its key is a random key generated on your phone, stored only in encrypted form, and that encryption uses a second key kept in the Android Keystore (your phone's secure key storage), which can't be copied off the device. No key ever leaves the phone.
+
+If the phone's secure key storage is ever reset (for example after some factory resets or security updates), the database can no longer be decrypted by anyone, including you. Khata then starts with an empty database instead of failing to open. This is another reason to export a CSV backup regularly.
 
 Android's automatic backup and device-to-device transfer are turned off for this app, so none of this is copied to Google Drive or another phone. The only way data leaves the app is a **CSV export that you start yourself**, saved to a location you pick; after that, the file is under your control. Uninstalling the app, or clearing its data, permanently deletes everything — there is no copy anywhere else, so export a CSV first if you want to keep your history.
 
