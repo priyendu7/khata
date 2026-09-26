@@ -102,8 +102,11 @@ private fun EnterRecoveryCode(viewModel: LockViewModel, onCorrect: () -> Unit, o
     ) {
         OutlinedTextField(
             value = code,
-            onValueChange = { if (it.length <= 24) code = it },
+            // Only the code's own characters are kept; the dashes are drawn, not typed.
+            onValueChange = { code = RecoveryCode.normalize(it).take(RecoveryCode.LENGTH) },
             label = { Text(stringResource(R.string.lock_recovery_label)) },
+            placeholder = { Text(RecoveryCode.PLACEHOLDER, fontFamily = FontFamily.Monospace) },
+            visualTransformation = RecoveryCodeTransformation,
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Characters,
@@ -112,7 +115,7 @@ private fun EnterRecoveryCode(viewModel: LockViewModel, onCorrect: () -> Unit, o
             ),
             keyboardActions = KeyboardActions(onDone = { submit() }),
             textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().focusOnAppear("recovery")
         )
         CheckMessage(state.lastCheck, onWaitOver = viewModel::clearLastCheck)
     }
@@ -238,7 +241,7 @@ private fun PinField(value: String, label: String, onChange: (String) -> Unit, o
             imeAction = ImeAction.Done
         ),
         keyboardActions = KeyboardActions(onDone = { onDone() }),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().focusOnAppear(label)
     )
 }
 

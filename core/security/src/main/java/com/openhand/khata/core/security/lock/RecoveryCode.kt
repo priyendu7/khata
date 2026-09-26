@@ -9,6 +9,7 @@ import java.security.SecureRandom
 object RecoveryCode {
     private const val ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ"
     const val LENGTH = 16
+    const val PLACEHOLDER = "XXXX-XXXX-XXXX-XXXX"
 
     fun generate(random: SecureRandom = SecureRandom()): String =
         String(CharArray(LENGTH) { ALPHABET[random.nextInt(ALPHABET.length)] })

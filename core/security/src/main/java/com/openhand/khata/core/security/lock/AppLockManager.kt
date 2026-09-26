@@ -5,13 +5,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Whether the app is locked right now. It starts locked (every cold start asks to unlock) and locks
- * again when it returns from the background after [LockSettings.timeout].
+ * Whether the app is locked right now. With the lock turned on, it starts locked (every cold start
+ * asks to unlock) and locks again when it returns from the background after [LockSettings.timeout].
  *
  * [elapsedRealtime] is a monotonic clock, so changing the phone's time can't skip the lock.
  */
 class AppLockManager(private val settings: LockSettings, private val elapsedRealtime: () -> Long) {
-    private val locked = MutableStateFlow(true)
+    private val locked = MutableStateFlow(settings.enabled)
     val isLocked: StateFlow<Boolean> = locked.asStateFlow()
 
     private var backgroundedAt: Long? = null
@@ -36,7 +36,8 @@ class AppLockManager(private val settings: LockSettings, private val elapsedReal
         locked.value = false
     }
 
+    /** Does nothing while the lock is turned off. */
     fun lock() {
-        locked.value = true
+        if (settings.enabled) locked.value = true
     }
 }

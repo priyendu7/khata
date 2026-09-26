@@ -22,10 +22,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 data class LockUiState(
+    val enabled: Boolean,
+    val blockScreenshots: Boolean,
     val method: LockMethod,
     val timeout: LockTimeout,
     val deviceSecure: Boolean,
-    val continueWithoutDeviceLock: Boolean,
     /** Result of the last PIN or recovery-code check, for the error line. */
     val lastCheck: CheckResult? = null,
     val checking: Boolean = false
@@ -45,10 +46,11 @@ class LockViewModel @Inject constructor(
     val state: StateFlow<LockUiState> = _state.asStateFlow()
 
     private fun currentState() = LockUiState(
+        enabled = settings.enabled,
+        blockScreenshots = settings.blockScreenshots,
         method = settings.method,
         timeout = settings.timeout,
-        deviceSecure = context.getSystemService(KeyguardManager::class.java).isDeviceSecure,
-        continueWithoutDeviceLock = settings.continueWithoutDeviceLock
+        deviceSecure = context.getSystemService(KeyguardManager::class.java).isDeviceSecure
     )
 
     /** Re-read settings and whether the phone has a screen lock (e.g. after returning from Settings). */
@@ -116,9 +118,18 @@ class LockViewModel @Inject constructor(
         refresh()
     }
 
-    fun continueWithoutDeviceLock() {
-        settings.continueWithoutDeviceLock = true
+    /** Turning the lock on doesn't lock right away; it takes effect the next time Khata opens. */
+    fun setEnabled(enabled: Boolean) {
+        settings.enabled = enabled
         refresh()
-        unlock()
+        if (!enabled) unlock()
     }
+
+    fun setBlockScreenshots(block: Boolean) {
+        settings.blockScreenshots = block
+        refresh()
+    }
+
+    /** From the "no screen lock" screen: turn the app lock off (it can be turned on in Settings). */
+    fun continueWithoutLock() = setEnabled(false)
 }
