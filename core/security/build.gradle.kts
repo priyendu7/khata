@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "com.openhand.khata.core.security"
 }
+
+dependencies {
+    implementation(libs.kotlinx.coroutines.core)
+}

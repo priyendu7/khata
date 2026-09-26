@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="lock_title">Khata is locked</string>
+    <string name="lock_body_device">Unlock with your phone\'s fingerprint, face, PIN or pattern.</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="lock_prompt_title">Unlock Khata</string>
+    <string name="lock_prompt_subtitle">Use your phone\'s screen lock</string>
+    <string name="lock_continue">Continue</string>
+    <string name="lock_cancel">Cancel</string>
+
+    <string name="lock_pin_title">Enter your app PIN</string>
+    <string name="lock_pin_label">PIN</string>
+    <string name="lock_forgot_pin">Forgot PIN?</string>
+    <plurals name="lock_wrong_attempts_left">
+        <item quantity="one">Wrong. %d more try before you have to wait.</item>
+        <item quantity="other">Wrong. %d more tries before you have to wait.</item>
+    </plurals>
+    <string name="lock_wait">Too many wrong tries. Try again in %1$s.</string>
+
+    <string name="lock_recovery_title">Enter your recovery code</string>
+    <string name="lock_recovery_body">The 16-character code you saved when you set your PIN.</string>
+    <string name="lock_recovery_label">Recovery code</string>
+    <string name="lock_back_to_pin">Back to PIN</string>
+
+    <string name="lock_no_screen_lock_title">Your phone has no screen lock</string>
+    <string name="lock_no_screen_lock_body">Khata normally unlocks with your phone\'s fingerprint, face, PIN or pattern. Without a screen lock, anyone holding your phone can open your records.</string>
+    <string name="lock_set_screen_lock">Set a screen lock</string>
+    <string name="lock_use_app_pin">Use an app PIN instead</string>
+    <string name="lock_continue_without">Continue without a lock</string>
+
+    <string name="pin_setup_title">Choose an app PIN</string>
+    <string name="pin_setup_body" tools:ignore="PluralsCandidate">%1$d to %2$d digits. You\'ll enter it each time Khata locks.</string>
+    <string name="pin_setup_confirm_title">Enter the PIN again</string>
+    <string name="pin_setup_mismatch">The PINs didn\'t match. Try again.</string>
+
+    <string name="recovery_code_title">Save your recovery code</string>
+    <string name="recovery_code_body">If you forget your PIN, this code is the only way back in. Write it down and keep it somewhere safe. It\'s shown only once.</string>
+    <string name="recovery_code_saved">I\'ve written it down</string>
+    <string name="recovery_code_done">Done</string>
+
+    <string name="settings_lock_method">Unlock with</string>
+    <string name="settings_lock_method_device">Phone screen lock</string>
+    <string name="settings_lock_method_device_none">Phone screen lock (your phone has none, so Khata isn\'t locked)</string>
+    <string name="settings_lock_method_pin">App PIN</string>
+    <string name="settings_change_pin">Change app PIN</string>
+    <string name="settings_lock_timeout">Lock after</string>
+    <string name="timeout_immediately">Immediately</string>
+    <string name="timeout_30s">30 seconds in the background</string>
+    <string name="timeout_1m">1 minute in the background</string>
+    <string name="timeout_5m">5 minutes in the background</string>
+    <string name="settings_remove_pin_title">Stop using the app PIN?</string>
+    <string name="settings_remove_pin_body">Khata will unlock with your phone\'s screen lock instead. Your PIN and recovery code will be deleted.</string>
+    <string name="settings_remove_pin_confirm">Use phone lock</string>
+</resources>

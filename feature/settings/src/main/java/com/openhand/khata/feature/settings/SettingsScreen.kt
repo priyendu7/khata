@@ -16,19 +16,33 @@ import com.openhand.khata.core.ui.ScreenTitle
 
 /** Settings tab, wired to its [SettingsViewModel] through Hilt. */
 @Composable
-fun SettingsRoute(modifier: Modifier = Modifier, viewModel: SettingsViewModel = hiltViewModel()) {
-    SettingsScreen(versionName = viewModel.versionName, modifier = modifier)
+fun SettingsRoute(
+    modifier: Modifier = Modifier,
+    lockSettings: @Composable () -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
+    SettingsScreen(
+        versionName = viewModel.versionName,
+        modifier = modifier,
+        lockSettings = lockSettings
+    )
 }
 
-// TODO(Phase 0-3): app lock, language switch, backup reminder and parsers become real settings.
+// TODO(Phase 1-3): language switch, backup reminder and parsers become real settings.
 @Composable
-fun SettingsScreen(versionName: String, modifier: Modifier = Modifier) {
+fun SettingsScreen(
+    versionName: String,
+    modifier: Modifier = Modifier,
+    /** App lock rows, supplied by :feature:lock through :app (features don't depend on each other). */
+    lockSettings: @Composable () -> Unit = {}
+) {
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenTitle(stringResource(UiR.string.nav_settings))
         Row(
             stringResource(R.string.settings_privacy),
             stringResource(R.string.settings_privacy_value)
         )
+        lockSettings()
         Row(
             stringResource(R.string.settings_language),
             stringResource(R.string.settings_language_value)

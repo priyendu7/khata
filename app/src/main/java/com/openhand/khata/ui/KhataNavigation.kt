@@ -20,6 +20,7 @@ import com.openhand.khata.R
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.feature.insights.HomeScreen
 import com.openhand.khata.feature.insights.InsightsScreen
+import com.openhand.khata.feature.lock.LockSettingsSection
 import com.openhand.khata.feature.settings.SettingsRoute
 import com.openhand.khata.feature.transactions.TransactionsScreen
 
@@ -58,7 +59,9 @@ fun KhataNavigation() {
             Destination.HOME -> HomeScreen(stringResource(R.string.app_name), modifier)
             Destination.TRANSACTIONS -> TransactionsScreen(modifier)
             Destination.INSIGHTS -> InsightsScreen(modifier)
-            Destination.SETTINGS -> SettingsRoute(modifier)
+            Destination.SETTINGS -> SettingsRoute(modifier, lockSettings = {
+                LockSettingsSection()
+            })
         }
     }
 }
