@@ -51,7 +51,8 @@ Each phase is a GitHub milestone, with one issue per checklist item in the devel
 - Business logic and state machines need unit tests, not just manual verification.
 - Note in your PR description which devices and Android versions you tested on.
 - **Money is `Long` paise**, never `Double`. Totals need tests that cover transfers (excluded from spending) and refunds.
-- **Database changes need a Room migration and a migration test.** A lost migration means lost user data — there is no cloud copy.
+- **Database changes need a Room migration and a migration test.** A lost migration means lost user data — there is no cloud copy. Commit the exported schema JSON in `core/database/schemas/`.
+- **Instrumented tests** (Keystore, SQLCipher, Room on a real device or emulator) live in each module's `src/androidTest/`. CI doesn't run them yet, so run them before opening a PR that touches `:core:security` or `:core:database`: `./gradlew connectedDebugAndroidTest` with an emulator running.
 - **Parser changes need sample SMS tests** with every personal detail (names, account numbers, balances, reference numbers) blanked out. Never commit a real, unredacted SMS.
 - **Every new English string needs a Hindi version** in `values-hi/strings.xml`.
 - Before a release, test on a low-end phone (Android 8–10) and a recent one, in light and dark mode, both languages, and with SMS permission granted and refused.
