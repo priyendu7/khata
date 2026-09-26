@@ -23,10 +23,7 @@ import com.openhand.khata.feature.insights.InsightsScreen
 import com.openhand.khata.feature.settings.SettingsRoute
 import com.openhand.khata.feature.transactions.TransactionsScreen
 
-enum class Destination(
-    @StringRes val label: Int,
-    @DrawableRes val icon: Int
-) {
+enum class Destination(@StringRes val label: Int, @DrawableRes val icon: Int) {
     HOME(UiR.string.nav_home, UiR.drawable.ic_home),
     TRANSACTIONS(UiR.string.nav_transactions, UiR.drawable.ic_ledger),
     INSIGHTS(UiR.string.nav_insights, UiR.drawable.ic_insights),

@@ -8,8 +8,6 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel
 @Inject
-constructor(
-    appInfo: AppInfo
-) : ViewModel() {
+constructor(appInfo: AppInfo) : ViewModel() {
     val versionName: String = appInfo.versionName
 }

@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.khata.android.compose)
     alias(libs.plugins.khata.android.hilt)
     alias(libs.plugins.ktlint)
@@ -57,6 +56,8 @@ android {
 
     buildFeatures {
         buildConfig = true
+        // app_name differs per build type (Khata / Khata QA); off by default since AGP 9.
+        resValues = true
     }
 
     compileOptions {
