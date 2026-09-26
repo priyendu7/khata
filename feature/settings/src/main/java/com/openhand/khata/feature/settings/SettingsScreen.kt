@@ -10,8 +10,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
+
+/** Settings tab, wired to its [SettingsViewModel] through Hilt. */
+@Composable
+fun SettingsRoute(modifier: Modifier = Modifier, viewModel: SettingsViewModel = hiltViewModel()) {
+    SettingsScreen(versionName = viewModel.versionName, modifier = modifier)
+}
 
 // TODO(Phase 0-3): app lock, language switch, backup reminder and parsers become real settings.
 @Composable

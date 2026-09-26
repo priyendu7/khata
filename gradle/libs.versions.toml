@@ -7,6 +7,9 @@ ktlint = "12.3.0"
 play-publisher = "3.13.0"
 compose-bom = "2024.09.00"
 activity-compose = "1.9.2"
+hilt = "2.58"  # 2.59+ needs AGP 9; raise with issue #16
+ksp = "2.3.12"
+androidx-hilt = "1.3.0"  # 1.4+ pulls lifecycle 2.11 (AGP 9.1, compileSdk 37); raise with issue #16
 junit = "4.13.2"
 compileSdk = "36"
 targetSdk = "36"
@@ -18,6 +21,11 @@ androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = 
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 junit = { module = "junit:junit", version.ref = "junit" }
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+androidx-hilt-lifecycle-viewmodel-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-compose", version.ref = "androidx-hilt" }
+# Build-time only: lets Hilt 2.58's processor read Kotlin 2.4 metadata (it bundles a reader for <= 2.3).
+kotlin-metadata-jvm = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
 
 # Gradle plugins used by build-logic (convention plugins).
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
@@ -33,8 +41,11 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 play-publisher = { id = "com.github.triplet.play", version.ref = "play-publisher" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 
 # Convention plugins from build-logic/.
 khata-android-library = { id = "khata.android.library" }
 khata-android-compose = { id = "khata.android.compose" }
 khata-jvm-library = { id = "khata.jvm.library" }
+khata-android-hilt = { id = "khata.android.hilt" }
