@@ -4,4 +4,16 @@
     <string name="nav_transactions">Transactions</string>
     <string name="nav_insights">Insights</string>
     <string name="nav_settings">Settings</string>
+
+    <!-- Default category names (DefaultCategory in :core:model). -->
+    <string name="category_food">Food</string>
+    <string name="category_groceries">Groceries</string>
+    <string name="category_travel">Travel</string>
+    <string name="category_rent">Rent</string>
+    <string name="category_work">Work</string>
+    <string name="category_bills_utilities">Bills &amp; Utilities</string>
+    <string name="category_shopping">Shopping</string>
+    <string name="category_health">Health</string>
+    <string name="category_entertainment">Entertainment</string>
+    <string name="category_uncategorized">Uncategorized</string>
 </resources>

@@ -16,11 +16,22 @@ data class AccountEntity(
     val last4: String?
 )
 
-/** One category per transaction (PRD feature 2). Archived categories stay on old transactions. */
-@Entity(tableName = "categories")
+/**
+ * One category per transaction (PRD feature 2). Archived categories stay on old transactions.
+ *
+ * Default categories have a [seedKey] (see `DefaultCategory`) and a null [name], so the UI shows
+ * them in the current language. Renaming sets [name]; [seedKey] never changes, so the app still
+ * knows which category is, for example, "Uncategorized".
+ */
+@Entity(
+    tableName = "categories",
+    indices = [Index(value = ["seed_key"], unique = true)]
+)
 data class CategoryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val name: String,
+    /** The user's name for this category; null means "use the default name for [seedKey]". */
+    val name: String?,
+    @ColumnInfo(name = "seed_key") val seedKey: String? = null,
     /** ARGB colour, e.g. 0xFFC62828. */
     val color: Int,
     /** Key of a bundled icon (resolved by the UI). */

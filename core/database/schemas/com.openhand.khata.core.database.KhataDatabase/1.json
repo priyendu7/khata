@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "d2c18e8f499260f82f13cd29a22f57a0",
+    "identityHash": "055181a02d63b91e933dd1ed27cfd389",
     "entities": [
       {
         "tableName": "accounts",
@@ -46,7 +46,7 @@
       },
       {
         "tableName": "categories",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `color` INTEGER NOT NULL, `icon` TEXT NOT NULL, `archived` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `seed_key` TEXT, `color` INTEGER NOT NULL, `icon` TEXT NOT NULL, `archived` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -57,8 +57,12 @@
           {
             "fieldPath": "name",
             "columnName": "name",
-            "affinity": "TEXT",
-            "notNull": true
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "seedKey",
+            "columnName": "seed_key",
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "color",
@@ -84,7 +88,18 @@
           "columnNames": [
             "id"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_categories_seed_key",
+            "unique": true,
+            "columnNames": [
+              "seed_key"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_categories_seed_key` ON `${TABLE_NAME}` (`seed_key`)"
+          }
+        ]
       },
       {
         "tableName": "tags",
@@ -497,7 +512,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd2c18e8f499260f82f13cd29a22f57a0')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '055181a02d63b91e933dd1ed27cfd389')"
     ]
   }
 }

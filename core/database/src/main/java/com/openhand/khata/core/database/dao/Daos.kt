@@ -44,7 +44,11 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE id = :id")
     suspend fun getById(id: Long): CategoryEntity?
 
-    @Query("SELECT * FROM categories WHERE archived = 0 ORDER BY name")
+    @Query("SELECT * FROM categories WHERE seed_key = :seedKey")
+    suspend fun getBySeedKey(seedKey: String): CategoryEntity?
+
+    /** In creation order; the UI sorts by the displayed (possibly translated) name. */
+    @Query("SELECT * FROM categories WHERE archived = 0 ORDER BY id")
     fun observeActive(): Flow<List<CategoryEntity>>
 }
 
