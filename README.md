@@ -46,7 +46,7 @@ Everything is protected by an app lock and an encrypted database, in English and
 ## Project layout
 
 ```
-app/src/main/java/com/khataapp/
+app/src/main/java/com/openhand/khata/
 ├── KhataApp.kt      Application class
 ├── ui/                   MainActivity, navigation shell
 ├── core/

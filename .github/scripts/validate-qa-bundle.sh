@@ -6,7 +6,7 @@ set -euo pipefail
 
 aab="$1"
 expected_code="$2"
-expected_package="com.khataapp.qa"
+expected_package="com.openhand.khata.qa"
 aapt2="${AAPT2:-aapt2}"
 
 fail() { echo "::error::QA bundle rejected: $*" >&2; exit 1; }

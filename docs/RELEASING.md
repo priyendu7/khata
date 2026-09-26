@@ -2,7 +2,7 @@
 
 Every build is **built once** from a git tag, uploaded to Google Play's **internal testing** track, and then **promoted** — the exact same binary — through closed testing, open testing, and a staged production rollout. Nothing is rebuilt between stages.
 
-This covers the **production app** (`com.khataapp`). Testing unmerged PRs happens in the separate **Khata QA** app — see [TESTING_ON_PLAY.md](TESTING_ON_PLAY.md).
+This covers the **production app** (`com.openhand.khata`). Testing unmerged PRs happens in the separate **Khata QA** app — see [TESTING_ON_PLAY.md](TESTING_ON_PLAY.md).
 
 ## Branch model
 
@@ -98,7 +98,7 @@ Approve the run when GitHub asks (the `play-production` environment gate). Googl
 2. **Create app** → name *Khata*, app, free.
 3. Complete *Set up your app*: privacy policy URL (use docs/PRIVACY.md; required whenever the app requests sensitive permissions), app access, ads (none), content rating, target audience, data safety, and the store listing (icon, screenshots, descriptions).
 4. **Play App Signing** is on by default: Google holds the app signing key; the keystore in GitHub secrets is your **upload key**. If the upload key is ever lost, it can be reset via Play support — the app key is safe with Google.
-5. **First upload is manual** (the Play API can't create the first release): download the AAB from a CI run — or build locally with the upload key — and upload it in *Testing → Internal testing → Create new release*. Package name `com.khataapp` is locked in from then on.
+5. **First upload is manual** (the Play API can't create the first release): download the AAB from a CI run — or build locally with the upload key — and upload it in *Testing → Internal testing → Create new release*. Package name `com.openhand.khata` is locked in from then on.
 6. *Testing → Internal testing → Testers*: create an email list, add testers, and share the opt-in link with them.
 
 ### Service account for CI

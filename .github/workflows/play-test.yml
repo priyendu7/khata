@@ -1,7 +1,7 @@
 name: Play test
 
 # Maintainer-triggered Play Store test builds for pull requests, published to the
-# separate "Khata QA" app (com.khataapp.qa) — never the production app.
+# separate "Khata QA" app (com.openhand.khata.qa) — never the production app.
 #
 #   /play-test <commit-sha>                 → Internal app sharing link
 #   /play-test <commit-sha> tester-<name>   → closed testing track in the QA app

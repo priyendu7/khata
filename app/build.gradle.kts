@@ -10,14 +10,14 @@ plugins {
 val releaseKeystorePath: String? = System.getenv("RELEASE_KEYSTORE_PATH")
 
 android {
-    namespace = "com.khataapp"
+    namespace = "com.openhand.khata"
     // TODO: revisit compileSdk/minSdk/targetSdk against the PRD's platform requirements.
     compileSdk = 36
 
     defaultConfig {
         // Overridable so contributors can publish a fork to their own Play account.
         applicationId = providers.gradleProperty("app.applicationId")
-            .getOrElse("com.khataapp")
+            .getOrElse("com.openhand.khata")
         minSdk = 26
         targetSdk = 36
         // CI derives these from the git tag (vX.Y.Z) and run number on release.
