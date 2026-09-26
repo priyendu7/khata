@@ -2,7 +2,7 @@
 
 Any pull request — including one from a fork — can be tested on real phones **through the Play Store before it is merged**. `main` only ever holds production-ready code, so testing happens on the PR.
 
-PR builds go to a **separate app, "Khata QA"** (`com.khataapp.qa`):
+PR builds go to a **separate app, "Khata QA"** (`com.openhand.khata.qa`):
 
 - it installs **alongside** the production app — testers never lose their real install or its data;
 - it's signed with a separate QA key, so PR code is never signed as the production app;
@@ -68,7 +68,7 @@ Then open the link from the PR on the phone (signed into the Play Store) and tap
 3. [`play-test.yml`](../.github/workflows/play-test.yml) then:
    - **gate** — checks you have write access, that the SHA belongs to the PR, and computes a unique version code;
    - **build** — builds the unsigned QA bundle from that SHA with **no secrets, a read-only token, and no Gradle cache**;
-   - **publish** — (trusted code from `main` only) checks the bundle is `com.khataapp.qa`, not debuggable, with the expected version code; signs it with the QA upload key; uploads; comments the result.
+   - **publish** — (trusted code from `main` only) checks the bundle is `com.openhand.khata.qa`, not debuggable, with the expected version code; signs it with the QA upload key; uploads; comments the result.
 
 Anyone without write access who tries `/play-test` gets a refusal comment. A track name must match `tester-<name>` and already exist in the Play Console, so PR builds can't target any other track.
 
@@ -85,7 +85,7 @@ To revoke access, remove the Google Group from the track (or pause the track).
 
 **Play Console — create the QA app**
 
-1. **Create app** → name *Khata QA*, free. Package name is set by the first upload: `com.khataapp.qa`.
+1. **Create app** → name *Khata QA*, free. Package name is set by the first upload: `com.openhand.khata.qa`.
 2. Complete the minimum *Set up your app* tasks (privacy policy URL, app access, ads, content rating, target audience, data safety). The QA app never goes to production, so Google's 12-tester/14-day production-access requirement doesn't apply to it.
 3. Create a **separate QA upload keystore** (never reuse the production one):
    ```bash

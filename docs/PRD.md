@@ -215,4 +215,4 @@ We build in five milestones. The app is useful from M2 on, before any SMS parsin
 | Banks change their SMS format | Transactions stop being recorded | Unparsed SMS go to the review inbox with their raw text; each parser is its own file and has tests |
 | Lost phone or uninstall wipes the data | The user loses their history | A backup reminder, plus a clear warning on first launch and before uninstalling where possible |
 | Forgotten PIN locks the user out | The data cannot be recovered | Use the phone's screen lock by default; an app-only PIN comes with a one-time recovery code |
-| "Khata" is a common word used by many shop-ledger apps, and may be linked with Khatabook | Weak discoverability; possible trademark complaint | "khata" is an everyday term; a distinct store title, icon and package (`com.khataapp`) set the app apart; search trademarks before publishing |
+| "Khata" is a common word used by many shop-ledger apps, and may be linked with Khatabook | Weak discoverability; possible trademark complaint | "khata" is an everyday term; a distinct store title, icon and package (`com.openhand.khata`) set the app apart; search trademarks before publishing |
