@@ -2,7 +2,7 @@
 
 Any pull request — including one from a fork — can be tested on real phones **through the Play Store before it is merged**. `main` only ever holds production-ready code, so testing happens on the PR.
 
-PR builds go to a **separate app, "BahiKhata QA"** (`com.bahikhata.qa`):
+PR builds go to a **separate app, "Khata QA"** (`com.khataapp.qa`):
 
 - it installs **alongside** the production app — testers never lose their real install or its data;
 - it's signed with a separate QA key, so PR code is never signed as the production app;
@@ -29,7 +29,7 @@ There are two ways to get a PR build to testers:
 
 If you'll be doing ongoing real-world testing with your own group of testers, open a **[Request a Play test track](../../../issues/new?template=play_test_track.yml)** issue. You'll need a **Google Group** for your testers — Google Play grants closed-track access by group, not by individual email:
 
-1. Create a group at [groups.google.com](https://groups.google.com) (e.g. `bahikhata-testers-<you>@googlegroups.com`) and add your testers.
+1. Create a group at [groups.google.com](https://groups.google.com) (e.g. `khata-testers-<you>@googlegroups.com`) and add your testers.
 2. Put the group address in the request issue.
 
 Tracks are granted at the maintainer's discretion, usually after you've had a PR or two reviewed. Your track will be named `tester-<your-github-username>`.
@@ -44,13 +44,13 @@ One-time setup on each phone:
 2. Tap **Play Store version** seven times until you see "You are now a developer".
 3. Back in **Settings** → **General** → turn on **Internal app sharing**.
 
-Then open the link from the PR on the phone (signed into the Play Store) and tap **Install**. The app appears as **BahiKhata QA**.
+Then open the link from the PR on the phone (signed into the Play Store) and tap **Install**. The app appears as **Khata QA**.
 
 ### Installing from a closed track
 
 1. Join the contributor's Google Group with the Google account you use on the Play Store.
 2. Open the opt-in link the contributor shares (from the track request issue), tap **Become a tester**.
-3. Install **BahiKhata QA** from the Play Store. New uploads to the track arrive as normal Play Store updates.
+3. Install **Khata QA** from the Play Store. New uploads to the track arrive as normal Play Store updates.
 
 ### Good to know
 
@@ -68,13 +68,13 @@ Then open the link from the PR on the phone (signed into the Play Store) and tap
 3. [`play-test.yml`](../.github/workflows/play-test.yml) then:
    - **gate** — checks you have write access, that the SHA belongs to the PR, and computes a unique version code;
    - **build** — builds the unsigned QA bundle from that SHA with **no secrets, a read-only token, and no Gradle cache**;
-   - **publish** — (trusted code from `main` only) checks the bundle is `com.bahikhata.qa`, not debuggable, with the expected version code; signs it with the QA upload key; uploads; comments the result.
+   - **publish** — (trusted code from `main` only) checks the bundle is `com.khataapp.qa`, not debuggable, with the expected version code; signs it with the QA upload key; uploads; comments the result.
 
 Anyone without write access who tries `/play-test` gets a refusal comment. A track name must match `tester-<name>` and already exist in the Play Console, so PR builds can't target any other track.
 
 ### Adding a trusted contributor's track
 
-1. Play Console → **BahiKhata QA** → **Test and release → Testing → Closed testing → Create track** → name it `tester-<github-username>`.
+1. Play Console → **Khata QA** → **Test and release → Testing → Closed testing → Create track** → name it `tester-<github-username>`.
 2. **Testers** tab → add their Google Group → save. Select countries if prompted.
 3. Copy the **opt-in link** and post it on their request issue, then close it.
 4. Their first upload to the track goes through Google review; later ones are usually faster.
@@ -85,18 +85,18 @@ To revoke access, remove the Google Group from the track (or pause the track).
 
 **Play Console — create the QA app**
 
-1. **Create app** → name *BahiKhata QA*, free. Package name is set by the first upload: `com.bahikhata.qa`.
+1. **Create app** → name *Khata QA*, free. Package name is set by the first upload: `com.khataapp.qa`.
 2. Complete the minimum *Set up your app* tasks (privacy policy URL, app access, ads, content rating, target audience, data safety). The QA app never goes to production, so Google's 12-tester/14-day production-access requirement doesn't apply to it.
 3. Create a **separate QA upload keystore** (never reuse the production one):
    ```bash
-   keytool -genkeypair -v -keystore ~/bahikhata-qa-upload.jks -alias bahikhata-qa -keyalg RSA -keysize 4096 -validity 10000
+   keytool -genkeypair -v -keystore ~/khata-qa-upload.jks -alias khata-qa -keyalg RSA -keysize 4096 -validity 10000
    ```
 4. **First upload is manual:** build and sign a QA bundle locally, then upload it in *Testing → Internal testing → Create new release*:
    ```bash
    VERSION_CODE=1 VERSION_NAME=qa-bootstrap ./gradlew bundleQa
-   jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore ~/bahikhata-qa-upload.jks app/build/outputs/bundle/qa/app-qa.aab bahikhata-qa
+   jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore ~/khata-qa-upload.jks app/build/outputs/bundle/qa/app-qa.aab khata-qa
    ```
-5. **Users and permissions** → the existing CI service account → add *BahiKhata QA* with **Release to testing tracks** and **Manage testing tracks and edit tester lists**.
+5. **Users and permissions** → the existing CI service account → add *Khata QA* with **Release to testing tracks** and **Manage testing tracks and edit tester lists**.
 6. **Internal app sharing** (Play Console → *Setup → Internal app sharing*):
    - add the service account's email as an **uploader**;
    - set *Who can download* to **Anyone you shared the link with**.
@@ -108,9 +108,9 @@ To revoke access, remove the Google Group from the track (or pause the track).
 
   | Secret | Value |
   |---|---|
-  | `QA_KEYSTORE_BASE64` | `base64 -i ~/bahikhata-qa-upload.jks \| pbcopy` |
+  | `QA_KEYSTORE_BASE64` | `base64 -i ~/khata-qa-upload.jks \| pbcopy` |
   | `QA_KEYSTORE_PASSWORD` | QA keystore password |
-  | `QA_KEY_ALIAS` | `bahikhata-qa` |
+  | `QA_KEY_ALIAS` | `khata-qa` |
   | `QA_KEY_PASSWORD` | QA key password |
 
 - `PLAY_SERVICE_ACCOUNT_JSON` can stay a repository secret (shared with `release.yml`).

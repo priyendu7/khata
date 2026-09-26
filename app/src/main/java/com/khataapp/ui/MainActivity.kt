@@ -1,4 +1,4 @@
-package com.bahikhata.ui
+package com.khataapp.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,7 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import com.bahikhata.R
+import com.khataapp.R
 
 // TODO: replace with the first screens from docs/DEVELOPMENT_PLAN.md.
 class MainActivity : ComponentActivity() {

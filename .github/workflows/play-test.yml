@@ -1,7 +1,7 @@
 name: Play test
 
 # Maintainer-triggered Play Store test builds for pull requests, published to the
-# separate "BahiKhata QA" app (com.bahikhata.qa) — never the production app.
+# separate "Khata QA" app (com.khataapp.qa) — never the production app.
 #
 #   /play-test <commit-sha>                 → Internal app sharing link
 #   /play-test <commit-sha> tester-<name>   → closed testing track in the QA app
@@ -241,9 +241,9 @@ jobs:
           if [ "$TARGET" = "internal-sharing" ]; then
             where="**Install link (Internal app sharing):** $URL"
           else
-            where="**Uploaded to closed track \`$TARGET\`** in BahiKhata QA. Testers in that track get it from the Play Store after Google's review (usually hours)."
+            where="**Uploaded to closed track \`$TARGET\`** in Khata QA. Testers in that track get it from the Play Store after Google's review (usually hours)."
           fi
-          gh pr comment "$PR" --repo "$REPO" --body "✅ **BahiKhata QA** test build \`$VERSION_NAME\` (versionCode $VERSION_CODE) from commit $SHA
+          gh pr comment "$PR" --repo "$REPO" --body "✅ **Khata QA** test build \`$VERSION_NAME\` (versionCode $VERSION_CODE) from commit $SHA
 
           $where
 

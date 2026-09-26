@@ -10,20 +10,20 @@ plugins {
 val releaseKeystorePath: String? = System.getenv("RELEASE_KEYSTORE_PATH")
 
 android {
-    namespace = "com.bahikhata"
+    namespace = "com.khataapp"
     // TODO: revisit compileSdk/minSdk/targetSdk against the PRD's platform requirements.
     compileSdk = 36
 
     defaultConfig {
         // Overridable so contributors can publish a fork to their own Play account.
         applicationId = providers.gradleProperty("app.applicationId")
-            .getOrElse("com.bahikhata")
+            .getOrElse("com.khataapp")
         minSdk = 26
         targetSdk = 36
         // CI derives these from the git tag (vX.Y.Z) and run number on release.
         versionCode = System.getenv("VERSION_CODE")?.toInt() ?: 1
         versionName = System.getenv("VERSION_NAME") ?: "0.1.0-dev"
-        resValue("string", "app_name", "BahiKhata")
+        resValue("string", "app_name", "Khata")
     }
 
     signingConfigs {
@@ -42,14 +42,14 @@ android {
             isMinifyEnabled = false
             signingConfig = signingConfigs.findByName("release")
         }
-        // PR test builds for the separate "BahiKhata QA" Play app (docs/TESTING_ON_PLAY.md).
+        // PR test builds for the separate "Khata QA" Play app (docs/TESTING_ON_PLAY.md).
         // Left unsigned: .github/workflows/play-test.yml signs it with the QA upload key.
         create("qa") {
             initWith(getByName("release"))
             applicationIdSuffix = ".qa"
             signingConfig = null
             matchingFallbacks += "release"
-            resValue("string", "app_name", "BahiKhata QA")
+            resValue("string", "app_name", "Khata QA")
         }
     }
 
