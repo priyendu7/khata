@@ -98,6 +98,7 @@ dependencies {
     implementation(project(":feature:insights"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:lock"))
+    implementation(project(":core:security"))
     implementation(libs.androidx.fragment)
 
     // Feature dependencies from docs/DEVELOPMENT_PLAN.md are added during feature work, in the PR that uses them.

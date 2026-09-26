@@ -57,9 +57,39 @@ class AppLockManagerTest {
     }
 
     @Test
-    fun defaultsAreThePhoneLockAndOneMinute() {
+    fun defaultsAreOnWithThePhoneLockAndOneMinute() {
+        assertTrue(settings.enabled)
+        assertTrue(settings.blockScreenshots)
         assertTrue(settings.method == LockMethod.DEVICE)
         assertTrue(settings.timeout == LockTimeout.MINUTE_1)
-        assertFalse(settings.continueWithoutDeviceLock)
+    }
+
+    @Test
+    fun turnedOffItStartsUnlockedAndNeverLocks() {
+        settings.enabled = false
+        settings.timeout = LockTimeout.IMMEDIATELY
+        val off = AppLockManager(settings) { clock }
+        assertFalse(off.isLocked.value)
+
+        off.onBackground()
+        clock += 3_600_000
+        off.onForeground()
+        off.lock()
+        assertFalse(off.isLocked.value)
+    }
+
+    @Test
+    fun settingsSurviveBeingReadAgain() {
+        settings.enabled = false
+        settings.blockScreenshots = false
+        val store = FakeLockStore()
+        LockSettings(store).apply {
+            enabled = false
+            blockScreenshots = false
+        }
+        assertFalse(LockSettings(store).enabled)
+        assertFalse(LockSettings(store).blockScreenshots)
+        LockSettings(store).enabled = true
+        assertTrue(LockSettings(store).enabled)
     }
 }

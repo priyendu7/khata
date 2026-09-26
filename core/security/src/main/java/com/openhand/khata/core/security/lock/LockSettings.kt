@@ -18,6 +18,16 @@ enum class LockTimeout(val stored: String, val millis: Long) {
 }
 
 class LockSettings(private val store: LockStore) {
+    /** Ask to unlock when Khata opens. On by default; the user can turn it off in Settings. */
+    var enabled: Boolean
+        get() = store.getString(ENABLED) != "false"
+        set(value) = store.edit { putString(ENABLED, if (value) null else "false") }
+
+    /** Hide the app in recent apps and block screenshots and screen recording. On by default. */
+    var blockScreenshots: Boolean
+        get() = store.getString(BLOCK_SCREENSHOTS) != "false"
+        set(value) = store.edit { putString(BLOCK_SCREENSHOTS, if (value) null else "false") }
+
     var method: LockMethod
         get() = LockMethod.entries.firstOrNull { it.stored == store.getString(METHOD) }
             ?: LockMethod.DEVICE
@@ -28,17 +38,10 @@ class LockSettings(private val store: LockStore) {
             ?: LockTimeout.MINUTE_1
         set(value) = store.edit { putString(TIMEOUT, value.stored) }
 
-    /**
-     * The user chose to continue without any lock because the phone has no screen lock. The lock
-     * comes back automatically once a screen lock is set, or if they choose an app PIN.
-     */
-    var continueWithoutDeviceLock: Boolean
-        get() = store.getString(NO_DEVICE_LOCK) == "true"
-        set(value) = store.edit { putString(NO_DEVICE_LOCK, if (value) "true" else null) }
-
     private companion object {
         const val METHOD = "method"
         const val TIMEOUT = "timeout"
-        const val NO_DEVICE_LOCK = "continue_without_device_lock"
+        const val ENABLED = "enabled"
+        const val BLOCK_SCREENSHOTS = "block_screenshots"
     }
 }

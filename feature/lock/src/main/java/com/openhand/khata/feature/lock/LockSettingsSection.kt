@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -18,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -25,7 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.security.lock.LockMethod
 import com.openhand.khata.core.security.lock.LockTimeout
 
-private enum class LockDialog { NONE, METHOD, TIMEOUT, REMOVE_PIN, PIN_SETUP }
+private enum class LockDialog { NONE, METHOD, TIMEOUT, REMOVE_PIN, PIN_SETUP, TURN_OFF }
 
 /** The app lock rows of the Settings screen. */
 @Composable
@@ -38,21 +41,42 @@ fun LockSettingsSection(viewModel: LockViewModel = hiltViewModel()) {
         !state.deviceSecure -> stringResource(R.string.settings_lock_method_device_none)
         else -> stringResource(R.string.settings_lock_method_device)
     }
-    ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_lock_method)) },
-        supportingContent = { Text(methodText) },
-        modifier = Modifier.clickable { dialog = LockDialog.METHOD }
+    SwitchRow(
+        title = stringResource(R.string.settings_app_lock),
+        summary = stringResource(R.string.settings_app_lock_summary),
+        checked = state.enabled,
+        onCheckedChange = { on ->
+            if (on) {
+                viewModel.setEnabled(true)
+            } else {
+                dialog =
+                    LockDialog.TURN_OFF
+            }
+        }
     )
-    if (state.method == LockMethod.PIN) {
+    if (state.enabled) {
         ListItem(
-            headlineContent = { Text(stringResource(R.string.settings_change_pin)) },
-            modifier = Modifier.clickable { dialog = LockDialog.PIN_SETUP }
+            headlineContent = { Text(stringResource(R.string.settings_lock_method)) },
+            supportingContent = { Text(methodText) },
+            modifier = Modifier.clickable { dialog = LockDialog.METHOD }
+        )
+        if (state.method == LockMethod.PIN) {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_change_pin)) },
+                modifier = Modifier.clickable { dialog = LockDialog.PIN_SETUP }
+            )
+        }
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_lock_timeout)) },
+            supportingContent = { Text(stringResource(state.timeout.label())) },
+            modifier = Modifier.clickable { dialog = LockDialog.TIMEOUT }
         )
     }
-    ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_lock_timeout)) },
-        supportingContent = { Text(stringResource(state.timeout.label())) },
-        modifier = Modifier.clickable { dialog = LockDialog.TIMEOUT }
+    SwitchRow(
+        title = stringResource(R.string.settings_block_screenshots),
+        summary = stringResource(R.string.settings_block_screenshots_summary),
+        checked = state.blockScreenshots,
+        onCheckedChange = viewModel::setBlockScreenshots
     )
 
     val close = { dialog = LockDialog.NONE }
@@ -106,8 +130,41 @@ fun LockSettingsSection(viewModel: LockViewModel = hiltViewModel()) {
         ) {
             PinSetupFlow(viewModel, onFinished = close, onCancel = close)
         }
+        LockDialog.TURN_OFF -> AlertDialog(
+            onDismissRequest = close,
+            title = { Text(stringResource(R.string.settings_turn_off_lock_title)) },
+            text = { Text(stringResource(R.string.settings_turn_off_lock_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.setEnabled(false)
+                    close()
+                }) { Text(stringResource(R.string.settings_turn_off_lock_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = close) { Text(stringResource(R.string.lock_cancel)) }
+            }
+        )
         LockDialog.NONE -> Unit
     }
+}
+
+@Composable
+private fun SwitchRow(
+    title: String,
+    summary: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = { Text(summary) },
+        trailingContent = { Switch(checked = checked, onCheckedChange = null) },
+        modifier = Modifier.toggleable(
+            value = checked,
+            role = Role.Switch,
+            onValueChange = onCheckedChange
+        )
+    )
 }
 
 @Composable

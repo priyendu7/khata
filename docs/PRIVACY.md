@@ -14,7 +14,7 @@ Khata is free, open-source software published by priyendu7. It has no ads and is
 
 Khata stores your transactions, accounts (name, bank, last 4 digits only), payees, categories, tags, notes, settings and — once SMS import is available and you turn it on — the text of bank transaction SMS it recorded. All of it lives in the app's private storage on your phone, in a database encrypted with SQLCipher. Its key is a random key generated on your phone, stored only in encrypted form, and that encryption uses a second key kept in the Android Keystore (your phone's secure key storage), which can't be copied off the device. No key ever leaves the phone.
 
-Khata locks itself: it opens behind your phone's fingerprint, face, PIN or pattern (or an app-only PIN if you choose one), locks again after a time you choose in the background, and hides its screen in the recent-apps view. An app PIN and its recovery code are stored only as one-way hashes.
+By default Khata locks itself: it opens behind your phone's fingerprint, face, PIN or pattern (or an app-only PIN if you choose one), locks again after a time you choose in the background, and hides its screen in the recent-apps view and blocks screenshots. You can turn the lock and the screenshot blocking off in Settings. An app PIN and its recovery code are stored only as one-way hashes.
 
 If the phone's secure key storage is ever reset (for example after some factory resets or security updates), the database can no longer be decrypted by anyone, including you. Khata then starts with an empty database instead of failing to open. This is another reason to export a CSV backup regularly.
 

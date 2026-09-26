@@ -28,7 +28,7 @@ fun NoScreenLockScreen(viewModel: LockViewModel) {
         },
         secondaryActions = listOf(
             stringResource(R.string.lock_use_app_pin) to { settingUpPin = true },
-            stringResource(R.string.lock_continue_without) to viewModel::continueWithoutDeviceLock
+            stringResource(R.string.lock_continue_without) to viewModel::continueWithoutLock
         )
     )
 }

@@ -27,7 +27,7 @@
     <string name="lock_no_screen_lock_body">Khata आम तौर पर आपके फ़ोन के फ़िंगरप्रिंट, चेहरे, PIN या पैटर्न से खुलता है। स्क्रीन लॉक के बिना, आपका फ़ोन हाथ में लेने वाला कोई भी आपके रिकॉर्ड खोल सकता है।</string>
     <string name="lock_set_screen_lock">स्क्रीन लॉक लगाएँ</string>
     <string name="lock_use_app_pin">इसके बजाय ऐप PIN इस्तेमाल करें</string>
-    <string name="lock_continue_without">बिना लॉक के आगे बढ़ें</string>
+    <string name="lock_continue_without">ऐप लॉक बंद करें</string>
 
     <string name="pin_setup_title">ऐप PIN चुनें</string>
     <string name="pin_setup_body">%1$d से %2$d अंक। Khata लॉक होने पर हर बार आप इसे डालेंगे।</string>
@@ -39,6 +39,13 @@
     <string name="recovery_code_saved">मैंने इसे लिख लिया है</string>
     <string name="recovery_code_done">हो गया</string>
 
+    <string name="settings_app_lock">ऐप लॉक</string>
+    <string name="settings_app_lock_summary">हर बार Khata खोलने पर अनलॉक करने के लिए कहें</string>
+    <string name="settings_block_screenshots">स्क्रीनशॉट रोकें</string>
+    <string name="settings_block_screenshots_summary">हाल के ऐप्स में Khata छिपाएँ और स्क्रीनशॉट व स्क्रीन रिकॉर्डिंग रोकें</string>
+    <string name="settings_turn_off_lock_title">ऐप लॉक बंद करें?</string>
+    <string name="settings_turn_off_lock_body">जो भी आपका फ़ोन खोल सकता है, वह Khata खोलकर आपके रिकॉर्ड देख पाएगा। आप यहाँ कभी भी लॉक फिर से चालू कर सकते हैं।</string>
+    <string name="settings_turn_off_lock_confirm">बंद करें</string>
     <string name="settings_lock_method">अनलॉक करें</string>
     <string name="settings_lock_method_device">फ़ोन का स्क्रीन लॉक</string>
     <string name="settings_lock_method_device_none">फ़ोन का स्क्रीन लॉक (आपके फ़ोन में नहीं है, इसलिए Khata लॉक नहीं है)</string>

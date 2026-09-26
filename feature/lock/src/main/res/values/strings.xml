@@ -26,7 +26,7 @@
     <string name="lock_no_screen_lock_body">Khata normally unlocks with your phone\'s fingerprint, face, PIN or pattern. Without a screen lock, anyone holding your phone can open your records.</string>
     <string name="lock_set_screen_lock">Set a screen lock</string>
     <string name="lock_use_app_pin">Use an app PIN instead</string>
-    <string name="lock_continue_without">Continue without a lock</string>
+    <string name="lock_continue_without">Turn off the app lock</string>
 
     <string name="pin_setup_title">Choose an app PIN</string>
     <string name="pin_setup_body" tools:ignore="PluralsCandidate">%1$d to %2$d digits. You\'ll enter it each time Khata locks.</string>
@@ -38,6 +38,13 @@
     <string name="recovery_code_saved">I\'ve written it down</string>
     <string name="recovery_code_done">Done</string>
 
+    <string name="settings_app_lock">App lock</string>
+    <string name="settings_app_lock_summary">Ask to unlock each time you open Khata</string>
+    <string name="settings_block_screenshots">Block screenshots</string>
+    <string name="settings_block_screenshots_summary">Hide Khata in recent apps and block screenshots and screen recording</string>
+    <string name="settings_turn_off_lock_title">Turn off the app lock?</string>
+    <string name="settings_turn_off_lock_body">Anyone who can open your phone will be able to open Khata and see your records. You can turn the lock back on here at any time.</string>
+    <string name="settings_turn_off_lock_confirm">Turn off</string>
     <string name="settings_lock_method">Unlock with</string>
     <string name="settings_lock_method_device">Phone screen lock</string>
     <string name="settings_lock_method_device_none">Phone screen lock (your phone has none, so Khata isn\'t locked)</string>

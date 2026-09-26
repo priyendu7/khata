@@ -1,7 +1,6 @@
 package com.openhand.khata.feature.lock
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -25,13 +24,11 @@ fun LockGate(viewModel: LockViewModel = hiltViewModel(), content: @Composable ()
         onPauseOrDispose { }
     }
 
-    val noDeviceLock = state.method == LockMethod.DEVICE && !state.deviceSecure
-    if (locked && noDeviceLock && state.continueWithoutDeviceLock) {
-        LaunchedEffect(Unit) { viewModel.unlock() }
-    }
+    SecureWindowEffect(state.blockScreenshots)
 
+    val noDeviceLock = state.method == LockMethod.DEVICE && !state.deviceSecure
     when {
-        !locked -> holder.SaveableStateProvider("app") { content() }
+        !locked || !state.enabled -> holder.SaveableStateProvider("app") { content() }
         state.method == LockMethod.PIN -> PinLockScreen(viewModel)
         noDeviceLock -> NoScreenLockScreen(viewModel)
         else -> DeviceLockScreen(viewModel)
