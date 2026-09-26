@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hindi strings. Every string in values/strings.xml needs a Hindi version here. -->
+    <string name="categories_title">श्रेणियाँ</string>
+    <string name="categories_add">श्रेणी जोड़ें</string>
+    <string name="categories_edit">श्रेणी बदलें</string>
+    <string name="categories_name">नाम</string>
+    <string name="categories_use_default_name">मूल नाम इस्तेमाल करें (%1$s)</string>
+    <string name="categories_colour">रंग</string>
+    <string name="categories_icon">आइकन</string>
+    <string name="categories_archive">संग्रहित करें</string>
+    <string name="categories_unarchive">संग्रह से वापस लाएँ</string>
+    <string name="categories_archive_help">संग्रहित श्रेणियाँ चुनने की सूची से हट जाती हैं। जिन लेन-देन में वे हैं, उनमें बनी रहती हैं।</string>
+    <string name="categories_uncategorized_help">बिना श्रेणी वाली हर चीज़ यहाँ आती है, इसलिए इसे संग्रहित नहीं किया जा सकता।</string>
+    <string name="categories_archived">संग्रहित</string>
+
+    <string name="tags_title">टैग</string>
+    <string name="tags_empty_title">अभी कोई टैग नहीं</string>
+    <string name="tags_empty_body">\"work\" या \"trip-goa\" जैसे टैग अलग-अलग श्रेणियों के लेन-देन को एक साथ रखते हैं। आप इन्हें लेन-देन जोड़ते समय बनाएँगे।</string>
+    <plurals name="tags_usage">
+        <item quantity="one">%d लेन-देन में इस्तेमाल</item>
+        <item quantity="other">%d लेन-देन में इस्तेमाल</item>
+    </plurals>
+    <string name="tags_rename">नाम बदलें</string>
+    <string name="tags_merge_into">दूसरे टैग में मिलाएँ</string>
+    <string name="tags_merge">मिलाएँ</string>
+    <string name="tags_merge_title">%1$s को इसमें मिलाएँ…</string>
+    <string name="tags_name_taken_title">%1$s पहले से है</string>
+    <string name="tags_merge_body">%1$s को %2$s में मिलाएँ? %1$s वाले हर लेन-देन पर अब %2$s टैग होगा।</string>
+    <string name="tags_delete_title">%1$s मिटाएँ?</string>
+    <plurals name="tags_delete_body">
+        <item quantity="one">यह %d लेन-देन से हट जाएगा। लेन-देन बना रहेगा।</item>
+        <item quantity="other">यह %d लेन-देन से हट जाएगा। लेन-देन बने रहेंगे।</item>
+    </plurals>
+</resources>

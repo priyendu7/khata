@@ -16,9 +16,10 @@ room {
 }
 
 dependencies {
-    implementation(project(":core:model"))
+    api(project(":core:model"))
     implementation(project(":core:security"))
-    implementation(libs.room.runtime)
+    // KhataDatabase extends RoomDatabase, so Room is part of this module's API.
+    api(libs.room.runtime)
     ksp(libs.room.compiler)
     implementation(libs.sqlcipher.android)
     implementation(libs.androidx.sqlite)

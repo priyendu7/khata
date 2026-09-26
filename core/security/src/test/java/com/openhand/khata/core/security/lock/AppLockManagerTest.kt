@@ -79,6 +79,16 @@ class AppLockManagerTest {
     }
 
     @Test
+    fun everySavedSettingIsAnnounced() {
+        val before = settings.changes.value
+        settings.blockScreenshots = false
+        settings.enabled = false
+        settings.timeout = LockTimeout.MINUTES_5
+        settings.method = LockMethod.PIN
+        assertTrue(settings.changes.value == before + 4)
+    }
+
+    @Test
     fun settingsSurviveBeingReadAgain() {
         settings.enabled = false
         settings.blockScreenshots = false

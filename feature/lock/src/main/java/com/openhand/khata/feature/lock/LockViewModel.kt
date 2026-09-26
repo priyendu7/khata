@@ -45,6 +45,12 @@ class LockViewModel @Inject constructor(
     private val _state = MutableStateFlow(currentState())
     val state: StateFlow<LockUiState> = _state.asStateFlow()
 
+    init {
+        // Several instances can exist (the lock gate's and one per navigation destination); keep
+        // them all in step with whatever any of them saved.
+        viewModelScope.launch { settings.changes.collect { refresh() } }
+    }
+
     private fun currentState() = LockUiState(
         enabled = settings.enabled,
         blockScreenshots = settings.blockScreenshots,

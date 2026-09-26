@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accounts_title">Accounts</string>
+    <string name="accounts_add">Add account</string>
+    <string name="accounts_edit">Edit account</string>
+    <string name="accounts_empty_title">No accounts yet</string>
+    <string name="accounts_empty_body">Add your bank accounts, cards and wallets so you can see where each transaction came from.</string>
+    <string name="accounts_name">Name</string>
+    <string name="accounts_name_hint">e.g. HDFC salary account</string>
+    <string name="accounts_bank">Bank (optional)</string>
+    <string name="accounts_last4">Last 4 digits (optional)</string>
+    <string name="accounts_last4_help">Only the last 4 digits are ever stored.</string>
+    <string name="accounts_last4_display">••%1$s</string>
+    <string name="accounts_delete_title">Delete %1$s?</string>
+    <string name="accounts_delete_unused">No transactions use this account.</string>
+    <plurals name="accounts_delete_move">
+        <item quantity="one">%d transaction uses this account. Move it to:</item>
+        <item quantity="other">%d transactions use this account. Move them to:</item>
+    </plurals>
+    <string name="accounts_no_account">No account</string>
+    <string name="account_type_bank">Bank account</string>
+    <string name="account_type_credit_card">Credit card</string>
+    <string name="account_type_debit_card">Debit card</string>
+    <string name="account_type_wallet">Wallet</string>
+    <string name="account_type_bank_short">Bank</string>
+    <string name="account_type_credit_card_short">Credit</string>
+    <string name="account_type_debit_card_short">Debit</string>
+    <string name="account_type_wallet_short">Wallet</string>
+</resources>

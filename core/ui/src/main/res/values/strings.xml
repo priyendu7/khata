@@ -16,4 +16,9 @@
     <string name="category_health">Health</string>
     <string name="category_entertainment">Entertainment</string>
     <string name="category_uncategorized">Uncategorized</string>
+
+    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
 </resources>

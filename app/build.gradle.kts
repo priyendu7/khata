@@ -99,6 +99,10 @@ dependencies {
     implementation(project(":feature:insights"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:lock"))
+    implementation(project(":feature:accounts"))
+    implementation(project(":feature:categories"))
+    implementation(project(":core:data"))
+    implementation(libs.androidx.navigation.compose)
     implementation(project(":core:security"))
     implementation(libs.androidx.fragment)
 

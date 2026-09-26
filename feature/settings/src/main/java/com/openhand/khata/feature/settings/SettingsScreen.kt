@@ -1,5 +1,6 @@
 package com.openhand.khata.feature.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
@@ -19,14 +20,19 @@ import com.openhand.khata.core.ui.ScreenTitle
 fun SettingsRoute(
     modifier: Modifier = Modifier,
     lockSettings: @Composable () -> Unit = {},
+    onOpen: (SettingsPage) -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     SettingsScreen(
         versionName = viewModel.versionName,
         modifier = modifier,
-        lockSettings = lockSettings
+        lockSettings = lockSettings,
+        onOpen = onOpen
     )
 }
+
+/** Screens that Settings opens; :app maps them to navigation routes. */
+enum class SettingsPage { ACCOUNTS, CATEGORIES, TAGS }
 
 // TODO(Phase 1-3): language switch, backup reminder and parsers become real settings.
 @Composable
@@ -34,10 +40,27 @@ fun SettingsScreen(
     versionName: String,
     modifier: Modifier = Modifier,
     /** App lock rows, supplied by :feature:lock through :app (features don't depend on each other). */
-    lockSettings: @Composable () -> Unit = {}
+    lockSettings: @Composable () -> Unit = {},
+    onOpen: (SettingsPage) -> Unit = {}
 ) {
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenTitle(stringResource(UiR.string.nav_settings))
+        Row(
+            stringResource(R.string.settings_accounts),
+            stringResource(R.string.settings_accounts_value)
+        ) {
+            onOpen(SettingsPage.ACCOUNTS)
+        }
+        Row(
+            stringResource(R.string.settings_categories),
+            stringResource(R.string.settings_categories_value)
+        ) {
+            onOpen(SettingsPage.CATEGORIES)
+        }
+        Row(stringResource(R.string.settings_tags), stringResource(R.string.settings_tags_value)) {
+            onOpen(SettingsPage.TAGS)
+        }
+        HorizontalDivider()
         Row(
             stringResource(R.string.settings_privacy),
             stringResource(R.string.settings_privacy_value)
@@ -61,6 +84,10 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun Row(title: String, value: String) {
-    ListItem(headlineContent = { Text(title) }, supportingContent = { Text(value) })
+private fun Row(title: String, value: String, onClick: (() -> Unit)? = null) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = { Text(value) },
+        modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+    )
 }

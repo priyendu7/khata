@@ -21,6 +21,7 @@ include(":app")
 include(":core:model", ":core:database", ":core:data", ":core:security", ":core:ui")
 include(
     ":feature:transactions",
+    ":feature:accounts",
     ":feature:payees",
     ":feature:categories",
     ":feature:insights",

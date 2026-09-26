@@ -10,4 +10,10 @@
     <string name="settings_source">सोर्स कोड</string>
     <string name="settings_source_value">GPL v3 के तहत मुफ़्त और ओपन सोर्स · github.com/priyendu7/khata</string>
     <string name="settings_version">वर्ज़न</string>
+    <string name="settings_accounts">खाते</string>
+    <string name="settings_accounts_value">बैंक खाते, कार्ड और वॉलेट</string>
+    <string name="settings_categories">श्रेणियाँ</string>
+    <string name="settings_categories_value">जोड़ें, नाम और रंग बदलें, संग्रहित करें</string>
+    <string name="settings_tags">टैग</string>
+    <string name="settings_tags_value">नाम बदलें, मिलाएँ और मिटाएँ</string>
 </resources>
