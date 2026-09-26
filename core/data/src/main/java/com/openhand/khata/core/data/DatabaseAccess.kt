@@ -17,3 +17,7 @@ internal fun <T> Lazy<KhataDatabase>.observe(query: (KhataDatabase) -> Flow<T>):
 
 internal suspend fun <T> Lazy<KhataDatabase>.io(block: suspend (KhataDatabase) -> T): T =
     withContext(Dispatchers.IO) { block(get()) }
+
+/** Escapes `%`, `_` and `\` for a LIKE pattern that uses `ESCAPE '\'`. */
+internal fun escapeLike(text: String): String =
+    text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")

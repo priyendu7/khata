@@ -1,6 +1,7 @@
 package com.openhand.khata.core.ui
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -13,7 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 
-/** A screen opened from another one: title bar with a back arrow, and an optional "add" button. */
+/**
+ * A screen opened from another one: title bar with a back arrow and optional [actions], and an
+ * optional "add" button.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubScreen(
@@ -22,6 +26,7 @@ fun SubScreen(
     modifier: Modifier = Modifier,
     onAdd: (() -> Unit)? = null,
     addLabel: String? = null,
+    actions: @Composable RowScope.() -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
@@ -36,7 +41,8 @@ fun SubScreen(
                             contentDescription = stringResource(R.string.back)
                         )
                     }
-                }
+                },
+                actions = actions
             )
         },
         floatingActionButton = {

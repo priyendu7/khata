@@ -1,6 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Hindi strings. Every string in values/strings.xml needs a Hindi version here. -->
+
+    <!-- Transactions list -->
     <string name="transactions_empty_title">अभी यहाँ कुछ नहीं है</string>
-    <string name="transactions_empty_body">आपकी आय और खर्च यहाँ दिन के हिसाब से दिखेंगे।</string>
+    <string name="transactions_empty_body">खर्च या आय जोड़ने के लिए + दबाएँ। आप जो भी जोड़ेंगे, वह यहाँ दिन के हिसाब से दिखेगा।</string>
+    <string name="transactions_no_match_title">कोई मेल खाता लेन-देन नहीं</string>
+    <string name="transactions_no_match_body">कुछ और खोजें, या फ़िल्टर हटाएँ।</string>
+    <string name="transactions_search">नाम या नोट खोजें</string>
+    <string name="transactions_clear_search">खोज हटाएँ</string>
+    <string name="filter_dates">तारीख़ें</string>
+    <string name="filter_clear">फ़िल्टर हटाएँ</string>
+    <string name="filter_any_category">सभी श्रेणियाँ</string>
+    <string name="filter_any_tag">सभी टैग</string>
+    <string name="filter_any_account">सभी खाते</string>
+    <string name="day_today">आज</string>
+    <string name="day_yesterday">कल</string>
+    <string name="day_spent">खर्च %1$s</string>
+    <string name="day_received">आय %1$s</string>
+
+    <!-- Add and edit -->
+    <string name="transactions_add">लेन-देन जोड़ें</string>
+    <string name="transactions_edit">लेन-देन बदलें</string>
+    <string name="direction_debit">खर्च</string>
+    <string name="direction_credit">आय</string>
+    <string name="direction_refund">रिफ़ंड</string>
+    <string name="direction_transfer">ट्रांसफ़र</string>
+    <string name="field_amount">रक़म</string>
+    <string name="amount_error_empty">रक़म डालें</string>
+    <string name="amount_error_invalid">250 या 99.50 जैसी रक़म डालें</string>
+    <string name="amount_error_zero">रक़म ₹0 से ज़्यादा होनी चाहिए</string>
+    <string name="field_date">तारीख़</string>
+    <string name="field_time">समय</string>
+    <string name="field_payee">किसे दिया या किससे मिला (वैकल्पिक)</string>
+    <string name="field_payee_hint">जैसे Swiggy, रमेश, मकान-मालिक</string>
+    <string name="field_category">श्रेणी</string>
+    <string name="field_account">खाता</string>
+    <string name="no_account">कोई खाता नहीं</string>
+    <string name="field_tag">टैग</string>
+    <string name="field_tags">टैग (वैकल्पिक)</string>
+    <string name="field_tags_hint">टैग लिखें, फिर Enter दबाएँ</string>
+    <string name="tag_add">टैग जोड़ें</string>
+    <string name="tag_remove">%1$s हटाएँ</string>
+    <string name="field_note">नोट (वैकल्पिक)</string>
+    <string name="transaction_delete">लेन-देन मिटाएँ</string>
+    <string name="transaction_delete_title">यह लेन-देन मिटाएँ?</string>
+    <string name="transaction_delete_body">यह हमेशा के लिए हट जाएगा। इसे वापस नहीं लाया जा सकता।</string>
 </resources>

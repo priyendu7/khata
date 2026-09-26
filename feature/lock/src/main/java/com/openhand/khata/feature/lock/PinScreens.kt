@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.security.lock.CheckResult
 import com.openhand.khata.core.security.lock.PinManager
 import com.openhand.khata.core.security.lock.RecoveryCode
+import com.openhand.khata.core.ui.focusOnAppear
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
