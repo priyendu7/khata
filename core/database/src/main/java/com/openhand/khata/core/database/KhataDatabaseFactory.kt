@@ -37,6 +37,7 @@ object KhataDatabaseFactory {
                 .databaseBuilder(context.applicationContext, KhataDatabase::class.java, name)
                 // Clears its copy of the passphrase from memory once the database is open.
                 .openHelperFactory(SupportOpenHelperFactory(passphrase.bytes))
+                .addMigrations(*KhataMigrations.ALL)
                 .build()
         return OpenedDatabase(database, wasReset)
     }

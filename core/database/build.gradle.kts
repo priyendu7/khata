@@ -6,6 +6,8 @@ plugins {
 
 android {
     namespace = "com.openhand.khata.core.database"
+    // Robolectric needs Android resources for Room DAO tests on the JVM.
+    testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 // Exported schemas are committed: they are the reference for migration tests (#9).
@@ -19,4 +21,10 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.sqlcipher.android)
     implementation(libs.androidx.sqlite)
+
+    // DAO tests run on the JVM (Robolectric) so CI runs them; migration tests run on a device.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.room.testing)
 }
