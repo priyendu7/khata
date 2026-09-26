@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- No permissions at bootstrap. PRD privacy principle 1: android.permission.INTERNET must never
-         appear here or in the merged manifest (enforced by .github/scripts/check-no-internet.sh).
+    <!-- PRD privacy principle 1: android.permission.INTERNET must never appear here or in the merged
+         manifest (enforced by .github/scripts/check-no-internet.sh).
+         From libraries: USE_BIOMETRIC and USE_FINGERPRINT (Android 8) come from androidx.biometric
+         for the app lock (PRD principle 4). Both are normal permissions with no prompt; Android
+         never gives the app biometric data.
          Coming with their features, each requested at runtime only when the user opts in:
          - READ_SMS, RECEIVE_SMS: SMS import (PRD feature 7, milestone M3). Deliberately absent until
            then, because Play blocks every upload that declares them until the SMS permissions

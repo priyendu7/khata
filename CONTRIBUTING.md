@@ -44,6 +44,7 @@ Each phase is a GitHub milestone, with one issue per checklist item in the devel
 - **Modules:** new code goes in the module whose README owns it (see the layout in `README.md`). A new module uses the convention plugins from `build-logic/` (`khata.android.library`, `khata.android.compose`, `khata.android.hilt` or `khata.jvm.library`) instead of repeating Android/Kotlin setup.
 - **Versions:** add or change library and plugin versions only in `gradle/libs.versions.toml`.
 - **Dependency injection:** ViewModels are `@HiltViewModel` and screens get them with `hiltViewModel()` in a small `…Route` composable; the screen itself stays a plain, previewable composable that takes state as parameters.
+- **Screenshots and screen recording:** release and QA builds set `FLAG_SECURE` (hidden in recent apps, screenshots blocked). Debug builds don't, so use a debug build for store screenshots and bug-report recordings.
 - **Strings:** a screen's strings live in its own module's `res/values/` and `res/values-hi/`; shared ones (navigation labels) live in `:core:ui`.
 
 ## Testing expectations

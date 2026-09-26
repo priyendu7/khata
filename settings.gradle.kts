@@ -26,5 +26,6 @@ include(
     ":feature:insights",
     ":feature:csv",
     ":feature:settings",
+    ":feature:lock",
 )
 include(":sms:parser", ":sms:ingest")
