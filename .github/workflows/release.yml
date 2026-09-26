@@ -27,12 +27,12 @@ jobs:
       RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       PLAY_SERVICE_ACCOUNT_JSON_PATH: ${{ github.workspace }}/play-service-account.json
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # full history for release notes
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v6
 
       - name: Require tag on main
         run: |
@@ -72,12 +72,12 @@ jobs:
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true
 
@@ -120,7 +120,7 @@ jobs:
 
       # Every build starts as a pre-release; promote.yml marks it "latest" on 100% production rollout.
       - name: Create GitHub pre-release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/*
           generate_release_notes: true
