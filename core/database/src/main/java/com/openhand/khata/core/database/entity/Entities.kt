@@ -1,0 +1,160 @@
+package com.openhand.khata.core.database.entity
+
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
+
+/** A bank account, card or wallet. Only the last 4 digits of any number are ever stored. */
+@Entity(tableName = "accounts")
+data class AccountEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val type: AccountType,
+    val bank: String?,
+    val last4: String?
+)
+
+/** One category per transaction (PRD feature 2). Archived categories stay on old transactions. */
+@Entity(tableName = "categories")
+data class CategoryEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    /** ARGB colour, e.g. 0xFFC62828. */
+    val color: Int,
+    /** Key of a bundled icon (resolved by the UI). */
+    val icon: String,
+    val archived: Boolean = false
+)
+
+@Entity(
+    tableName = "tags",
+    indices = [Index(value = ["name"], unique = true)]
+)
+data class TagEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Unique ignoring case, so `Work` and `work` are the same tag. */
+    @ColumnInfo(collate = ColumnInfo.NOCASE) val name: String
+)
+
+/** Payee memory (PRD feature 3): what a UPI ID, merchant or account is called and how it's filed. */
+@Entity(
+    tableName = "payees",
+    foreignKeys = [
+        ForeignKey(
+            entity = CategoryEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["default_category_id"],
+            onDelete = ForeignKey.SET_NULL
+        )
+    ],
+    indices = [Index(value = ["identifier"], unique = true), Index("default_category_id")]
+)
+data class PayeeEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** UPI ID, merchant name or account as it appears in SMS or entry, e.g. `paytmqr…@paytm`. */
+    val identifier: String,
+    @ColumnInfo(name = "display_name") val displayName: String,
+    @ColumnInfo(name = "default_category_id") val defaultCategoryId: Long?
+)
+
+/** A payee's default tags (the "default tags" of PRD feature 3), many-to-many. */
+@Entity(
+    tableName = "payee_default_tags",
+    primaryKeys = ["payee_id", "tag_id"],
+    foreignKeys = [
+        ForeignKey(
+            entity = PayeeEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["payee_id"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = TagEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["tag_id"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("tag_id")]
+)
+data class PayeeDefaultTagEntity(
+    @ColumnInfo(name = "payee_id") val payeeId: Long,
+    @ColumnInfo(name = "tag_id") val tagId: Long
+)
+
+@Entity(
+    tableName = "transactions",
+    foreignKeys = [
+        // Accounts and categories in use can't be deleted; the UI moves or archives first (#17, #20).
+        ForeignKey(
+            entity = AccountEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["account_id"],
+            onDelete = ForeignKey.RESTRICT
+        ),
+        ForeignKey(
+            entity = CategoryEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["category_id"],
+            onDelete = ForeignKey.RESTRICT
+        ),
+        ForeignKey(
+            entity = PayeeEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["payee_id"],
+            onDelete = ForeignKey.SET_NULL
+        )
+    ],
+    indices = [
+        Index("timestamp"),
+        Index("account_id"),
+        Index("payee_id"),
+        Index("category_id"),
+        // Unique only when present: SQLite allows any number of NULLs in a unique index.
+        Index(value = ["reference_no"], unique = true)
+    ]
+)
+data class TransactionEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Always positive, in paise (₹1 = 100). [direction] gives the sign. */
+    @ColumnInfo(name = "amount_paise") val amountPaise: Long,
+    val direction: Direction,
+    /** When it happened, in milliseconds since the epoch (UTC). */
+    val timestamp: Long,
+    @ColumnInfo(name = "account_id") val accountId: Long?,
+    @ColumnInfo(name = "payee_id") val payeeId: Long?,
+    @ColumnInfo(name = "category_id") val categoryId: Long,
+    val note: String?,
+    /** UPI or bank reference number; unique when present, which stops duplicate imports. */
+    @ColumnInfo(name = "reference_no") val referenceNo: String?,
+    val source: TransactionSource,
+    /** Original SMS text, kept only for SMS-sourced transactions. */
+    @ColumnInfo(name = "raw_sms") val rawSms: String?,
+    @ColumnInfo(name = "needs_review") val needsReview: Boolean = false
+)
+
+@Entity(
+    tableName = "transaction_tags",
+    primaryKeys = ["transaction_id", "tag_id"],
+    foreignKeys = [
+        ForeignKey(
+            entity = TransactionEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["transaction_id"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = TagEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["tag_id"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("tag_id")]
+)
+data class TransactionTagEntity(
+    @ColumnInfo(name = "transaction_id") val transactionId: Long,
+    @ColumnInfo(name = "tag_id") val tagId: Long
+)
