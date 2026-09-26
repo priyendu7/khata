@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hindi strings. Every string in values/strings.xml needs a Hindi version here. -->
+    <string name="settings_privacy">गोपनीयता</string>
+    <string name="settings_privacy_value">इंटरनेट की अनुमति नहीं। आपका डेटा कभी इस फ़ोन से बाहर नहीं जाता।</string>
+    <string name="settings_language">भाषा</string>
+    <string name="settings_language_value">आपके फ़ोन जैसी (अंग्रेज़ी या हिंदी)</string>
+    <string name="settings_backup">बैकअप</string>
+    <string name="settings_backup_value">CSV एक्सपोर्ट बाद के अपडेट में आएगा।</string>
+    <string name="settings_source">सोर्स कोड</string>
+    <string name="settings_source_value">GPL v3 के तहत मुफ़्त और ओपन सोर्स · github.com/priyendu7/khata</string>
+    <string name="settings_version">वर्ज़न</string>
+</resources>

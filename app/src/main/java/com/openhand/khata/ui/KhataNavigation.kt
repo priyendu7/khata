@@ -16,7 +16,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import com.openhand.khata.BuildConfig
 import com.openhand.khata.R
+import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.feature.insights.HomeScreen
 import com.openhand.khata.feature.insights.InsightsScreen
 import com.openhand.khata.feature.settings.SettingsScreen
@@ -26,10 +28,10 @@ enum class Destination(
     @StringRes val label: Int,
     @DrawableRes val icon: Int
 ) {
-    HOME(R.string.nav_home, R.drawable.ic_home),
-    TRANSACTIONS(R.string.nav_transactions, R.drawable.ic_ledger),
-    INSIGHTS(R.string.nav_insights, R.drawable.ic_insights),
-    SETTINGS(R.string.nav_settings, R.drawable.ic_settings)
+    HOME(UiR.string.nav_home, UiR.drawable.ic_home),
+    TRANSACTIONS(UiR.string.nav_transactions, UiR.drawable.ic_ledger),
+    INSIGHTS(UiR.string.nav_insights, UiR.drawable.ic_insights),
+    SETTINGS(UiR.string.nav_settings, UiR.drawable.ic_settings)
 }
 
 /** Bottom-navigation shell from the development plan (Phase 0): Home, Transactions, Insights, Settings. */
@@ -57,10 +59,10 @@ fun KhataNavigation() {
     ) { padding ->
         val modifier = Modifier.padding(padding)
         when (current) {
-            Destination.HOME -> HomeScreen(modifier)
+            Destination.HOME -> HomeScreen(stringResource(R.string.app_name), modifier)
             Destination.TRANSACTIONS -> TransactionsScreen(modifier)
             Destination.INSIGHTS -> InsightsScreen(modifier)
-            Destination.SETTINGS -> SettingsScreen(modifier)
+            Destination.SETTINGS -> SettingsScreen(BuildConfig.VERSION_NAME, modifier)
         }
     }
 }

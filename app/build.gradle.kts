@@ -1,11 +1,11 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("org.jlleitschuh.gradle.ktlint")
-    id("com.github.triplet.play")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.khata.android.compose)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.play.publisher)
 }
 
 // Release signing is injected by CI (see .github/workflows/release.yml); local builds stay debug-only.
@@ -13,15 +13,14 @@ val releaseKeystorePath: String? = System.getenv("RELEASE_KEYSTORE_PATH")
 
 android {
     namespace = "com.openhand.khata"
-    // TODO: revisit compileSdk/minSdk/targetSdk against the PRD's platform requirements.
-    compileSdk = 36
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         // Overridable so contributors can publish a fork to their own Play account.
         applicationId = providers.gradleProperty("app.applicationId")
             .getOrElse("com.openhand.khata")
-        minSdk = 26
-        targetSdk = 36
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         // CI derives these from the git tag (vX.Y.Z) and run number on release.
         versionCode = System.getenv("VERSION_CODE")?.toInt() ?: 1
         versionName = System.getenv("VERSION_NAME") ?: "0.1.0-dev"
@@ -56,7 +55,6 @@ android {
     }
 
     buildFeatures {
-        compose = true
         buildConfig = true
     }
 
@@ -88,13 +86,15 @@ play {
 }
 
 dependencies {
-    // Minimal Compose shell so the app builds and launches.
-    implementation(platform("androidx.compose:compose-bom:2024.09.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.activity:activity-compose:1.9.2")
+    // Compose (BOM, UI, Material 3) comes from the khata.android.compose convention plugin.
+    implementation(libs.androidx.activity.compose)
+
+    implementation(project(":core:ui"))
+    implementation(project(":feature:transactions"))
+    implementation(project(":feature:insights"))
+    implementation(project(":feature:settings"))
 
     // Feature dependencies from docs/DEVELOPMENT_PLAN.md are added during feature work, in the PR that uses them.
 
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(libs.junit)
 }

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hindi strings. Every string in values/strings.xml needs a Hindi version here. -->
+    <string name="amount_zero">₹0</string>
+    <string name="home_this_month">इस महीने</string>
+    <string name="home_spent">खर्च</string>
+    <string name="home_income">आय</string>
+    <string name="home_spent_today">आज का खर्च</string>
+    <string name="home_empty_title">अभी कोई लेन-देन नहीं</string>
+    <string name="home_empty_body">आय और खर्च हाथ से जोड़ने की सुविधा अगले अपडेट में आ रही है। आप जो भी जोड़ेंगे, वह इसी फ़ोन पर रहेगा।</string>
+    <string name="insights_heatmap_title">रोज़ का खर्च</string>
+    <string name="insights_less">कम</string>
+    <string name="insights_more">ज़्यादा</string>
+    <string name="insights_empty_title">लेन-देन जोड़ते ही चार्ट भरेंगे</string>
+    <string name="insights_empty_body">लेन-देन जोड़ने के बाद आप श्रेणी के हिसाब से खर्च, खर्च का कैलेंडर और महीने-दर-महीने तुलना देख पाएँगे।</string>
+</resources>

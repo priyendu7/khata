@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hindi strings. Every string in values/strings.xml needs a Hindi version here. -->
+    <string name="transactions_empty_title">अभी यहाँ कुछ नहीं है</string>
+    <string name="transactions_empty_body">आपकी आय और खर्च यहाँ दिन के हिसाब से दिखेंगे।</string>
+</resources>
