@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.openhand.khata.core.security.AndroidKeystoreKeyWrapper
 import com.openhand.khata.core.security.DatabaseKeyManager
 import java.io.File
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -83,6 +84,32 @@ class EncryptedDatabaseTest {
         assertTrue(reopened.wasReset)
         assertNull(reopened.read())
         reopened.database.close()
+    }
+
+    @Test
+    fun newAndResetDatabasesHaveTheDefaultCategories() {
+        val expected = com.openhand.khata.core.model.DefaultCategory.entries.size
+        open().apply {
+            assertEquals(
+                expected,
+                runBlocking {
+                    database.categoryDao().observeActive().first().size
+                }
+            )
+            database.close()
+        }
+        wrapper.deleteKey()
+
+        open().apply {
+            assertTrue(wasReset)
+            assertEquals(
+                expected,
+                runBlocking {
+                    database.categoryDao().observeActive().first().size
+                }
+            )
+            database.close()
+        }
     }
 
     @Test

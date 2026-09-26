@@ -12,6 +12,8 @@
 - Deleting an account or category that transactions use fails (the UI must move or archive first); deleting a payee clears the link; deleting a transaction or tag removes its tag links. Tag names are unique ignoring case.
 - Timestamps are epoch milliseconds (UTC).
 
+**Default categories (done in #10):** `DefaultCategorySeeder` adds the ten PRD defaults (`DefaultCategory` in `:core:model`) when the database file is created, and again if it's recreated after a lost key. Each has a fixed `seed_key` and **no stored name**, so the UI shows it in the current language (English or Hindi) and switching languages renames it. When the user renames one, their `name` is stored and shown as typed, and the `seed_key` stays, so `uncategorized` can always be found (`CategoryDao.getBySeedKey`). Seeding uses INSERT OR IGNORE on the unique `seed_key`, so it can never duplicate.
+
 **Changing the schema:** bump the version in `KhataDatabase`, add the migration to `KhataMigrations.ALL`, commit the new JSON from `schemas/`, and add a test in `src/androidTest/MigrationTest` that migrates real data. DAO and constraint tests run on the JVM with Robolectric (`src/test/`), so CI runs them.
 
 **Encryption (done in #8):** `KhataDatabaseFactory` opens Room through SQLCipher's `SupportOpenHelperFactory` with the passphrase from `:core:security`. The database is opened lazily, the first time something injects it (see `DatabaseModule`), so inject it off the main thread.

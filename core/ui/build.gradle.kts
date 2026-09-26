@@ -6,3 +6,7 @@ plugins {
 android {
     namespace = "com.openhand.khata.core.ui"
 }
+
+dependencies {
+    implementation(project(":core:model"))
+}

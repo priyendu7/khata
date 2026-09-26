@@ -16,6 +16,7 @@ room {
 }
 
 dependencies {
+    implementation(project(":core:model"))
     implementation(project(":core:security"))
     implementation(libs.room.runtime)
     ksp(libs.room.compiler)
