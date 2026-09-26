@@ -85,6 +85,9 @@ Run the same checks CI runs on every PR:
 ```bash
 ./gradlew ktlintCheck lintDebug testDebugUnitTest assembleDebug
 .github/scripts/check-no-internet.sh
+./gradlew detekt
+python3 .github/scripts/check-hardcoded-text.py
+.github/scripts/check-dependency-allowlist.sh
 ```
 
 `./gradlew ktlintFormat` auto-fixes most style issues. Builds are distributed through Google Play testing tracks (internal → closed → open → production); signed APKs are also attached to each [GitHub release](https://github.com/priyendu7/khata/releases). See [`docs/RELEASING.md`](docs/RELEASING.md). Pull requests can be tested from the Play Store before merge via the separate Khata QA app — see [`docs/TESTING_ON_PLAY.md`](docs/TESTING_ON_PLAY.md).

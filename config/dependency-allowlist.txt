@@ -1,0 +1,19 @@
+# Libraries allowed in the app's release build (PRD privacy principle 2: no SDK may phone home).
+# CI and the release workflow fail if anything else reaches the release runtime classpath:
+# .github/scripts/check-dependency-allowlist.sh
+#
+# Format, one per line:  <group>  |  <group>:<artifact>  |  <group prefix>.*   then "# why".
+# Adding a line is a reviewed change: explain in the PR what the library does and confirm it
+# makes no network connections (see CONTRIBUTING.md).
+
+androidx.*                              # AndroidX: Google's Android support libraries (UI, Room, biometric, lifecycle…)
+org.jetbrains.kotlin                    # Kotlin standard library
+org.jetbrains.kotlinx                   # kotlinx.coroutines (and its BOM)
+org.jetbrains:annotations               # JetBrains nullability annotations, no code
+net.zetetic:sqlcipher-android           # SQLCipher: encrypted database (named in the PRD)
+com.google.dagger                       # Dagger/Hilt: dependency injection generated at compile time; no reflection, no network
+javax.inject                            # @Inject annotation API used by Dagger
+jakarta.inject                          # Jakarta @Inject annotation API used by Dagger
+com.google.code.findbugs:jsr305         # Nullness annotations (pulled in by Dagger), no code
+org.jspecify                            # Nullness annotations (pulled in by AndroidX), no code
+com.google.guava:listenablefuture       # Empty placeholder artifact that stops full Guava being pulled in

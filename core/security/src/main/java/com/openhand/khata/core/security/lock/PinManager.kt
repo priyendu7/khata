@@ -97,6 +97,9 @@ class PinManager(
         private const val FIRST_WAIT_MILLIS = 30_000L
         private const val MAX_WAIT_MILLIS = 60 * 60_000L
 
+        // Enough to pass MAX_WAIT_MILLIS without overflowing the shift.
+        private const val MAX_DOUBLINGS = 20L
+
         private const val PIN_HASH = "pin_hash"
         private const val RECOVERY_HASH = "recovery_hash"
         private const val FAILURES = "failures"
@@ -108,7 +111,7 @@ class PinManager(
         /** No wait for the first [FREE_ATTEMPTS] failures; then 30 s, 1 min, 2 min, … up to 1 hour. */
         fun waitAfter(failures: Long): Long? {
             if (failures < FREE_ATTEMPTS) return null
-            val doublings = (failures - FREE_ATTEMPTS).coerceAtMost(20)
+            val doublings = (failures - FREE_ATTEMPTS).coerceAtMost(MAX_DOUBLINGS)
             return (FIRST_WAIT_MILLIS shl doublings.toInt()).coerceAtMost(MAX_WAIT_MILLIS)
         }
     }

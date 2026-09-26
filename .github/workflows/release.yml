@@ -84,7 +84,7 @@ jobs:
       - name: Verify
         # Unit tests run on the debug variant: Compose UI tests need ui-test-manifest, which is
         # debugImplementation, so Robolectric can't resolve ComponentActivity in release.
-        run: ./gradlew ktlintCheck lintRelease testDebugUnitTest
+        run: ./gradlew ktlintCheck detekt lintRelease testDebugUnitTest
 
       - name: Write release notes
         run: |
@@ -101,6 +101,9 @@ jobs:
 
       - name: No INTERNET permission (PRD privacy principle 1)
         run: .github/scripts/check-no-internet.sh
+
+      - name: Only allowlisted libraries (PRD privacy principle 2)
+        run: .github/scripts/check-dependency-allowlist.sh
 
       - name: Upload to Google Play (internal testing)
         if: steps.play.outputs.enabled == 'true'

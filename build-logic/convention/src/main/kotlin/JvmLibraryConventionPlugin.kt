@@ -10,6 +10,7 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
         with(target) {
             pluginManager.apply("org.jetbrains.kotlin.jvm")
             pluginManager.apply("org.jlleitschuh.gradle.ktlint")
+            configureDetekt()
 
             extensions.configure<JavaPluginExtension> {
                 sourceCompatibility = KHATA_JAVA_VERSION

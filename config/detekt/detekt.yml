@@ -1,0 +1,30 @@
+# Overrides on top of detekt's default rules (buildUponDefaultConfig = true).
+# Mostly the usual settings for Jetpack Compose code; see https://detekt.dev/docs/introduction/compose
+
+naming:
+  FunctionNaming:
+    # Composables are named like types: HomeScreen(), LockGate().
+    ignoreAnnotated: ['Composable']
+
+style:
+  MagicNumber:
+    # Named constants and enum values are the "well named constants" this rule asks for; layout
+    # numbers in composables (16.dp, 0.82f) are normal Compose style.
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreEnums: true
+    ignoreAnnotated: ['Composable']
+
+complexity:
+  LongMethod:
+    ignoreAnnotated: ['Composable']
+  LongParameterList:
+    # Composables commonly take several optional parameters.
+    ignoreDefaultParameters: true
+    ignoreAnnotated: ['Composable']
+  CyclomaticComplexMethod:
+    ignoreSimpleWhenEntries: true
+  TooManyFunctions:
+    # ViewModels and Room DAOs have one small function per action or query.
+    thresholdInClasses: 20
+    thresholdInInterfaces: 20

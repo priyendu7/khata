@@ -24,7 +24,9 @@ class DatabaseKeyManager(
     private val keyWrapper: KeyWrapper,
     private val random: SecureRandom = SecureRandom()
 ) {
+    // A key that can't be unwrapped is gone for good, so it's replaced (reported as previousKeyLost).
     @Synchronized
+    @Suppress("SwallowedException")
     fun getOrCreatePassphrase(): DatabasePassphrase {
         var previousKeyLost = false
         if (wrappedKeyFile.exists()) {

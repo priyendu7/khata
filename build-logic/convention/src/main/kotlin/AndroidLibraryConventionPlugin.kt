@@ -13,6 +13,7 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
         with(target) {
             pluginManager.apply("com.android.library")
             pluginManager.apply("org.jlleitschuh.gradle.ktlint")
+            configureDetekt()
 
             extensions.configure<LibraryExtension> {
                 compileSdk = libs.version("compileSdk").toInt()

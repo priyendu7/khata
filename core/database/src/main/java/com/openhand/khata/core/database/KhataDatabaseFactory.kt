@@ -18,6 +18,8 @@ class OpenedDatabase(val database: KhataDatabase, val wasReset: Boolean)
 object KhataDatabaseFactory {
     @Volatile private var nativeLibraryLoaded = false
 
+    // Room takes migrations as varargs; the array is copied once, when the database opens.
+    @Suppress("SpreadOperator")
     fun open(
         context: Context,
         keyManager: DatabaseKeyManager,
