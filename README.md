@@ -46,33 +46,33 @@ Everything is protected by an app lock and an encrypted database, in English and
 ## Project layout
 
 ```
-app/src/main/java/com/openhand/khata/
-├── KhataApp.kt      Application class
-├── ui/                   MainActivity, navigation shell
-├── core/
-│   ├── model/            Plain Kotlin data classes (Transaction, Payee…)
-│   ├── database/         Room + SQLCipher, DAOs, migrations
-│   ├── data/             Repositories
-│   ├── security/         Keystore key, device-lock / biometric helpers
-│   └── ui/               Theme, shared Compose components
-├── feature/
-│   ├── transactions/     List, add/edit, review inbox
-│   ├── payees/           Payee memory screens
-│   ├── categories/       Categories and tags
-│   ├── insights/         Donut, heatmap, monthly chart, home summary
-│   ├── csv/              Import and export
-│   └── settings/         Lock, backup reminder, parsers, language
-└── sms/
-    ├── parser/           Bank parsers + rule engine (no Android deps)
-    └── ingest/           SMS receiver, inbox scan, dedupe
-
-Each package has a README saying what it will own and which milestone builds it. The development plan
-splits these into separate Gradle modules during Phase 0; `parser-web/` (the custom-parser website) arrives in Phase 3.
+app/                     Entry point: KhataApp, MainActivity, bottom navigation, launcher icon
+core/
+├── model/               Plain Kotlin data classes (Transaction, Payee…) — JVM only
+├── database/            Room + SQLCipher, DAOs, migrations
+├── data/                Repositories
+├── security/            Keystore key, device-lock / biometric helpers
+└── ui/                  Theme, shared Compose components, shared strings and icons
+feature/
+├── transactions/        List, add/edit, review inbox
+├── payees/              Payee memory screens
+├── categories/          Categories and tags
+├── insights/            Home summary, donut, heatmap, monthly chart
+├── csv/                 Import and export
+└── settings/            Lock, backup reminder, parsers, language
+sms/
+├── parser/              Bank parsers + rule engine — JVM only, no Android deps
+└── ingest/              SMS receiver, inbox scan, dedupe
+build-logic/             Convention plugins shared by every module
+gradle/libs.versions.toml  All plugin and library versions
 ```
+
+Each module has a README saying what it owns and which milestone builds it. Every module uses the
+`com.openhand.khata.<module>` package. `parser-web/` (the custom-parser website) arrives in Phase 3.
 
 ## Getting started
 
-Requires JDK 17+ and the Android SDK (API 36). The app is currently a buildable shell — feature modules are still stubs.
+Requires JDK 17+ and the Android SDK (API 36). The app is currently a navigation shell with empty screens; most modules are still stubs.
 
 ```bash
 git clone https://github.com/priyendu7/khata.git

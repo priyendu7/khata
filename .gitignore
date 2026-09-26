@@ -1,7 +1,6 @@
 # Gradle
 .gradle/
 build/
-app/build/
 *.hprof
 
 # Local config

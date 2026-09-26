@@ -1,8 +1,11 @@
-// Top-level build file. Plugin versions are declared here and applied per-module.
+// Top-level build file. Versions live in gradle/libs.versions.toml; shared module setup lives in
+// build-logic/ (convention plugins khata.android.library, khata.android.compose, khata.jvm.library).
 plugins {
-    id("com.android.application") version "8.13.2" apply false
-    id("org.jetbrains.kotlin.android") version "2.4.20" apply false
-    id("org.jetbrains.kotlin.plugin.compose") version "2.4.20" apply false
-    id("org.jlleitschuh.gradle.ktlint") version "12.3.0" apply false
-    id("com.github.triplet.play") version "3.13.0" apply false
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.ktlint) apply false
+    alias(libs.plugins.play.publisher) apply false
 }
