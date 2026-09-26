@@ -19,7 +19,7 @@ Closes #
 
 ## Play testing
 
-Want testers to try this PR from the Play Store before merge? See [`docs/TESTING_ON_PLAY.md`](https://github.com/priyendu7/bahikhata/blob/main/docs/TESTING_ON_PLAY.md).
+Want testers to try this PR from the Play Store before merge? See [`docs/TESTING_ON_PLAY.md`](https://github.com/priyendu7/khata/blob/main/docs/TESTING_ON_PLAY.md).
 
 - [ ] Not needed
 - [ ] Internal app sharing link

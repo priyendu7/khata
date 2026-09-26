@@ -1,18 +1,18 @@
-# BahiKhata
+# Khata
 
-[![CI](https://github.com/priyendu7/bahikhata/actions/workflows/ci.yml/badge.svg)](https://github.com/priyendu7/bahikhata/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/priyendu7/bahikhata?include_prereleases)](https://github.com/priyendu7/bahikhata/releases)
+[![CI](https://github.com/priyendu7/khata/actions/workflows/ci.yml/badge.svg)](https://github.com/priyendu7/khata/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/priyendu7/khata?include_prereleases)](https://github.com/priyendu7/khata/releases)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 A private, offline expense tracker that turns your bank SMS into a categorized spending diary.
 
-**Free. No ads. No data collection.** BahiKhata doesn't have accounts, analytics, or trackers, and the app does not even have permission to use the internet — CI fails the build if anything adds it. See [`docs/PRIVACY.md`](docs/PRIVACY.md).
+**Free. No ads. No data collection.** Khata doesn't have accounts, analytics, or trackers, and the app does not even have permission to use the internet — CI fails the build if anything adds it. See [`docs/PRIVACY.md`](docs/PRIVACY.md).
 
 > **Status:** Pre-MVP / early development. See [`docs/PRD.md`](docs/PRD.md) and [`docs/DEVELOPMENT_PLAN.md`](docs/DEVELOPMENT_PLAN.md) for the full product and engineering plan.
 
 ## Why
 
-Popular Indian expense apps need an account, show ads, and upload your SMS and spending data to their servers. People who care about privacy fall back to hand-kept spreadsheets and lose track. BahiKhata turns the transaction SMS your bank already sends into a categorized expense diary with charts — entirely on your phone, in an encrypted database, behind your phone's own lock. It's for salaried people in India who pay mostly by UPI and card and want their spending tracked without handing their data to anyone.
+Popular Indian expense apps need an account, show ads, and upload your SMS and spending data to their servers. People who care about privacy fall back to hand-kept spreadsheets and lose track. Khata turns the transaction SMS your bank already sends into a categorized expense diary with charts — entirely on your phone, in an encrypted database, behind your phone's own lock. It's for salaried people in India who pay mostly by UPI and card and want their spending tracked without handing their data to anyone.
 
 ## MVP scope
 
@@ -46,8 +46,8 @@ Everything is protected by an app lock and an encrypted database, in English and
 ## Project layout
 
 ```
-app/src/main/java/com/bahikhata/
-├── BahiKhataApp.kt      Application class
+app/src/main/java/com/khataapp/
+├── KhataApp.kt      Application class
 ├── ui/                   MainActivity, navigation shell
 ├── core/
 │   ├── model/            Plain Kotlin data classes (Transaction, Payee…)
@@ -75,8 +75,8 @@ splits these into separate Gradle modules during Phase 0; `parser-web/` (the cus
 Requires JDK 17+ and the Android SDK (API 36). The app is currently a buildable shell — feature modules are still stubs.
 
 ```bash
-git clone https://github.com/priyendu7/bahikhata.git
-cd bahikhata
+git clone https://github.com/priyendu7/khata.git
+cd khata
 ./gradlew assembleDebug
 ```
 
@@ -87,7 +87,7 @@ Run the same checks CI runs on every PR:
 .github/scripts/check-no-internet.sh
 ```
 
-`./gradlew ktlintFormat` auto-fixes most style issues. Builds are distributed through Google Play testing tracks (internal → closed → open → production); signed APKs are also attached to each [GitHub release](https://github.com/priyendu7/bahikhata/releases). See [`docs/RELEASING.md`](docs/RELEASING.md). Pull requests can be tested from the Play Store before merge via the separate BahiKhata QA app — see [`docs/TESTING_ON_PLAY.md`](docs/TESTING_ON_PLAY.md).
+`./gradlew ktlintFormat` auto-fixes most style issues. Builds are distributed through Google Play testing tracks (internal → closed → open → production); signed APKs are also attached to each [GitHub release](https://github.com/priyendu7/khata/releases). See [`docs/RELEASING.md`](docs/RELEASING.md). Pull requests can be tested from the Play Store before merge via the separate Khata QA app — see [`docs/TESTING_ON_PLAY.md`](docs/TESTING_ON_PLAY.md).
 
 ## Contributing
 
@@ -95,4 +95,4 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for branch/commit conventions and how t
 
 ## License
 
-[GNU GPL v3](LICENSE) — you may use, study, share and modify BahiKhata; derived versions must stay open under the same license.
+[GNU GPL v3](LICENSE) — you may use, study, share and modify Khata; derived versions must stay open under the same license.

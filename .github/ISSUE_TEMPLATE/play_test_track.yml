@@ -1,12 +1,12 @@
 name: Request a Play test track
-description: Ask for a closed testing track in the BahiKhata QA app for field testing with your own testers.
+description: Ask for a closed testing track in the Khata QA app for field testing with your own testers.
 title: "[Play track] tester-"
 labels: ["play-test-track"]
 body:
   - type: markdown
     attributes:
       value: |
-        Closed tracks let **your** group of testers get PR builds of BahiKhata QA through the Play Store.
+        Closed tracks let **your** group of testers get PR builds of Khata QA through the Play Store.
         They're granted at the maintainer's discretion, usually to contributors who've had a PR or two reviewed.
         For one-off testing, just ask for an internal sharing link on your PR instead — see [docs/TESTING_ON_PLAY.md](../blob/main/docs/TESTING_ON_PLAY.md).
   - type: input
@@ -21,7 +21,7 @@ body:
     attributes:
       label: Google Group email
       description: Google Play grants closed-track access by Google Group. Create one at groups.google.com and add your testers.
-      placeholder: bahikhata-testers-yourname@googlegroups.com
+      placeholder: khata-testers-yourname@googlegroups.com
     validations:
       required: true
   - type: dropdown

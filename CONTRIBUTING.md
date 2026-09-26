@@ -1,4 +1,4 @@
-# Contributing to BahiKhata
+# Contributing to Khata
 
 Thanks for taking a look. This project is early — the fastest way to help is picking up an open issue from the first milestones in `docs/DEVELOPMENT_PLAN.md`.
 
@@ -7,7 +7,7 @@ By contributing, you agree your contributions are licensed under the project's [
 ## Ground rules
 
 - **Scope is defined by the [PRD](docs/PRD.md).** Anything outside it is out of scope by default. If you think something should be added, open an issue proposing a PRD change first; don't send a PR that quietly expands scope.
-- **Privacy is a feature.** BahiKhata is free, has no ads, and never collects, stores remotely, or shares user data. PRs that add analytics, tracking, ads, accounts, or network calls that send user data will not be accepted. The PRD's privacy principles are hard rules: the app has **no `INTERNET` permission** (CI fails if any dependency adds it), dependencies are limited to AndroidX, Kotlin libraries and SQLCipher, and Android backup stays off. See [`docs/PRIVACY.md`](docs/PRIVACY.md).
+- **Privacy is a feature.** Khata is free, has no ads, and never collects, stores remotely, or shares user data. PRs that add analytics, tracking, ads, accounts, or network calls that send user data will not be accepted. The PRD's privacy principles are hard rules: the app has **no `INTERNET` permission** (CI fails if any dependency adds it), dependencies are limited to AndroidX, Kotlin libraries and SQLCipher, and Android backup stays off. See [`docs/PRIVACY.md`](docs/PRIVACY.md).
 
 ## Before you start
 
@@ -60,7 +60,7 @@ Each phase is a GitHub milestone, with one issue per checklist item in the devel
 
 ## Testing your PR on real phones via Google Play
 
-You don't need to wait for a merge to put your change in testers' hands. A maintainer can publish your PR to the separate **BahiKhata QA** app on Google Play — as an install link, or to your own closed testing track. See [`docs/TESTING_ON_PLAY.md`](docs/TESTING_ON_PLAY.md).
+You don't need to wait for a merge to put your change in testers' hands. A maintainer can publish your PR to the separate **Khata QA** app on Google Play — as an install link, or to your own closed testing track. See [`docs/TESTING_ON_PLAY.md`](docs/TESTING_ON_PLAY.md).
 
 ## Continuous integration
 

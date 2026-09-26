@@ -10,14 +10,14 @@
          - POST_NOTIFICATIONS: optional daily summary and backup reminder (PRD features 4 and 6). -->
 
     <application
-        android:name=".BahiKhataApp"
+        android:name=".KhataApp"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:theme="@style/Theme.BahiKhata">
+        android:theme="@style/Theme.Khata">
 
         <activity
             android:name=".ui.MainActivity"

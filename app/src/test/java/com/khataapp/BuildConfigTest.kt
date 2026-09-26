@@ -1,4 +1,4 @@
-package com.bahikhata
+package com.khataapp
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -9,7 +9,7 @@ import org.junit.Test
 class BuildConfigTest {
     @Test
     fun applicationIdMatchesNamespace() {
-        assertEquals("com.bahikhata", BuildConfig.APPLICATION_ID)
+        assertEquals("com.khataapp", BuildConfig.APPLICATION_ID)
     }
 
     @Test

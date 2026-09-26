@@ -16,7 +16,7 @@ fi
 status=0
 while IFS= read -r m; do
   if grep -q 'android.permission.INTERNET"' "$m"; then
-    echo "::error file=$m::android.permission.INTERNET is in the merged manifest. BahiKhata must not have internet access (docs/PRD.md, privacy principle 1). Find the dependency that adds it in app/build/outputs/logs/manifest-merger-*-report.txt and remove it."
+    echo "::error file=$m::android.permission.INTERNET is in the merged manifest. Khata must not have internet access (docs/PRD.md, privacy principle 1). Find the dependency that adds it in app/build/outputs/logs/manifest-merger-*-report.txt and remove it."
     status=1
   else
     echo "OK (no INTERNET): $m"

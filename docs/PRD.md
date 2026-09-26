@@ -1,10 +1,10 @@
-# BahiKhata PRD
+# Khata PRD
 
 2026-09-25 · SLPS
 
 ## Overview
 
-BahiKhata is a free, open-source Android expense tracker. Every record stays on the phone, and the app has no permission to use the internet. It turns the transaction SMS that Indian banks already send into a categorized expense diary with charts, so there is almost nothing to type.
+Khata is a free, open-source Android expense tracker. Every record stays on the phone, and the app has no permission to use the internet. It turns the transaction SMS that Indian banks already send into a categorized expense diary with charts, so there is almost nothing to type.
 
 **Problem.** Popular Indian expense apps need an account, show ads, and upload SMS and spending data to their servers. People who care about privacy end up keeping spreadsheets by hand, and they lose track.
 
@@ -38,7 +38,7 @@ v1 turns bank SMS into a private, categorized record of your spending, with good
 
 The main users are salaried people in India who pay mostly through UPI and cards and want their spending tracked without handing their data to anyone.
 
-| Persona | Situation | What they need from BahiKhata |
+| Persona | Situation | What they need from Khata |
 | --- | --- | --- |
 | Privacy-minded professional | Uses several cards and UPI apps; avoids apps that upload SMS | Automatic tracking that works offline and whose code they can check |
 | Freelancer / business traveller | Mixes personal and work spending | Tags such as "work" to separate spending that can be reimbursed |
@@ -96,7 +96,7 @@ v1 has eight features, and spending alerts are planned for later. SMS parsing sh
 ### 6. CSV export and import
 
 - Export all data or a date range to a documented CSV format, saved anywhere the user picks through the Android file picker.
-- Import from BahiKhata's own CSV, or from any CSV after matching its columns (date, amount, description, category). Duplicates are skipped by reference number, or else by date, amount and payee.
+- Import from Khata's own CSV, or from any CSV after matching its columns (date, amount, description, category). Duplicates are skipped by reference number, or else by date, amount and payee.
 - A reminder to back up is shown if there has been no export in 30 days (the interval can be changed).
 
 ### 7. SMS reading (later milestone)
@@ -119,7 +119,7 @@ Parsing happens entirely on the device, with a rule set for each sender (HDFC, I
 
 Users can add a parser for any bank we don't support yet, without waiting for a release.
 
-1. On the BahiKhata parser website (GitHub Pages), the user pastes a sample SMS and marks the amount, payee, account and reference number.
+1. On the Khata parser website (GitHub Pages), the user pastes a sample SMS and marks the amount, payee, account and reference number.
 2. The site generates a parser rule, a short text code containing a pattern and field mapping.
 3. In the app, the user opens Settings > Parsers > Add, pastes the code, tests it against a recent SMS on the phone, and saves it.
 
@@ -182,7 +182,7 @@ We publish on the Play Store, and attach signed APKs to GitHub Releases. We are 
 - [ ] Submit the SMS permissions declaration form, choosing SMS-based money management as the use case, and upload a short video showing why the app needs to read SMS.
 - [ ] Fill in the Data safety form: no data collected, no data shared.
 - [ ] Publish a privacy policy URL, for example a page on GitHub Pages saying no data leaves the device.
-- [ ] Store listing title: "BahiKhata: Private Expense Tracker" (30 characters max).
+- [ ] Store listing title: "Khata: Private Expense Tracker" (exactly 30 characters, the maximum).
 
 **GitHub Releases** get signed APKs as well, for people who install apps directly.
 
@@ -215,4 +215,4 @@ We build in five milestones. The app is useful from M2 on, before any SMS parsin
 | Banks change their SMS format | Transactions stop being recorded | Unparsed SMS go to the review inbox with their raw text; each parser is its own file and has tests |
 | Lost phone or uninstall wipes the data | The user loses their history | A backup reminder, plus a clear warning on first launch and before uninstalling where possible |
 | Forgotten PIN locks the user out | The data cannot be recovered | Use the phone's screen lock by default; an app-only PIN comes with a one-time recovery code |
-| The name gets linked with Khatabook | Possible trademark complaint | Search trademarks before publishing; "bahi khata" is an everyday term |
+| "Khata" is a common word used by many shop-ledger apps, and may be linked with Khatabook | Weak discoverability; possible trademark complaint | "khata" is an everyday term; a distinct store title, icon and package (`com.khataapp`) set the app apart; search trademarks before publishing |

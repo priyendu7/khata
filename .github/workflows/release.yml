@@ -115,7 +115,7 @@ jobs:
       - name: Collect release files
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/BahiKhata-${VERSION_NAME}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "dist/Khata-${VERSION_NAME}.apk"
           cd dist && sha256sum * > SHA256SUMS.txt
 
       # Every build starts as a pre-release; promote.yml marks it "latest" on 100% production rollout.

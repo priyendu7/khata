@@ -1,10 +1,10 @@
-# BahiKhata Development Plan
+# Khata Development Plan
 
 2026-09-25 · SLPS
 
 ## Summary
 
-The plan takes BahiKhata from an empty repo to a Play Store release in five phases. It follows the milestones in the PRD. Every phase ends with a working app you can install, not just finished code. There are no deadlines: each phase starts when the one before it is done.
+The plan takes Khata from an empty repo to a Play Store release in five phases. It follows the milestones in the PRD. Every phase ends with a working app you can install, not just finished code. There are no deadlines: each phase starts when the one before it is done.
 
 | Phase | Result you can see |
 | --- | --- |
@@ -18,10 +18,10 @@ Spending alerts come after the release, as the first update.
 
 ## Repository and architecture
 
-The project is one public GitHub repo (`bahikhata`) under GPLv3 containing the Android app split into modules, plus the parser website as a static folder. The app follows the MVVM pattern: each screen has a ViewModel that talks to repositories, which read and write the database.
+The project is one public GitHub repo (`khata`) under GPLv3 containing the Android app split into modules, plus the parser website as a static folder. The app follows the MVVM pattern: each screen has a ViewModel that talks to repositories, which read and write the database.
 
 ```
-bahikhata/
+khata/
 ├── app/                  # Entry point, navigation, app lock, Hilt setup
 ├── core/
 │   ├── model/            # Plain Kotlin data classes (Transaction, Payee...)
@@ -94,7 +94,7 @@ By the end of this phase you can import your existing spreadsheet and see all th
 - [ ] Show income against spending on the monthly chart
 - [ ] Write down the CSV format in `docs/csv-format.md`
 - [ ] CSV export: all data or a date range, saved through the system file picker
-- [ ] CSV import: BahiKhata's own format, plus a column-matching step for any other CSV; show a preview and skip duplicates
+- [ ] CSV import: Khata's own format, plus a column-matching step for any other CSV; show a preview and skip duplicates
 - [ ] Backup reminder after 30 days without an export (interval can be changed), using WorkManager
 - [ ] Tests: CSV export then import gives back the same data, and chart totals match the database totals
 
@@ -131,7 +131,7 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 
 ## Phase 4: Release
 
-By the end of this phase BahiKhata is live on the Play Store. Most of the wait is Google's required 14-day closed test, so start recruiting testers during Phase 3.
+By the end of this phase Khata is live on the Play Store. Most of the wait is Google's required 14-day closed test, so start recruiting testers during Phase 3.
 
 - [ ] Create the Play developer account and complete identity verification (start this in Phase 0, since verification can take days)
 - [ ] Final app icon, feature graphic and screenshots in English and Hindi
@@ -140,7 +140,7 @@ By the end of this phase BahiKhata is live on the Play Store. Most of the wait i
 - [ ] Closed test track with at least 12 testers for 14 days; fix what they report
 - [ ] SMS permissions declaration form, with money management as the use case, and a 1–2 minute demo video
 - [ ] Data safety form: no data collected, no data shared
-- [ ] Store listing: "BahiKhata: Private Expense Tracker", descriptions in English and Hindi
+- [ ] Store listing: "Khata: Private Expense Tracker", descriptions in English and Hindi
 - [ ] GitHub release with the signed APK and changelog
 - [ ] Apply for production access and roll out in stages (10%, 50%, 100%)
 
@@ -177,7 +177,7 @@ Work is tracked as GitHub issues and delivered as small pull requests, one featu
 
 The first step is to create the repo, which only you can do. After that, Phase 0 work can start.
 
-- [ ] You: create an empty public repo named `bahikhata` on GitHub, and connect it to this project
+- [ ] You: create an empty public repo named `khata` on GitHub, and connect it to this project
 - [ ] You: start the Google Play developer account registration, because identity verification can take several days
 - [ ] Claude: open the first PR with the project skeleton, GPLv3 license, CI and the INTERNET-permission check
 - [ ] Claude: create GitHub issues and milestones from this plan
