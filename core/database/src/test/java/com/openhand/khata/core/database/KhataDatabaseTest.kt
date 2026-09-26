@@ -5,13 +5,13 @@ import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.openhand.khata.core.database.entity.AccountEntity
-import com.openhand.khata.core.database.entity.AccountType
 import com.openhand.khata.core.database.entity.CategoryEntity
-import com.openhand.khata.core.database.entity.Direction
 import com.openhand.khata.core.database.entity.PayeeEntity
 import com.openhand.khata.core.database.entity.TagEntity
 import com.openhand.khata.core.database.entity.TransactionEntity
-import com.openhand.khata.core.database.entity.TransactionSource
+import com.openhand.khata.core.model.AccountType
+import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.TransactionSource
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After

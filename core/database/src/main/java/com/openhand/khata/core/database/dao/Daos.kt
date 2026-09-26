@@ -18,6 +18,9 @@ import kotlinx.coroutines.flow.Flow
 
 // Basic CRUD for the first schema. Feature issues add the queries their screens need.
 
+/** A tag and how many transactions use it. */
+data class TagUsage(val id: Long, val name: String, val usage: Int)
+
 @Dao
 interface AccountDao {
     @Insert suspend fun insert(account: AccountEntity): Long
@@ -31,6 +34,22 @@ interface AccountDao {
 
     @Query("SELECT * FROM accounts ORDER BY name")
     fun observeAll(): Flow<List<AccountEntity>>
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE account_id = :accountId")
+    suspend fun transactionCount(accountId: Long): Int
+
+    @Query("UPDATE transactions SET account_id = :to WHERE account_id = :from")
+    suspend fun moveTransactions(from: Long, to: Long?)
+
+    @Query("DELETE FROM accounts WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    /** Moves the account's transactions to [moveTo] (null = no account), then deletes it. */
+    @Transaction
+    suspend fun deleteMovingTransactions(id: Long, moveTo: Long?) {
+        moveTransactions(id, moveTo)
+        deleteById(id)
+    }
 }
 
 @Dao
@@ -50,6 +69,10 @@ interface CategoryDao {
     /** In creation order; the UI sorts by the displayed (possibly translated) name. */
     @Query("SELECT * FROM categories WHERE archived = 0 ORDER BY id")
     fun observeActive(): Flow<List<CategoryEntity>>
+
+    /** Every category, archived ones included, in creation order. */
+    @Query("SELECT * FROM categories ORDER BY id")
+    fun observeAll(): Flow<List<CategoryEntity>>
 }
 
 @Dao
@@ -67,6 +90,52 @@ interface TagDao {
 
     @Query("SELECT * FROM tags ORDER BY name")
     fun observeAll(): Flow<List<TagEntity>>
+
+    @Query("SELECT * FROM tags WHERE id = :id")
+    suspend fun getById(id: Long): TagEntity?
+
+    @Query(
+        "SELECT t.id AS id, t.name AS name, COUNT(tt.transaction_id) AS usage FROM tags t " +
+            "LEFT JOIN transaction_tags tt ON tt.tag_id = t.id " +
+            "GROUP BY t.id ORDER BY t.name COLLATE NOCASE"
+    )
+    fun observeWithUsage(): Flow<List<TagUsage>>
+
+    /** Tags whose name starts with [prefix] (ignoring case), most used first. */
+    @Query(
+        "SELECT t.id AS id, t.name AS name, COUNT(tt.transaction_id) AS usage FROM tags t " +
+            "LEFT JOIN transaction_tags tt ON tt.tag_id = t.id " +
+            "WHERE t.name LIKE :prefix || '%' ESCAPE '\\' " +
+            "GROUP BY t.id ORDER BY usage DESC, t.name COLLATE NOCASE LIMIT :limit"
+    )
+    suspend fun search(prefix: String, limit: Int): List<TagUsage>
+
+    @Query("UPDATE tags SET name = :name WHERE id = :id")
+    suspend fun rename(id: Long, name: String)
+
+    @Query("DELETE FROM tags WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Query(
+        "INSERT OR IGNORE INTO transaction_tags (transaction_id, tag_id) " +
+            "SELECT transaction_id, :into FROM transaction_tags WHERE tag_id = :from"
+    )
+    suspend fun copyTransactionLinks(from: Long, into: Long)
+
+    @Query(
+        "INSERT OR IGNORE INTO payee_default_tags (payee_id, tag_id) " +
+            "SELECT payee_id, :into FROM payee_default_tags WHERE tag_id = :from"
+    )
+    suspend fun copyPayeeDefaultLinks(from: Long, into: Long)
+
+    /** Moves every use of [from] to [into] and deletes [from]; its old links go with it (cascade). */
+    @Transaction
+    suspend fun merge(from: Long, into: Long) {
+        if (from == into) return
+        copyTransactionLinks(from, into)
+        copyPayeeDefaultLinks(from, into)
+        deleteById(from)
+    }
 }
 
 @Dao

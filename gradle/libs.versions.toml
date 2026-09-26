@@ -23,6 +23,7 @@ kotlinx-coroutines = "1.11.0"
 biometric = "1.1.0"
 fragment = "1.9.1"
 lifecycle = "2.11.0"
+navigation = "2.10.2"
 junit = "4.13.2"
 # compileSdk is the SDK we build against; targetSdk opts in to that release's runtime behaviour
 # and follows Play's minimum target requirement.
@@ -45,6 +46,7 @@ androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-te
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle" }

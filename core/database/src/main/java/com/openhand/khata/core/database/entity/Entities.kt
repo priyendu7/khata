@@ -5,6 +5,9 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.openhand.khata.core.model.AccountType
+import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.TransactionSource
 
 /** A bank account, card or wallet. Only the last 4 digits of any number are ever stored. */
 @Entity(tableName = "accounts")

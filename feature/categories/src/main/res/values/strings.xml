@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="categories_title">Categories</string>
+    <string name="categories_add">Add category</string>
+    <string name="categories_edit">Edit category</string>
+    <string name="categories_name">Name</string>
+    <string name="categories_use_default_name">Use the default name (%1$s)</string>
+    <string name="categories_colour">Colour</string>
+    <string name="categories_icon">Icon</string>
+    <string name="categories_archive">Archive</string>
+    <string name="categories_unarchive">Unarchive</string>
+    <string name="categories_archive_help">Archived categories disappear from pickers. Transactions that use them keep them.</string>
+    <string name="categories_uncategorized_help">Uncategorized is where anything without a category goes, so it can\'t be archived.</string>
+    <string name="categories_archived">Archived</string>
+
+    <string name="tags_title">Tags</string>
+    <string name="tags_empty_title">No tags yet</string>
+    <string name="tags_empty_body">Tags like \"work\" or \"trip-goa\" group transactions across categories. You\'ll add them while adding transactions.</string>
+    <plurals name="tags_usage">
+        <item quantity="one">Used in %d transaction</item>
+        <item quantity="other">Used in %d transactions</item>
+    </plurals>
+    <string name="tags_rename">Rename</string>
+    <string name="tags_merge_into">Merge into another tag</string>
+    <string name="tags_merge">Merge</string>
+    <string name="tags_merge_title">Merge %1$s into…</string>
+    <string name="tags_name_taken_title">%1$s already exists</string>
+    <string name="tags_merge_body">Merge %1$s into %2$s? Every transaction tagged %1$s will be tagged %2$s instead.</string>
+    <string name="tags_delete_title">Delete %1$s?</string>
+    <plurals name="tags_delete_body">
+        <item quantity="one">It will be removed from %d transaction. The transaction itself stays.</item>
+        <item quantity="other">It will be removed from %d transactions. The transactions themselves stay.</item>
+    </plurals>
+</resources>

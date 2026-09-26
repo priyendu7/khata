@@ -9,4 +9,10 @@
     <string name="settings_source">Source code</string>
     <string name="settings_source_value">Free and open source under GPL v3 · github.com/priyendu7/khata</string>
     <string name="settings_version">Version</string>
+    <string name="settings_accounts">Accounts</string>
+    <string name="settings_accounts_value">Bank accounts, cards and wallets</string>
+    <string name="settings_categories">Categories</string>
+    <string name="settings_categories_value">Add, rename, recolour and archive</string>
+    <string name="settings_tags">Tags</string>
+    <string name="settings_tags_value">Rename, merge and delete</string>
 </resources>

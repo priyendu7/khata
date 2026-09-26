@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hindi strings. Every string in values/strings.xml needs a Hindi version here. -->
+    <string name="accounts_title">खाते</string>
+    <string name="accounts_add">खाता जोड़ें</string>
+    <string name="accounts_edit">खाता बदलें</string>
+    <string name="accounts_empty_title">अभी कोई खाता नहीं</string>
+    <string name="accounts_empty_body">अपने बैंक खाते, कार्ड और वॉलेट जोड़ें ताकि पता चले कि हर लेन-देन कहाँ से हुआ।</string>
+    <string name="accounts_name">नाम</string>
+    <string name="accounts_name_hint">जैसे HDFC सैलरी खाता</string>
+    <string name="accounts_bank">बैंक (वैकल्पिक)</string>
+    <string name="accounts_last4">आख़िरी 4 अंक (वैकल्पिक)</string>
+    <string name="accounts_last4_help">सिर्फ़ आख़िरी 4 अंक ही सहेजे जाते हैं।</string>
+    <string name="accounts_last4_display">••%1$s</string>
+    <string name="accounts_delete_title">%1$s मिटाएँ?</string>
+    <string name="accounts_delete_unused">कोई लेन-देन इस खाते का इस्तेमाल नहीं करता।</string>
+    <plurals name="accounts_delete_move">
+        <item quantity="one">%d लेन-देन इस खाते का है। इसे यहाँ ले जाएँ:</item>
+        <item quantity="other">%d लेन-देन इस खाते के हैं। इन्हें यहाँ ले जाएँ:</item>
+    </plurals>
+    <string name="accounts_no_account">कोई खाता नहीं</string>
+    <string name="account_type_bank">बैंक खाता</string>
+    <string name="account_type_credit_card">क्रेडिट कार्ड</string>
+    <string name="account_type_debit_card">डेबिट कार्ड</string>
+    <string name="account_type_wallet">वॉलेट</string>
+    <string name="account_type_bank_short">बैंक</string>
+    <string name="account_type_credit_card_short">क्रेडिट</string>
+    <string name="account_type_debit_card_short">डेबिट</string>
+    <string name="account_type_wallet_short">वॉलेट</string>
+</resources>
