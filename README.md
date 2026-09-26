@@ -41,7 +41,7 @@ Everything is protected by an app lock and an encrypted database, in English and
 | SMS | `BroadcastReceiver` + one-time inbox scan; parsers are pure Kotlin |
 | CSV | Storage Access Framework (system file picker) |
 | Network | **None** — no `INTERNET` permission, enforced in CI |
-| Min / target SDK | 26 (Android 8.0) / 36 |
+| Min / target / compile SDK | 26 (Android 8.0) / 36 / 37 |
 
 ## Project layout
 
@@ -72,7 +72,7 @@ Each module has a README saying what it owns and which milestone builds it. Ever
 
 ## Getting started
 
-Requires JDK 17+ and the Android SDK (API 36). The app is currently a navigation shell with empty screens; most modules are still stubs.
+Requires JDK 17 or newer (Android Studio's bundled JDK works) and the Android SDK with the API 37 platform. The build uses Gradle 9 and AGP 9, which compiles Kotlin itself (no separate Kotlin Android plugin). The app is currently a navigation shell with empty screens; most modules are still stubs.
 
 ```bash
 git clone https://github.com/priyendu7/khata.git

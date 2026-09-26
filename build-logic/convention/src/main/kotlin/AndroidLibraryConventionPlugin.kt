@@ -4,12 +4,14 @@ import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 
-/** Android library module: SDK levels, Java 17, lint and ktlint shared with :app. */
+/**
+ * Android library module: SDK levels, Java 17, lint and ktlint shared with :app.
+ * AGP 9 compiles Kotlin itself (built-in Kotlin), so there's no separate Kotlin Android plugin.
+ */
 class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             pluginManager.apply("com.android.library")
-            pluginManager.apply("org.jetbrains.kotlin.android")
             pluginManager.apply("org.jlleitschuh.gradle.ktlint")
 
             extensions.configure<LibraryExtension> {
