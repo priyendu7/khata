@@ -52,7 +52,7 @@ jobs:
         # Release is built unsigned here only so its merged manifest can be checked too.
         run: ./gradlew assembleDebug assembleRelease
 
-      - name: No INTERNET permission (PRD privacy principle 1)
+      - name: No INTERNET or SEND_SMS permission (PRD privacy principles 1 and 6)
         run: .github/scripts/check-no-internet.sh
 
       - name: Only allowlisted libraries (PRD privacy principle 2)

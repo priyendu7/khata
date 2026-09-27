@@ -8,14 +8,24 @@
          for the app lock (PRD principle 4). Both are normal permissions with no prompt; Android
          never gives the app biometric data.
          Coming with their features, each requested at runtime only when the user opts in:
-         - READ_SMS, RECEIVE_SMS: SMS import (PRD feature 7, milestone M3). Deliberately absent until
-           then, because Play blocks every upload that declares them until the SMS permissions
-           declaration form is approved.
+         - READ_SMS, RECEIVE_SMS: SMS import (PRD feature 7). Asked for only when the user turns SMS
+           import on (PRD principle 6). A Play track release that declares them is blocked until the
+           SMS permissions declaration is approved; internal app sharing doesn't need it. So no
+           release is tagged until SMS import is done and the declaration is approved
+           (docs/RELEASING.md). SEND_SMS is never declared (.github/scripts/check-no-internet.sh).
          - POST_NOTIFICATIONS: optional daily summary and backup reminder (PRD features 4 and 6).
            Asked for on Android 13+ only when the user turns the backup reminder on; if refused,
            Home still shows the reminder. -->
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+
+    <!-- The SMS permissions imply telephony hardware, which would stop the app installing on
+         tablets and Chromebooks. Manual entry and CSV work without SMS, so telephony is optional. -->
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
 
     <!-- WorkManager (the daily backup-reminder check) keeps WAKE_LOCK and RECEIVE_BOOT_COMPLETED,
          which it needs to run the check and reschedule it after a restart; neither has a prompt.

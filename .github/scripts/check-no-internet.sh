@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # PRD privacy principle 1: android.permission.INTERNET must never appear in a merged manifest.
+# PRD privacy principle 6: nor may android.permission.SEND_SMS (Khata only reads bank SMS).
 # Checks every merged manifest Gradle produced (run after assembling/bundling any variant), so a
 # dependency that adds the permission fails the build instead of shipping.
 # Usage: check-no-internet.sh [build-dir]   (default: app/build)
@@ -18,8 +19,11 @@ while IFS= read -r m; do
   if grep -q 'android.permission.INTERNET"' "$m"; then
     echo "::error file=$m::android.permission.INTERNET is in the merged manifest. Khata must not have internet access (docs/PRD.md, privacy principle 1). Find the dependency that adds it in app/build/outputs/logs/manifest-merger-*-report.txt and remove it."
     status=1
+  elif grep -q 'android.permission.SEND_SMS"' "$m"; then
+    echo "::error file=$m::android.permission.SEND_SMS is in the merged manifest. Khata never sends SMS (docs/PRD.md, privacy principle 6)."
+    status=1
   else
-    echo "OK (no INTERNET): $m"
+    echo "OK (no INTERNET, no SEND_SMS): $m"
   fi
 done <<< "$manifests"
 exit $status
