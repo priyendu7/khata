@@ -89,9 +89,9 @@ By the end of this phase you can import your existing spreadsheet and see all th
 
 - [x] A shared chart theme for light and dark mode, drawn with Compose Canvas (no chart library)
 - [x] Category donut: top 5–6 categories plus "Other"; tap a slice to open its transactions; switch between week, month, year and a custom range
-- [ ] Calendar heatmap (custom Compose Canvas): the last 12 months, with 5 color levels based on the user's own spending; tap a day to open its list; scrolls sideways on small screens
-- [ ] Monthly comparison: bars for 6 or 12 months, optionally stacked by category, with the change against last month ("Food +18%")
-- [ ] Show income against spending on the monthly chart
+- [x] Calendar heatmap (custom Compose Canvas): the last 12 months, with 5 color levels based on the user's own spending; tap a day to open its list; scrolls sideways on small screens
+- [x] Monthly comparison: bars for 6 or 12 months, optionally stacked by category, with the change against last month ("Food +18%")
+- [x] Show income against spending on the monthly chart
 - [ ] Write down the CSV format in `docs/csv-format.md`
 - [ ] CSV export: all data or a date range, saved through the system file picker
 - [ ] CSV import: Khata's own format, plus a column-matching step for any other CSV; show a preview and skip duplicates

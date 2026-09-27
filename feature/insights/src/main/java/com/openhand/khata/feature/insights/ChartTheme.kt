@@ -8,6 +8,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextStyle
+import com.openhand.khata.core.model.HeatLevels
+import com.openhand.khata.core.ui.incomeColor
 
 /**
  * Colors and text shared by the Insights charts. Everything comes from the Material theme (so the
@@ -24,6 +26,11 @@ data class ChartTheme(
     val track: Color,
     /** Drawn between slices, so two categories of the same color stay apart. */
     val divider: Color,
+    /** Spending bars when they aren't split by category. */
+    val spending: Color,
+    val income: Color,
+    /** Heatmap colors from "nothing spent" ([track]) to the most, one per level. */
+    val heat: List<Color>,
     val isDark: Boolean
 ) {
     /**
@@ -47,8 +54,14 @@ fun chartTheme(): ChartTheme {
         axisText = MaterialTheme.typography.labelSmall.copy(color = colors.onSurfaceVariant),
         gridLine = colors.outlineVariant,
         other = colors.outline,
-        track = colors.surfaceVariant,
+        // Card backgrounds are close to surfaceVariant, so empty cells need the outline color.
+        track = colors.outlineVariant,
         divider = CardDefaults.cardColors().containerColor,
+        spending = colors.primary,
+        income = incomeColor(),
+        heat = (0..HeatLevels.MAX).map {
+            lerp(colors.outlineVariant, colors.primary, it / HeatLevels.MAX.toFloat())
+        },
         isDark = isSystemInDarkTheme()
     )
 }

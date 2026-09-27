@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
+import com.openhand.khata.core.data.CategoryRepository
 import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
@@ -12,6 +13,7 @@ import com.openhand.khata.core.model.Transaction
 import dagger.Lazy
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -63,8 +65,13 @@ class InsightsViewModelTest {
         )
     )
 
-    private fun viewModel() =
-        InsightsViewModel(transactions, flowOf(today), zone, firstDayOfWeek = DayOfWeek.MONDAY)
+    private fun viewModel() = InsightsViewModel(
+        transactions,
+        CategoryRepository(Lazy { db }),
+        flowOf(today),
+        zone,
+        firstDayOfWeek = DayOfWeek.MONDAY
+    )
 
     @Test
     fun switchingPeriodsChangesTheDatesAndTheSpending() = runTest {
@@ -114,6 +121,59 @@ class InsightsViewModelTest {
             assertEquals(250_00L, state.breakdown.totalPaise)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun heatmapCoversTheLastTwelveMonths() = runTest {
+        spend(today, 100_00, "food")
+        spend(today.minusYears(1).plusDays(1), 200_00, "rent")
+        spend(today.minusYears(1), 400_00, "travel") // A day too early.
+
+        viewModel().heatmap.test {
+            var state = awaitItem()
+            while (state == null) state = awaitItem()
+            assertEquals(LocalDate.of(2025, 9, 28), state.first)
+            assertEquals(
+                mapOf(today to 100_00L, LocalDate.of(2025, 9, 28) to 200_00L),
+                state.days
+            )
+            assertEquals(4, state.levels.level(200_00))
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun monthlySwitchesBetweenSixAndTwelveMonths() = runTest {
+        spend(today, 100_00, "food")
+        spend(LocalDate.of(2026, 1, 10), 300_00, "rent")
+
+        val viewModel = viewModel()
+        viewModel.monthly.test {
+            var state = awaitItem()
+            while (state == null) state = awaitItem()
+            assertEquals(6, state.months)
+            assertEquals(
+                (5L downTo 0L).map { YearMonth.of(2026, 9).minusMonths(it) },
+                state.comparison.bars.map { it.month }
+            )
+            assertEquals(100_00L, state.comparison.bars.sumOf { it.spentPaise })
+
+            viewModel.selectMonths(12)
+            do state = awaitItem() while (state?.months != 12)
+            assertEquals(YearMonth.of(2025, 10), state.comparison.bars.first().month)
+            assertEquals(400_00L, state.comparison.bars.sumOf { it.spentPaise })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun rangesAreLocalDaysAndMonths() {
+        val viewModel = viewModel()
+        val day = viewModel.rangeOf(today)
+        assertEquals(DateSpan(today, today).from(zone) to DateSpan(today, today).until(zone), day)
+        val (from, until) = viewModel.rangeOf(YearMonth.of(2026, 2))
+        assertEquals(LocalDate.of(2026, 2, 1).atStartOfDay(zone).toInstant().toEpochMilli(), from)
+        assertEquals(LocalDate.of(2026, 3, 1).atStartOfDay(zone).toInstant().toEpochMilli(), until)
     }
 
     private suspend fun app.cash.turbine.ReceiveTurbine<DonutState?>.awaitNotNull(): DonutState {

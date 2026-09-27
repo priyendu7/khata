@@ -20,4 +20,24 @@
     <string name="insights_refunded_body">Not in the chart, but counted in the total.</string>
     <string name="insights_nothing_spent_title">Nothing spent in this period</string>
     <string name="insights_nothing_spent_body">Pick another period, or add expenses from Home or Transactions.</string>
+    <string name="insights_income">Income</string>
+    <string name="insights_heatmap_title">Spending by day</string>
+    <string name="insights_less">Less</string>
+    <string name="insights_more">More</string>
+    <string name="insights_day_spent">%1$s: %2$s spent</string>
+    <string name="insights_day_nothing">%1$s: nothing spent</string>
+    <string name="insights_monthly_title">Month by month</string>
+    <string name="insights_stack_by_category">By category</string>
+    <string name="insights_month_description">%1$s: spent %2$s, income %3$s</string>
+    <string name="insights_no_months_title">Nothing in these months</string>
+    <string name="insights_no_months_body">Spending and income show here, month by month, as you add them.</string>
+    <string name="insights_change_title">%1$s vs %2$s</string>
+    <string name="insights_change_all">All spending</string>
+    <string name="insights_change_up">+%1$s%%</string>
+    <string name="insights_change_down">−%1$s%%</string>
+    <string name="insights_change_new">New</string>
+    <plurals name="insights_months">
+        <item quantity="one">%d month</item>
+        <item quantity="other">%d months</item>
+    </plurals>
 </resources>

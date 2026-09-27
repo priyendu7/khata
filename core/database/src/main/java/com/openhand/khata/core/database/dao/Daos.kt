@@ -58,6 +58,14 @@ data class CategorySpendRow(
     @ColumnInfo(name = "spent_paise") val spentPaise: Long
 )
 
+/** An expense, refund or income, with just what the charts need. */
+data class AmountRow(
+    val timestamp: Long,
+    val direction: Direction,
+    @ColumnInfo(name = "amount_paise") val amountPaise: Long,
+    @ColumnInfo(name = "category_id") val categoryId: Long
+)
+
 /** A payee with its default tag names and how many transactions it has. */
 data class PayeeRow(
     val id: Long,
@@ -365,6 +373,16 @@ interface TransactionDao {
             "GROUP BY c.id HAVING spent_paise != 0 ORDER BY spent_paise DESC, c.id"
     )
     fun observeCategorySpending(from: Long, until: Long): Flow<List<CategorySpendRow>>
+
+    /**
+     * Every expense, refund and income for timestamps in [from, until), for charts that group by
+     * local day or month in Kotlin (SQLite only knows UTC days). Transfers never count.
+     */
+    @Query(
+        "SELECT timestamp, direction, amount_paise, category_id FROM transactions " +
+            "WHERE direction != 'transfer' AND timestamp >= :from AND timestamp < :until"
+    )
+    fun observeAmounts(from: Long, until: Long): Flow<List<AmountRow>>
 
     /**
      * The transactions list, newest first. Each null argument means "any"; the rest combine.
