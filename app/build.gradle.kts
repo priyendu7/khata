@@ -102,6 +102,7 @@ dependencies {
     implementation(project(":feature:accounts"))
     implementation(project(":feature:categories"))
     implementation(project(":feature:payees"))
+    implementation(project(":feature:csv"))
     implementation(project(":core:data"))
     implementation(libs.androidx.navigation.compose)
     implementation(project(":core:security"))

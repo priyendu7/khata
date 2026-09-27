@@ -66,6 +66,33 @@ data class AmountRow(
     @ColumnInfo(name = "category_id") val categoryId: Long
 )
 
+/** One transaction with everything a CSV row needs, oldest first (`docs/csv-format.md`). */
+data class ExportRow(
+    val timestamp: Long,
+    @ColumnInfo(name = "amount_paise") val amountPaise: Long,
+    val direction: Direction,
+    @ColumnInfo(name = "account_name") val accountName: String?,
+    @ColumnInfo(name = "payee_identifier") val payeeIdentifier: String?,
+    @ColumnInfo(name = "payee_name") val payeeName: String?,
+    @Embedded(prefix = "category_") val category: CategoryEntity,
+    /** Tag names joined with [TransactionRow.TAG_SEPARATOR], or null when there are none. */
+    val tags: String?,
+    val note: String?,
+    @ColumnInfo(name = "reference_no") val referenceNo: String?
+)
+
+/**
+ * What import compares a new row with to spot a duplicate: the reference number, or else the
+ * date, direction, amount and [party] (the payee's name, or the note when there's no payee).
+ */
+data class DuplicateKeyRow(
+    val timestamp: Long,
+    val direction: Direction,
+    @ColumnInfo(name = "amount_paise") val amountPaise: Long,
+    @ColumnInfo(name = "reference_no") val referenceNo: String?,
+    val party: String?
+)
+
 /** A payee with its default tag names and how many transactions it has. */
 data class PayeeRow(
     val id: Long,
@@ -90,6 +117,9 @@ interface AccountDao {
 
     @Query("SELECT * FROM accounts ORDER BY name")
     fun observeAll(): Flow<List<AccountEntity>>
+
+    @Query("SELECT * FROM accounts WHERE name = :name COLLATE NOCASE ORDER BY id LIMIT 1")
+    suspend fun getByName(name: String): AccountEntity?
 
     @Query("SELECT COUNT(*) FROM transactions WHERE account_id = :accountId")
     suspend fun transactionCount(accountId: Long): Int
@@ -129,6 +159,9 @@ interface CategoryDao {
     /** Every category, archived ones included, in creation order. */
     @Query("SELECT * FROM categories ORDER BY id")
     fun observeAll(): Flow<List<CategoryEntity>>
+
+    @Query("SELECT * FROM categories ORDER BY id")
+    suspend fun getAll(): List<CategoryEntity>
 }
 
 @Dao
@@ -420,4 +453,36 @@ interface TransactionDao {
         from: Long?,
         until: Long?
     ): Flow<List<TransactionRow>>
+}
+
+/** The queries CSV export and import need (`docs/csv-format.md`). */
+@Dao
+interface BackupDao {
+    /** Transactions in [from, until) for CSV export, oldest first; null bounds mean no limit. */
+    @Query(
+        "SELECT t.timestamp, t.amount_paise, t.direction, a.name AS account_name, " +
+            "p.identifier AS payee_identifier, p.display_name AS payee_name, " +
+            "c.id AS category_id, c.name AS category_name, c.seed_key AS category_seed_key, " +
+            "c.color AS category_color, c.icon AS category_icon, " +
+            "c.archived AS category_archived, " +
+            "(SELECT GROUP_CONCAT(g.name, char(31)) FROM transaction_tags tt " +
+            "JOIN tags g ON g.id = tt.tag_id WHERE tt.transaction_id = t.id) AS tags, " +
+            "t.note, t.reference_no " +
+            "FROM transactions t " +
+            "JOIN categories c ON c.id = t.category_id " +
+            "LEFT JOIN payees p ON p.id = t.payee_id " +
+            "LEFT JOIN accounts a ON a.id = t.account_id " +
+            "WHERE (:from IS NULL OR t.timestamp >= :from) " +
+            "AND (:until IS NULL OR t.timestamp < :until) " +
+            "ORDER BY t.timestamp, t.id"
+    )
+    suspend fun exportRows(from: Long?, until: Long?): List<ExportRow>
+
+    /** Every transaction's duplicate-check fields, for CSV import. */
+    @Query(
+        "SELECT t.timestamp, t.direction, t.amount_paise, t.reference_no, " +
+            "COALESCE(p.display_name, t.note) AS party " +
+            "FROM transactions t LEFT JOIN payees p ON p.id = t.payee_id"
+    )
+    suspend fun duplicateKeys(): List<DuplicateKeyRow>
 }

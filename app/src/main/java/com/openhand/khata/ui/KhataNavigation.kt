@@ -23,6 +23,8 @@ import com.openhand.khata.R
 import com.openhand.khata.feature.accounts.AccountsScreen
 import com.openhand.khata.feature.categories.CategoriesScreen
 import com.openhand.khata.feature.categories.TagsScreen
+import com.openhand.khata.feature.csv.ExportScreen
+import com.openhand.khata.feature.csv.ImportScreen
 import com.openhand.khata.feature.insights.HomeScreen
 import com.openhand.khata.feature.insights.InsightsScreen
 import com.openhand.khata.feature.lock.LockSettingsSection
@@ -75,6 +77,8 @@ fun KhataNavigation() {
         composable(Route.CATEGORIES) { CategoriesScreen(onBack = back) }
         composable(Route.TAGS) { TagsScreen(onBack = back) }
         composable(Route.PAYEES) { PayeesScreen(onBack = back) }
+        composable(Route.EXPORT) { ExportScreen(onBack = back) }
+        composable(Route.IMPORT) { ImportScreen(onBack = back) }
     }
 }
 
@@ -84,6 +88,8 @@ private object Route {
     const val CATEGORIES = "categories"
     const val TAGS = "tags"
     const val PAYEES = "payees"
+    const val EXPORT = "export"
+    const val IMPORT = "import"
 
     /** Add (id 0) or edit a transaction. */
     const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}"
@@ -104,6 +110,8 @@ private fun SettingsPage.route() = when (this) {
     SettingsPage.CATEGORIES -> Route.CATEGORIES
     SettingsPage.TAGS -> Route.TAGS
     SettingsPage.PAYEES -> Route.PAYEES
+    SettingsPage.EXPORT -> Route.EXPORT
+    SettingsPage.IMPORT -> Route.IMPORT
 }
 
 /** Bottom-navigation shell: Home, Transactions, Insights, Settings. */

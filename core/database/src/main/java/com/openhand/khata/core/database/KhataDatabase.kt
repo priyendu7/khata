@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.openhand.khata.core.database.dao.AccountDao
+import com.openhand.khata.core.database.dao.BackupDao
 import com.openhand.khata.core.database.dao.CategoryDao
 import com.openhand.khata.core.database.dao.PayeeDao
 import com.openhand.khata.core.database.dao.TagDao
@@ -49,6 +50,8 @@ abstract class KhataDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
 
     abstract fun metadataDao(): MetadataDao
+
+    abstract fun backupDao(): BackupDao
 
     companion object {
         const val NAME = "khata.db"
