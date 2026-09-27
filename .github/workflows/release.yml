@@ -99,7 +99,7 @@ jobs:
       - name: Build signed APK and AAB
         run: ./gradlew assembleRelease bundleRelease
 
-      - name: No INTERNET permission (PRD privacy principle 1)
+      - name: No INTERNET or SEND_SMS permission (PRD privacy principles 1 and 6)
         run: .github/scripts/check-no-internet.sh
 
       - name: Only allowlisted libraries (PRD privacy principle 2)

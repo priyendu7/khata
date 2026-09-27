@@ -37,5 +37,8 @@ fi
 if echo "$tree" | grep -q '"android.permission.INTERNET"'; then
   fail "bundle requests android.permission.INTERNET (docs/PRD.md, privacy principle 1)"
 fi
+if echo "$tree" | grep -q '"android.permission.SEND_SMS"'; then
+  fail "bundle requests android.permission.SEND_SMS (docs/PRD.md, privacy principle 6)"
+fi
 
 echo "QA bundle OK: package=$package versionCode=$code"
