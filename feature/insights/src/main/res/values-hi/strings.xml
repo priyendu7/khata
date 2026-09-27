@@ -21,4 +21,24 @@
     <string name="insights_refunded_body">चार्ट में नहीं, पर कुल में गिना गया है।</string>
     <string name="insights_nothing_spent_title">इस अवधि में कोई खर्च नहीं</string>
     <string name="insights_nothing_spent_body">कोई और अवधि चुनें, या होम या लेन-देन से खर्च जोड़ें।</string>
+    <string name="insights_income">आय</string>
+    <string name="insights_heatmap_title">रोज़ का खर्च</string>
+    <string name="insights_less">कम</string>
+    <string name="insights_more">ज़्यादा</string>
+    <string name="insights_day_spent">%1$s: %2$s खर्च</string>
+    <string name="insights_day_nothing">%1$s: कोई खर्च नहीं</string>
+    <string name="insights_monthly_title">महीने-दर-महीने</string>
+    <string name="insights_stack_by_category">श्रेणी के हिसाब से</string>
+    <string name="insights_month_description">%1$s: खर्च %2$s, आय %3$s</string>
+    <string name="insights_no_months_title">इन महीनों में कुछ नहीं</string>
+    <string name="insights_no_months_body">खर्च और आय जोड़ते ही यहाँ महीने-दर-महीने दिखेंगे।</string>
+    <string name="insights_change_title">%1$s बनाम %2$s</string>
+    <string name="insights_change_all">कुल खर्च</string>
+    <string name="insights_change_up">+%1$s%%</string>
+    <string name="insights_change_down">−%1$s%%</string>
+    <string name="insights_change_new">नया</string>
+    <plurals name="insights_months">
+        <item quantity="one">%d महीना</item>
+        <item quantity="other">%d महीने</item>
+    </plurals>
 </resources>
