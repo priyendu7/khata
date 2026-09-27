@@ -4,7 +4,7 @@
     <string name="settings_privacy">गोपनीयता</string>
     <string name="settings_privacy_value">इंटरनेट की अनुमति नहीं। आपका डेटा कभी इस फ़ोन से बाहर नहीं जाता।</string>
     <string name="settings_language">भाषा</string>
-    <string name="settings_language_value">आपके फ़ोन जैसी (अंग्रेज़ी या हिंदी)</string>
+    <string name="language_system">सिस्टम डिफ़ॉल्ट</string>
     <string name="settings_backup">बैकअप</string>
     <string name="settings_backup_value">CSV एक्सपोर्ट बाद के अपडेट में आएगा।</string>
     <string name="settings_source">सोर्स कोड</string>

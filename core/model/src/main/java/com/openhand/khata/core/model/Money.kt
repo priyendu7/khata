@@ -1,5 +1,7 @@
 package com.openhand.khata.core.model
 
+import kotlin.math.abs
+
 /**
  * Amounts are stored as whole paise (₹1 = 100 paise) in a [Long], so no floating-point maths ever
  * touches money. These helpers convert between paise and the text people type and read.
@@ -7,7 +9,7 @@ package com.openhand.khata.core.model
 object Money {
     const val PAISE_PER_RUPEE = 100L
 
-    /** Most rupee digits accepted before the decimal point (up to ₹999,99,99,999). */
+    /** Most rupee digits accepted before the decimal point (up to ₹99,99,99,99,999). */
     const val MAX_RUPEE_DIGITS = 11
 
     private const val MAX_PAISE_DIGITS = 2
@@ -42,14 +44,16 @@ object Money {
     }
 
     /**
-     * Indian-style amount with the rupee sign: `₹1,00,000`, `₹1,234.50`. Whole amounts drop `.00`.
-     * [paise] must not be negative; callers add their own sign.
+     * The one formatter for amounts shown anywhere in the app: Indian digit grouping with the rupee
+     * sign, e.g. `₹1,00,000`, `₹1,234.50` or `-₹250`. Whole amounts drop `.00`.
      */
     fun format(paise: Long): String {
-        require(paise >= 0) { "Negative amount" }
-        val rupees = groupIndian((paise / PAISE_PER_RUPEE).toString())
-        val rest = paise % PAISE_PER_RUPEE
-        return if (rest == 0L) "₹$rupees" else "₹$rupees.${rest.toString().padStart(2, '0')}"
+        // Quotient and remainder separately, so even Long.MIN_VALUE has no overflow on negation.
+        val rupees = groupIndian(abs(paise / PAISE_PER_RUPEE).toString())
+        val rest = abs(paise % PAISE_PER_RUPEE)
+        val sign = if (paise < 0) "-" else ""
+        val decimals = if (rest == 0L) "" else "." + rest.toString().padStart(2, '0')
+        return "$sign₹$rupees$decimals"
     }
 
     /** `1234567` → `12,34,567`: the last three digits, then groups of two. */

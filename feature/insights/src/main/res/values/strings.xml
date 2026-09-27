@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="amount_zero">₹0</string>
     <string name="home_this_month">This month</string>
     <string name="home_spent">Spent</string>
     <string name="home_income">Income</string>
     <string name="home_spent_today">Spent today</string>
+    <string name="home_top_category">Top category this month</string>
     <string name="home_empty_title">No transactions yet</string>
-    <string name="home_empty_body">Adding income and expenses by hand is coming in the next update. Everything you add stays on this phone.</string>
+    <string name="home_empty_body">Tap + to add income or an expense. Everything you add stays on this phone.</string>
     <string name="insights_heatmap_title">Spending by day</string>
     <string name="insights_less">Less</string>
     <string name="insights_more">More</string>

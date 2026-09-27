@@ -4,7 +4,9 @@ import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.database.dao.TransactionRow
 import com.openhand.khata.core.database.entity.PayeeEntity
 import com.openhand.khata.core.database.entity.TransactionEntity
+import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.DefaultCategory
+import com.openhand.khata.core.model.Totals
 import com.openhand.khata.core.model.Transaction
 import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.model.TransactionListItem
@@ -31,6 +33,22 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
             )
         }.map { rows -> rows.map { it.toModel() } }
     }
+
+    /** Whether there are any transactions at all, updated as they're added or deleted. */
+    fun observeAny(): Flow<Boolean> = db.observe { it.transactionDao().observeAny() }
+
+    /**
+     * Spending and income for timestamps in [from, until) (epoch milliseconds), updated whenever
+     * the data changes. Transfers count as neither, and refunds reduce spending (PRD feature 1).
+     */
+    fun observeTotals(from: Long, until: Long): Flow<Totals> =
+        db.observe { it.transactionDao().observeTotals(from, until) }
+            .map { Totals(spentPaise = it.spentPaise, incomePaise = it.incomePaise) }
+
+    /** The category with the most spending in [from, until), or null when nothing was spent. */
+    fun observeTopCategory(from: Long, until: Long): Flow<CategorySpend?> =
+        db.observe { it.transactionDao().observeTopCategory(from, until) }
+            .map { row -> row?.let { CategorySpend(it.category.toModel(), it.spentPaise) } }
 
     /** The transaction with [id] as the edit screen shows it, or null if it's gone. */
     suspend fun get(id: Long): Transaction? = db.io { database ->

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Platform base theme; Compose handles in-app styling (see ui/). -->
-    <style name="Theme.Khata" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- AppCompat base theme, required by AppCompatActivity (per-app language on Android 8–12);
+         Compose handles in-app styling (see ui/). -->
+    <style name="Theme.Khata" parent="Theme.AppCompat.DayNight.NoActionBar" />
 </resources>
