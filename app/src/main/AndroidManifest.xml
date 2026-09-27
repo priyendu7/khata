@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- PRD privacy principle 1: android.permission.INTERNET must never appear here or in the merged
          manifest (enforced by .github/scripts/check-no-internet.sh).
@@ -10,7 +11,22 @@
          - READ_SMS, RECEIVE_SMS: SMS import (PRD feature 7, milestone M3). Deliberately absent until
            then, because Play blocks every upload that declares them until the SMS permissions
            declaration form is approved.
-         - POST_NOTIFICATIONS: optional daily summary and backup reminder (PRD features 4 and 6). -->
+         - POST_NOTIFICATIONS: optional daily summary and backup reminder (PRD features 4 and 6).
+           Asked for on Android 13+ only when the user turns the backup reminder on; if refused,
+           Home still shows the reminder. -->
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- WorkManager (the daily backup-reminder check) keeps WAKE_LOCK and RECEIVE_BOOT_COMPLETED,
+         which it needs to run the check and reschedule it after a restart; neither has a prompt.
+         Khata uses no network constraints and no foreground work, so the permissions WorkManager
+         adds for those are removed: the app info page shouldn't list any network access. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"
+        tools:node="remove" />
 
     <application
         android:name=".KhataApp"
@@ -25,7 +41,8 @@
 
         <activity
             android:name=".ui.MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

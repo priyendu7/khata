@@ -89,4 +89,11 @@
     <string name="direction_credit">Received</string>
     <string name="direction_refund">Refund</string>
     <string name="direction_transfer">Transfer</string>
+    <!-- Backup reminder notification: never amounts or transaction details. -->
+    <string name="reminder_channel">Backup reminder</string>
+    <string name="reminder_title">Time to back up Khata</string>
+    <plurals name="reminder_text">
+        <item quantity="one">You haven\'t exported a backup in %d day. Tap to save a CSV file: if this phone is lost, your data can\'t be recovered without one.</item>
+        <item quantity="other">You haven\'t exported a backup in %d days. Tap to save a CSV file: if this phone is lost, your data can\'t be recovered without one.</item>
+    </plurals>
 </resources>
