@@ -101,6 +101,7 @@ dependencies {
     implementation(project(":feature:lock"))
     implementation(project(":feature:accounts"))
     implementation(project(":feature:categories"))
+    implementation(project(":feature:payees"))
     implementation(project(":core:data"))
     implementation(libs.androidx.navigation.compose)
     implementation(project(":core:security"))

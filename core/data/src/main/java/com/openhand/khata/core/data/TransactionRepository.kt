@@ -3,7 +3,6 @@ package com.openhand.khata.core.data
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.database.dao.TransactionRow
 import com.openhand.khata.core.database.entity.PayeeEntity
-import com.openhand.khata.core.database.entity.TagEntity
 import com.openhand.khata.core.database.entity.TransactionEntity
 import com.openhand.khata.core.model.DefaultCategory
 import com.openhand.khata.core.model.Transaction
@@ -54,27 +53,30 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
      * Adds a new transaction (id 0) or updates one, and returns its id. The payee is matched by
      * name or saved as a new one, tags are created as needed, and no category means Uncategorized.
      * Fields the screen doesn't show (source, reference number, SMS text) are kept on update.
+     *
+     * With [rememberPayeeDefaults], a payee that has no defaults yet takes this transaction's
+     * category and tags as its defaults. A payee that already has some keeps them: a different
+     * category here overrides them for this transaction only (PRD feature 3).
      */
-    suspend fun save(transaction: Transaction): Long {
+    suspend fun save(transaction: Transaction, rememberPayeeDefaults: Boolean = false): Long {
         require(transaction.amountPaise > 0) { "Amount must be more than zero" }
         val payeeName = transaction.payeeName?.trim()?.ifEmpty { null }
         val note = transaction.note?.trim()?.ifEmpty { null }
-        val tagNames = transaction.tags.map { it.trim() }.filter { it.isNotEmpty() }
-            .distinctBy { it.lowercase() }
         return db.io { database ->
             val payeeDao = database.payeeDao()
-            val payeeId = payeeName?.let { name ->
-                payeeDao.findByName(name)?.id
-                    ?: payeeDao.insert(
-                        PayeeEntity(identifier = name, displayName = name, defaultCategoryId = null)
-                    )
+            val payee = payeeName?.let { name ->
+                payeeDao.findByName(name)
+                    ?: PayeeEntity(identifier = name, displayName = name, defaultCategoryId = null)
+                        .let { it.copy(id = payeeDao.insert(it)) }
             }
-            val tagDao = database.tagDao()
-            val tagIds = tagNames.map { name ->
-                tagDao.getByName(name)?.id ?: tagDao.insert(TagEntity(name = name))
+            val tagIds = database.tagDao().getOrCreate(transaction.tags)
+            val uncategorizedId =
+                database.categoryDao().getBySeedKey(DefaultCategory.UNCATEGORIZED.key)!!.id
+            val categoryId = transaction.categoryId ?: uncategorizedId
+            if (payee != null && rememberPayeeDefaults) {
+                val defaultCategoryId = categoryId.takeUnless { it == uncategorizedId }
+                rememberDefaults(database, payee, defaultCategoryId, tagIds)
             }
-            val categoryId = transaction.categoryId
-                ?: database.categoryDao().getBySeedKey(DefaultCategory.UNCATEGORIZED.key)!!.id
             val dao = database.transactionDao()
             val existing = if (transaction.id == 0L) null else dao.getById(transaction.id)
             val entity = TransactionEntity(
@@ -83,7 +85,7 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
                 direction = transaction.direction,
                 timestamp = transaction.timestamp,
                 accountId = transaction.accountId,
-                payeeId = payeeId,
+                payeeId = payee?.id,
                 categoryId = categoryId,
                 note = note,
                 referenceNo = existing?.referenceNo,
@@ -94,6 +96,20 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
             )
             dao.saveWithTags(entity, tagIds)
         }
+    }
+
+    /** Saves defaults for a payee that has none; never replaces ones already saved. */
+    private suspend fun rememberDefaults(
+        database: KhataDatabase,
+        payee: PayeeEntity,
+        categoryId: Long?,
+        tagIds: List<Long>
+    ) {
+        val dao = database.payeeDao()
+        val hasDefaults =
+            payee.defaultCategoryId != null || dao.defaultTagIds(payee.id).isNotEmpty()
+        if (hasDefaults || (categoryId == null && tagIds.isEmpty())) return
+        dao.updateWithDefaultTags(payee.copy(defaultCategoryId = categoryId), tagIds)
     }
 
     suspend fun delete(id: Long) {

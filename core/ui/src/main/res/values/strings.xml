@@ -22,4 +22,9 @@
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
     <string name="ok">OK</string>
+
+    <!-- TagInput -->
+    <string name="field_tags_hint">Type a tag, then press Enter</string>
+    <string name="tag_add">Add tag</string>
+    <string name="tag_remove">Remove %1$s</string>
 </resources>

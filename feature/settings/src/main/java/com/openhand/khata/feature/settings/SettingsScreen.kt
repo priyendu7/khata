@@ -32,7 +32,7 @@ fun SettingsRoute(
 }
 
 /** Screens that Settings opens; :app maps them to navigation routes. */
-enum class SettingsPage { ACCOUNTS, CATEGORIES, TAGS }
+enum class SettingsPage { ACCOUNTS, CATEGORIES, TAGS, PAYEES }
 
 // TODO(Phase 1-3): language switch, backup reminder and parsers become real settings.
 @Composable
@@ -59,6 +59,12 @@ fun SettingsScreen(
         }
         Row(stringResource(R.string.settings_tags), stringResource(R.string.settings_tags_value)) {
             onOpen(SettingsPage.TAGS)
+        }
+        Row(
+            stringResource(R.string.settings_payees),
+            stringResource(R.string.settings_payees_value)
+        ) {
+            onOpen(SettingsPage.PAYEES)
         }
         HorizontalDivider()
         Row(

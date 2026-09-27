@@ -1,4 +1,4 @@
-package com.openhand.khata.feature.transactions
+package com.openhand.khata.core.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,16 +25,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.openhand.khata.core.ui.R as UiR
 
 /**
  * Tags on the transaction as removable chips, a field to add more (Enter, a comma or the + button
- * adds), and existing tags to pick from. New names become new tags when the transaction is saved.
+ * adds), and existing tags to pick from. New names become new tags when the form is saved.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun TagInput(
+fun TagInput(
     tags: List<String>,
+    label: String,
     suggestions: List<String>,
     onQueryChange: (String) -> Unit,
     onAdd: (String) -> Unit,
@@ -58,7 +58,7 @@ internal fun TagInput(
                         label = { Text(tag) },
                         trailingIcon = {
                             Icon(
-                                painterResource(UiR.drawable.ic_close),
+                                painterResource(R.drawable.ic_close),
                                 contentDescription = stringResource(R.string.tag_remove, tag),
                                 modifier = Modifier.size(InputChipDefaults.IconSize)
                             )
@@ -77,7 +77,7 @@ internal fun TagInput(
                     onQueryChange(new)
                 }
             },
-            label = { Text(stringResource(R.string.field_tags)) },
+            label = { Text(label) },
             placeholder = { Text(stringResource(R.string.field_tags_hint)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -87,7 +87,7 @@ internal fun TagInput(
                 if (text.isNotBlank()) {
                     IconButton(onClick = { add(text) }) {
                         Icon(
-                            painterResource(UiR.drawable.ic_add),
+                            painterResource(R.drawable.ic_add),
                             contentDescription = stringResource(R.string.tag_add)
                         )
                     }

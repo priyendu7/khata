@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hindi strings. Every string in values/strings.xml needs a Hindi version here. -->
+    <string name="payees_title">पाने वाले</string>
+    <string name="payees_empty_title">अभी कोई पाने वाला नहीं</string>
+    <string name="payees_empty_body">\"किसे दिया या किससे मिला\" में नाम लिखकर लेन-देन जोड़ने पर पाने वाले सहेजे जाते हैं। अगली बार उनकी श्रेणी और टैग अपने आप भर जाते हैं।</string>
+    <plurals name="payees_usage">
+        <item quantity="one">%d लेन-देन</item>
+        <item quantity="other">%d लेन-देन</item>
+    </plurals>
+    <string name="payees_no_default_category">कोई तय श्रेणी नहीं</string>
+    <string name="payees_edit">पाने वाले को बदलें</string>
+    <string name="payees_identifier">पहचान: %1$s</string>
+    <string name="payees_name">नाम</string>
+    <string name="payees_default_category">तय श्रेणी</string>
+    <string name="payees_default_tags">तय टैग</string>
+    <string name="payees_defaults_help">इस पाने वाले के नए लेन-देन को यही श्रेणी और टैग मिलेंगे। किसी भी एक लेन-देन पर आप इन्हें फिर भी बदल सकते हैं।</string>
+    <string name="payees_merge_into">दूसरे पाने वाले में मिलाएँ</string>
+    <string name="payees_merge_title">%1$s को इसमें मिलाएँ…</string>
+    <string name="payees_merge_confirm_title">%1$s को %2$s में मिलाएँ?</string>
+    <plurals name="payees_merge_body">
+        <item quantity="one">%1$d लेन-देन %2$s से %3$s में चला जाएगा। %3$s का नाम, श्रेणी और टैग वही रहेंगे, और %2$s हटा दिया जाएगा।</item>
+        <item quantity="other">%1$d लेन-देन %2$s से %3$s में चले जाएँगे। %3$s का नाम, श्रेणी और टैग वही रहेंगे, और %2$s हटा दिया जाएगा।</item>
+    </plurals>
+    <string name="payees_merge">मिलाएँ</string>
+</resources>

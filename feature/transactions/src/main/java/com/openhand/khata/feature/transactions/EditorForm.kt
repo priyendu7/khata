@@ -2,6 +2,7 @@ package com.openhand.khata.feature.transactions
 
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Money
+import com.openhand.khata.core.model.Payee
 import com.openhand.khata.core.model.Transaction
 import java.time.Instant
 import java.time.LocalDate
@@ -27,7 +28,11 @@ data class EditorForm(
     /** Null means Uncategorized. */
     val categoryId: Long? = null,
     val tags: List<String> = emptyList(),
-    val note: String = ""
+    val note: String = "",
+    /** The saved payee [payee] refers to, or null for a new one. Its defaults are filled in. */
+    val knownPayee: Payee? = null,
+    /** Save this category and tags as the payee's defaults; offered while it has none. */
+    val rememberPayee: Boolean = true
 ) {
     val amountError: AmountError?
         get() {
@@ -48,6 +53,30 @@ data class EditorForm(
     }
 
     fun withoutTag(name: String): EditorForm = copy(tags = tags - name)
+
+    /** Whether to offer saving this category and tags for next time (a new payee, or no defaults). */
+    val canRememberPayee: Boolean
+        get() = payee.isNotBlank() && knownPayee?.hasDefaults != true
+
+    /**
+     * Switches to [match], the saved payee the typed name now refers to (null for none). The old
+     * payee's default category and tags make way for the new one's, but a category the user picked
+     * and tags they added stay: that's the one-transaction override.
+     */
+    fun withKnownPayee(match: Payee?): EditorForm {
+        if (match == knownPayee) return this
+        val old = knownPayee
+        val picked = categoryId != old?.defaultCategoryId
+        val oldTags = old?.defaultTags.orEmpty()
+        val ownTags = tags.filterNot { tag -> oldTags.any { it.equals(tag, ignoreCase = true) } }
+        return match?.defaultTags.orEmpty().fold(
+            copy(
+                knownPayee = match,
+                categoryId = if (picked) categoryId else match?.defaultCategoryId,
+                tags = ownTags
+            )
+        ) { form, tag -> form.withTag(tag) }
+    }
 
     /** The transaction to save. Only call when [amountError] is null. */
     fun toTransaction(id: Long, zone: ZoneId): Transaction = Transaction(

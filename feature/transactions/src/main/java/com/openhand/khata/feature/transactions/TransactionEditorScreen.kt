@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -25,9 +27,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -38,8 +42,12 @@ import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.ui.CategoryBadge
+import com.openhand.khata.core.ui.Choice
+import com.openhand.khata.core.ui.ChoiceDialog
+import com.openhand.khata.core.ui.PickerField
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SubScreen
+import com.openhand.khata.core.ui.TagInput
 import com.openhand.khata.core.ui.categoryName
 import com.openhand.khata.core.ui.focusOnAppear
 
@@ -141,6 +149,7 @@ internal fun TransactionEditorContent(
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
+            PayeeMemory(form, onChange)
             val category = categories.firstOrNull { it.id == form.categoryId }
                 ?: categories.firstOrNull { it.isUncategorized }
             PickerField(
@@ -158,6 +167,7 @@ internal fun TransactionEditorContent(
             )
             TagInput(
                 tags = form.tags,
+                label = stringResource(R.string.field_tags),
                 suggestions = tagSuggestions,
                 onQueryChange = onTagQueryChange,
                 onAdd = { onChange(form.withTag(it)) },
@@ -241,6 +251,41 @@ private fun EditorDialogs(
                 TextButton(onClick = close) { Text(stringResource(UiR.string.cancel)) }
             }
         )
+    }
+}
+
+/**
+ * Under the payee: says the category and tags came from a saved payee (and that changing them here
+ * doesn't change it), or offers to remember them for a payee that has none yet.
+ */
+@Composable
+private fun PayeeMemory(form: EditorForm, onChange: (EditorForm) -> Unit) {
+    val known = form.knownPayee
+    if (known != null && known.hasDefaults) {
+        Text(
+            stringResource(R.string.payee_filled_in, known.displayName),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+    } else if (form.canRememberPayee) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(
+                    value = form.rememberPayee,
+                    role = Role.Checkbox,
+                    onValueChange = { onChange(form.copy(rememberPayee = it)) }
+                )
+        ) {
+            Checkbox(checked = form.rememberPayee, onCheckedChange = null)
+            Text(
+                stringResource(R.string.payee_remember),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(start = 12.dp)
+            )
+        }
     }
 }
 
