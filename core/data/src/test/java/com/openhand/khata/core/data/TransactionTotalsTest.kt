@@ -3,6 +3,7 @@ package com.openhand.khata.core.data
 import app.cash.turbine.test
 import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.AccountType
+import com.openhand.khata.core.model.CategoryBreakdown
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Totals
 import com.openhand.khata.core.model.Transaction
@@ -110,6 +111,59 @@ class TransactionTotalsTest : RepositoryTest() {
 
         assertNull(transactions.observeTopCategory(MONTH_START, MONTH_END).first())
         assertEquals(Totals.ZERO, totals())
+    }
+
+    @Test
+    fun categorySpendingFollowsTheHomeRules() = runTest {
+        add(Direction.DEBIT, 1_000_00, category = "shopping")
+        add(Direction.REFUND, 600_00, category = "shopping")
+        add(Direction.DEBIT, 500_00, category = "food")
+        add(Direction.DEBIT, 200_00, category = "health")
+        add(Direction.REFUND, 200_00, category = "health")
+        add(Direction.TRANSFER, 50_000_00, category = "bills_utilities")
+        add(Direction.CREDIT, 50_000_00, category = "work")
+        add(Direction.DEBIT, 99_00, category = "travel", at = MONTH_END)
+
+        val spending = transactions.observeCategorySpending(MONTH_START, MONTH_END).first()
+        // Health nets to zero, and transfers, income and next month don't count.
+        assertEquals(
+            listOf("food" to 500_00L, "shopping" to 400_00L),
+            spending.map { it.category.seedKey to it.spentPaise }
+        )
+        assertEquals(transactions.observeTopCategory(MONTH_START, MONTH_END).first(), spending[0])
+    }
+
+    @Test
+    fun slicesOtherAndRefundsAddUpToTheHomeTotal() = runTest {
+        val seeded = listOf(
+            "food",
+            "groceries",
+            "travel",
+            "rent",
+            "work",
+            "bills_utilities",
+            "shopping",
+            "health"
+        )
+        seeded.forEachIndexed { i, key -> add(Direction.DEBIT, (i + 1) * 100_00L, category = key) }
+        // More refunded than spent: a negative category the donut can't draw.
+        add(Direction.DEBIT, 300_00, category = "entertainment")
+        add(Direction.REFUND, 1_000_00, category = "entertainment")
+        add(Direction.TRANSFER, 5_000_00, category = "rent")
+
+        val breakdown = CategoryBreakdown.of(
+            transactions.observeCategorySpending(MONTH_START, MONTH_END).first()
+        )
+        assertEquals(5, breakdown.slices.size)
+        assertEquals(listOf("entertainment"), breakdown.refunded.map { it.category.seedKey })
+        assertEquals(-700_00L, breakdown.refunded.single().spentPaise)
+        val total = totals().spentPaise
+        assertEquals(total, breakdown.totalPaise)
+        assertEquals(
+            total,
+            breakdown.slices.sumOf { it.spentPaise } + breakdown.otherPaise +
+                breakdown.refunded.sumOf { it.spentPaise }
+        )
     }
 
     @Test

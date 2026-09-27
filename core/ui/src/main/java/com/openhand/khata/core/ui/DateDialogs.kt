@@ -1,4 +1,4 @@
-package com.openhand.khata.feature.transactions
+package com.openhand.khata.core.ui
 
 import android.text.format.DateFormat
 import androidx.compose.material3.AlertDialog
@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import com.openhand.khata.core.ui.R as UiR
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -30,24 +29,24 @@ private fun Long.fromPickerMillis() =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun DateDialog(date: LocalDate, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+fun DateDialog(date: LocalDate, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
     val state = rememberDatePickerState(initialSelectedDateMillis = date.toPickerMillis())
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = { onPick(state.selectedDateMillis?.fromPickerMillis() ?: date) }) {
-                Text(stringResource(UiR.string.ok))
+                Text(stringResource(R.string.ok))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.cancel)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     ) { DatePicker(state) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun TimeDialog(time: LocalTime, onPick: (LocalTime) -> Unit, onDismiss: () -> Unit) {
+fun TimeDialog(time: LocalTime, onPick: (LocalTime) -> Unit, onDismiss: () -> Unit) {
     val state = rememberTimePickerState(
         initialHour = time.hour,
         initialMinute = time.minute,
@@ -58,11 +57,11 @@ internal fun TimeDialog(time: LocalTime, onPick: (LocalTime) -> Unit, onDismiss:
         text = { TimePicker(state) },
         confirmButton = {
             TextButton(onClick = { onPick(LocalTime.of(state.hour, state.minute)) }) {
-                Text(stringResource(UiR.string.ok))
+                Text(stringResource(R.string.ok))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.cancel)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     )
 }
@@ -70,7 +69,7 @@ internal fun TimeDialog(time: LocalTime, onPick: (LocalTime) -> Unit, onDismiss:
 /** Picks a first and last day (inclusive); one day alone is a range of one day. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun DateRangeDialog(
+fun DateRangeDialog(
     start: LocalDate?,
     end: LocalDate?,
     onPick: (LocalDate, LocalDate) -> Unit,
@@ -91,10 +90,10 @@ internal fun DateRangeDialog(
                         onPick(first, state.selectedEndDateMillis?.fromPickerMillis() ?: first)
                     }
                 }
-            ) { Text(stringResource(UiR.string.ok)) }
+            ) { Text(stringResource(R.string.ok)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.cancel)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     ) {
         DateRangePicker(state, modifier = Modifier.weight(1f))

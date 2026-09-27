@@ -35,7 +35,7 @@ Everything is protected by an app lock and an encrypted database, in English and
 | Design | Material 3 with dynamic color; English and Hindi strings |
 | Architecture | MVVM in Gradle modules (`core/*`, `feature/*`, `sms/*`), Hilt for dependency injection |
 | Storage | Room on SQLCipher; key generated on-device and kept in the Android Keystore |
-| Charts | Vico (donut, bars); custom Compose Canvas for the calendar heatmap |
+| Charts | Compose Canvas (donut, bars and calendar heatmap); no chart library |
 | Security | `androidx.biometric` app lock, `FLAG_SECURE`, Android backup disabled |
 | Background work | WorkManager (daily summary, backup reminder) |
 | SMS | `BroadcastReceiver` + one-time inbox scan; parsers are pure Kotlin |
