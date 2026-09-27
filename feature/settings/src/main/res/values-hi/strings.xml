@@ -16,4 +16,6 @@
     <string name="settings_categories_value">जोड़ें, नाम और रंग बदलें, संग्रहित करें</string>
     <string name="settings_tags">टैग</string>
     <string name="settings_tags_value">नाम बदलें, मिलाएँ और मिटाएँ</string>
+    <string name="settings_payees">पाने वाले</string>
+    <string name="settings_payees_value">नाम, तय श्रेणी और टैग; दोहराए गए को मिलाएँ</string>
 </resources>

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openhand.khata.core.data.AccountRepository
 import com.openhand.khata.core.data.CategoryRepository
+import com.openhand.khata.core.data.PayeeRepository
 import com.openhand.khata.core.data.TagRepository
 import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.model.Account
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
@@ -38,7 +40,8 @@ class TransactionEditorViewModel @Inject constructor(
     private val transactions: TransactionRepository,
     categories: CategoryRepository,
     accounts: AccountRepository,
-    private val tags: TagRepository
+    private val tags: TagRepository,
+    private val payees: PayeeRepository
 ) : ViewModel() {
     val transactionId: Long = savedState[TRANSACTION_ID_ARG] ?: 0L
     val isNew: Boolean get() = transactionId == 0L
@@ -80,23 +83,38 @@ class TransactionEditorViewModel @Inject constructor(
         found.map { it.name }.filterNot { name -> added.any { it.equals(name, ignoreCase = true) } }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
 
+    /** The payee name as typed, once the user changes it; looked up to fill in its defaults. */
+    private val typedPayee = MutableStateFlow<String?>(null)
+
     init {
         if (!isNew) {
             viewModelScope.launch {
                 val transaction = transactions.get(transactionId)
-                if (transaction ==
-                    null
-                ) {
+                if (transaction == null) {
                     _done.value = true
                 } else {
-                    _form.value = EditorForm.from(transaction, zone)
+                    // The saved category and tags stay as they are; the payee only drives the hint.
+                    val payee = transaction.payeeName?.let { payees.find(it) }
+                    _form.value = EditorForm.from(transaction, zone).copy(knownPayee = payee)
                 }
             }
+        }
+        viewModelScope.launch {
+            typedPayee.filterNotNull().debounce(PAYEE_DEBOUNCE_MILLIS)
+                .mapLatest { name -> name to payees.find(name) }
+                .collect { (name, match) ->
+                    // Skipped if the name changed again while the lookup ran.
+                    _form.update { form ->
+                        if (form?.payee == name) form.withKnownPayee(match) else form
+                    }
+                }
         }
     }
 
     fun update(form: EditorForm) {
+        val payeeChanged = _form.value?.payee != form.payee
         _form.value = form
+        if (payeeChanged) typedPayee.value = form.payee
     }
 
     fun onTagQueryChange(query: String) {
@@ -109,7 +127,12 @@ class TransactionEditorViewModel @Inject constructor(
             _showErrors.value = true
             return
         }
-        runOnce { transactions.save(form.toTransaction(transactionId, zone)) }
+        runOnce {
+            transactions.save(
+                form.toTransaction(transactionId, zone),
+                rememberPayeeDefaults = form.rememberPayee
+            )
+        }
     }
 
     fun delete() {
@@ -133,5 +156,6 @@ class TransactionEditorViewModel @Inject constructor(
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
         const val TAG_DEBOUNCE_MILLIS = 150L
+        const val PAYEE_DEBOUNCE_MILLIS = 300L
     }
 }

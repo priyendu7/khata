@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -18,6 +19,7 @@ import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.Payee
 import com.openhand.khata.core.model.Transaction
 import java.time.LocalDate
 import java.time.LocalTime
@@ -42,11 +44,29 @@ class TransactionEditorTest {
         Category(id = 10, name = null, seedKey = "uncategorized", color = 0, icon = "uncategorized")
     private val cash = Account(id = 5, name = "Cash", type = AccountType.WALLET)
 
+    private val groceries =
+        Category(id = 2, name = null, seedKey = "groceries", color = 0, icon = "groceries")
+    private val swiggy = Payee(
+        id = 3,
+        identifier = "swiggy@icici",
+        displayName = "Swiggy",
+        defaultCategoryId = food.id,
+        defaultTags = listOf("online")
+    )
+
     private var saved: Transaction? = null
+    private var remembered: Boolean? = null
     private var deleted = false
 
-    /** Hosts the editor like [TransactionEditorScreen] does, saving the way the ViewModel does. */
-    private fun show(start: EditorForm, isNew: Boolean) {
+    /**
+     * Hosts the editor like [TransactionEditorScreen] does, saving the way the ViewModel does and
+     * looking payees up in [payees] (by display name or identifier) as they're typed.
+     */
+    private fun show(start: EditorForm, isNew: Boolean, payees: List<Payee> = emptyList()) {
+        fun lookup(name: String) = payees.firstOrNull {
+            it.displayName.equals(name.trim(), ignoreCase = true) ||
+                it.identifier.equals(name.trim(), ignoreCase = true)
+        }
         compose.setContent {
             var form by remember { mutableStateOf(start) }
             var showErrors by remember { mutableStateOf(false) }
@@ -54,16 +74,23 @@ class TransactionEditorTest {
                 isNew = isNew,
                 form = form,
                 showErrors = showErrors,
-                categories = listOf(food, uncategorized),
+                categories = listOf(food, groceries, uncategorized),
                 accounts = listOf(cash),
                 tagSuggestions = listOf("office"),
-                onChange = { form = it },
+                onChange = { new ->
+                    form = if (new.payee != form.payee) {
+                        new.withKnownPayee(lookup(new.payee))
+                    } else {
+                        new
+                    }
+                },
                 onTagQueryChange = {},
                 onSave = {
                     if (form.amountError != null) {
                         showErrors = true
                     } else {
                         saved = form.toTransaction(if (isNew) 0 else 42, zone)
+                        remembered = form.rememberPayee
                     }
                 },
                 onDelete = { deleted = true },
@@ -159,5 +186,52 @@ class TransactionEditorTest {
         compose.onNodeWithText("Delete transaction").performScrollTo().performClick()
         compose.onNodeWithText("Delete").performClick()
         assertTrue(deleted)
+    }
+
+    @Test
+    fun aKnownPayeeFillsInItsCategoryAndTags() {
+        show(blank.copy(amount = "120"), isNew = true, payees = listOf(swiggy))
+
+        compose.onNodeWithText("Paid to or received from (optional)").performTextInput("swiggy")
+
+        compose.onNodeWithText("Food").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("online").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(
+            "Category and tags filled in from Swiggy. Changes here apply to this transaction only."
+        ).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Save").performClick()
+
+        assertEquals(food.id, saved!!.categoryId)
+        assertEquals(listOf("online"), saved!!.tags)
+    }
+
+    @Test
+    fun theCategoryCanBeOverriddenForOneTransaction() {
+        show(blank.copy(amount = "120"), isNew = true, payees = listOf(swiggy))
+
+        compose.onNodeWithText("Paid to or received from (optional)").performTextInput("Swiggy")
+        compose.onNodeWithText("Category").performScrollTo().performClick()
+        compose.onNodeWithText("Groceries").performClick()
+        compose.onNodeWithContentDescription("Remove online").performScrollTo().performClick()
+        compose.onNodeWithText("Save").performClick()
+
+        assertEquals(groceries.id, saved!!.categoryId)
+        assertEquals(emptyList<String>(), saved!!.tags)
+    }
+
+    @Test
+    fun offersToRememberANewPayee() {
+        show(blank.copy(amount = "80"), isNew = true, payees = listOf(swiggy))
+        val remember = "Remember this category and tags for next time"
+
+        compose.onNodeWithText(remember).assertDoesNotExist()
+        compose.onNodeWithText("Paid to or received from (optional)").performTextInput("Ramesh")
+        compose.onNodeWithText(remember)
+            .performScrollTo().performClick()
+        compose.onNodeWithText(remember).assertIsOff()
+        compose.onNodeWithText("Save").performClick()
+
+        assertEquals("Ramesh", saved!!.payeeName)
+        assertEquals(false, remembered)
     }
 }

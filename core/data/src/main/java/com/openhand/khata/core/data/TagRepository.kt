@@ -1,6 +1,7 @@
 package com.openhand.khata.core.data
 
 import com.openhand.khata.core.database.KhataDatabase
+import com.openhand.khata.core.database.dao.TagDao
 import com.openhand.khata.core.database.entity.TagEntity
 import com.openhand.khata.core.model.Tag
 import dagger.Lazy
@@ -18,6 +19,14 @@ sealed interface RenameResult {
     data class NameTaken(val existing: Tag) : RenameResult
 }
 
+/**
+ * Ids for [names], creating tags that don't exist yet. Names are trimmed, blanks dropped, and names
+ * that differ only in case count as the same tag. Shared by every repository that saves tags.
+ */
+internal suspend fun TagDao.getOrCreate(names: Collection<String>): List<Long> =
+    names.map { it.trim() }.filter { it.isNotEmpty() }.distinctBy { it.lowercase() }
+        .map { name -> getByName(name)?.id ?: insert(TagEntity(name = name)) }
+
 @Singleton
 class TagRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
     /** Every tag with how many transactions use it, by name. */
@@ -34,13 +43,8 @@ class TagRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
      * Ids for [names], creating tags that don't exist yet. Names are trimmed, blanks dropped, and
      * names that differ only in case count as the same tag.
      */
-    suspend fun getOrCreate(names: Collection<String>): List<Long> {
-        val clean = names.map { it.trim() }.filter { it.isNotEmpty() }.distinctBy { it.lowercase() }
-        return db.io { database ->
-            val dao = database.tagDao()
-            clean.map { name -> dao.getByName(name)?.id ?: dao.insert(TagEntity(name = name)) }
-        }
-    }
+    suspend fun getOrCreate(names: Collection<String>): List<Long> =
+        db.io { it.tagDao().getOrCreate(names) }
 
     suspend fun rename(tagId: Long, newName: String): RenameResult {
         val name = newName.trim()

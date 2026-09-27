@@ -64,6 +64,62 @@ class TransactionRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun remembersDefaultsForANewPayee() = runTest {
+        val food = db.categoryDao().getBySeedKey("food")!!.id
+        transactions.save(
+            expense { copy(payeeName = "Swiggy", categoryId = food, tags = listOf("online")) },
+            rememberPayeeDefaults = true
+        )
+
+        val payee = PayeeRepository(lazyDb).find("Swiggy")!!
+        assertEquals(food, payee.defaultCategoryId)
+        assertEquals(listOf("online"), payee.defaultTags)
+    }
+
+    @Test
+    fun overridingTheCategoryKeepsTheSavedDefaults() = runTest {
+        val food = db.categoryDao().getBySeedKey("food")!!.id
+        val groceries = db.categoryDao().getBySeedKey("groceries")!!.id
+        transactions.save(
+            expense { copy(payeeName = "paytmqr123@paytm", categoryId = food) },
+            rememberPayeeDefaults = true
+        )
+
+        val id = transactions.save(
+            expense { copy(payeeName = "paytmqr123@paytm", categoryId = groceries) },
+            rememberPayeeDefaults = true
+        )
+
+        assertEquals(groceries, transactions.get(id)!!.categoryId)
+        val payee = PayeeRepository(lazyDb).find("paytmqr123@paytm")!!
+        assertEquals(food, payee.defaultCategoryId)
+        assertEquals(emptyList<String>(), payee.defaultTags)
+    }
+
+    @Test
+    fun remembersNothingWhenAskedNotToOrWhenThereIsNothingToRemember() = runTest {
+        val food = db.categoryDao().getBySeedKey("food")!!.id
+        val uncategorized = uncategorizedId()
+        transactions.save(expense { copy(payeeName = "Ramesh", categoryId = food) })
+        transactions.save(expense { copy(payeeName = "Ramesh") }, rememberPayeeDefaults = true)
+        transactions.save(
+            expense { copy(payeeName = "Ramesh", categoryId = uncategorized) },
+            rememberPayeeDefaults = true
+        )
+
+        val payee = PayeeRepository(lazyDb).find("Ramesh")!!
+        assertNull(payee.defaultCategoryId)
+        assertEquals(emptyList<String>(), payee.defaultTags)
+
+        // A payee without defaults (like ones saved before payee memory) learns them on next use.
+        transactions.save(
+            expense { copy(payeeName = "ramesh", categoryId = food) },
+            rememberPayeeDefaults = true
+        )
+        assertEquals(food, PayeeRepository(lazyDb).find("Ramesh")!!.defaultCategoryId)
+    }
+
+    @Test
     fun updateReplacesTagsAndKeepsSmsFields() = runTest {
         val id = db.transactionDao().insert(
             TransactionEntity(

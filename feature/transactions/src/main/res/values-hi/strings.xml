@@ -34,14 +34,13 @@
     <string name="field_time">समय</string>
     <string name="field_payee">किसे दिया या किससे मिला (वैकल्पिक)</string>
     <string name="field_payee_hint">जैसे Swiggy, रमेश, मकान-मालिक</string>
+    <string name="payee_filled_in">श्रेणी और टैग %1$s से भरे गए। यहाँ किए बदलाव सिर्फ़ इसी लेन-देन पर लागू होंगे।</string>
+    <string name="payee_remember">अगली बार के लिए यह श्रेणी और टैग याद रखें</string>
     <string name="field_category">श्रेणी</string>
     <string name="field_account">खाता</string>
     <string name="no_account">कोई खाता नहीं</string>
     <string name="field_tag">टैग</string>
     <string name="field_tags">टैग (वैकल्पिक)</string>
-    <string name="field_tags_hint">टैग लिखें, फिर Enter दबाएँ</string>
-    <string name="tag_add">टैग जोड़ें</string>
-    <string name="tag_remove">%1$s हटाएँ</string>
     <string name="field_note">नोट (वैकल्पिक)</string>
     <string name="transaction_delete">लेन-देन मिटाएँ</string>
     <string name="transaction_delete_title">यह लेन-देन मिटाएँ?</string>

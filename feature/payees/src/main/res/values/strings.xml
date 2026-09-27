@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="payees_title">Payees</string>
+    <string name="payees_empty_title">No payees yet</string>
+    <string name="payees_empty_body">Payees are saved when you add a transaction with a name in \"Paid to or received from\". Their category and tags are filled in next time.</string>
+    <plurals name="payees_usage">
+        <item quantity="one">%d transaction</item>
+        <item quantity="other">%d transactions</item>
+    </plurals>
+    <string name="payees_no_default_category">No default category</string>
+    <string name="payees_edit">Edit payee</string>
+    <string name="payees_identifier">Recognised by: %1$s</string>
+    <string name="payees_name">Name</string>
+    <string name="payees_default_category">Default category</string>
+    <string name="payees_default_tags">Default tags</string>
+    <string name="payees_defaults_help">New transactions for this payee get this category and these tags. You can still change them on any one transaction.</string>
+    <string name="payees_merge_into">Merge into another payee</string>
+    <string name="payees_merge_title">Merge %1$s into…</string>
+    <string name="payees_merge_confirm_title">Merge %1$s into %2$s?</string>
+    <plurals name="payees_merge_body">
+        <item quantity="one">%1$d transaction moves from %2$s to %3$s. %3$s keeps its name, category and tags, and %2$s is removed.</item>
+        <item quantity="other">%1$d transactions move from %2$s to %3$s. %3$s keeps its name, category and tags, and %2$s is removed.</item>
+    </plurals>
+    <string name="payees_merge">Merge</string>
+</resources>

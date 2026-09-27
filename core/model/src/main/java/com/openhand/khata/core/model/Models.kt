@@ -37,3 +37,20 @@ data class Category(
 
 /** A tag and how many transactions use it. */
 data class Tag(val id: Long = 0, val name: String, val usageCount: Int = 0)
+
+/**
+ * Payee memory (PRD feature 3): what a UPI ID, merchant or person is called, and the category and
+ * tags its transactions get by default. Manual entries use the typed name as the [identifier].
+ */
+data class Payee(
+    val id: Long = 0,
+    val identifier: String,
+    val displayName: String,
+    /** Null means no default: the transaction keeps whatever category it has. */
+    val defaultCategoryId: Long? = null,
+    val defaultTags: List<String> = emptyList(),
+    val transactionCount: Int = 0
+) {
+    /** Whether there's anything to fill in; a payee without defaults is remembered on next use. */
+    val hasDefaults: Boolean get() = defaultCategoryId != null || defaultTags.isNotEmpty()
+}

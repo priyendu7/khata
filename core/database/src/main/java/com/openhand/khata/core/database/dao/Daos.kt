@@ -43,6 +43,17 @@ data class TransactionRow(
     }
 }
 
+/** A payee with its default tag names and how many transactions it has. */
+data class PayeeRow(
+    val id: Long,
+    val identifier: String,
+    @ColumnInfo(name = "display_name") val displayName: String,
+    @ColumnInfo(name = "default_category_id") val defaultCategoryId: Long?,
+    /** Default tag names joined with [TransactionRow.TAG_SEPARATOR], or null when there are none. */
+    val tags: String?,
+    val usage: Int
+)
+
 @Dao
 interface AccountDao {
     @Insert suspend fun insert(account: AccountEntity): Long
@@ -198,6 +209,42 @@ interface PayeeDao {
     suspend fun setDefaultTags(payeeId: Long, tagIds: Collection<Long>) {
         clearDefaultTags(payeeId)
         addDefaultTags(tagIds.map { PayeeDefaultTagEntity(payeeId, it) })
+    }
+
+    @Query(
+        "SELECT g.name FROM payee_default_tags pt JOIN tags g ON g.id = pt.tag_id " +
+            "WHERE pt.payee_id = :payeeId ORDER BY g.name COLLATE NOCASE"
+    )
+    suspend fun defaultTagNames(payeeId: Long): List<String>
+
+    @Query(
+        "SELECT p.id, p.identifier, p.display_name, p.default_category_id, " +
+            "(SELECT GROUP_CONCAT(g.name, char(31)) FROM payee_default_tags pt " +
+            "JOIN tags g ON g.id = pt.tag_id WHERE pt.payee_id = p.id) AS tags, " +
+            "(SELECT COUNT(*) FROM transactions t WHERE t.payee_id = p.id) AS usage " +
+            "FROM payees p ORDER BY p.display_name COLLATE NOCASE, p.id"
+    )
+    fun observeWithDetails(): Flow<List<PayeeRow>>
+
+    /** Updates the name and defaults together, so a half-saved edit can't happen. */
+    @Transaction
+    suspend fun updateWithDefaultTags(payee: PayeeEntity, tagIds: Collection<Long>) {
+        update(payee)
+        setDefaultTags(payee.id, tagIds)
+    }
+
+    @Query("UPDATE transactions SET payee_id = :into WHERE payee_id = :from")
+    suspend fun moveTransactions(from: Long, into: Long)
+
+    @Query("DELETE FROM payees WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    /** Moves [from]'s transactions to [into] and deletes [from]; [into] keeps its own defaults. */
+    @Transaction
+    suspend fun merge(from: Long, into: Long) {
+        if (from == into) return
+        moveTransactions(from, into)
+        deleteById(from)
     }
 }
 

@@ -4,4 +4,4 @@
 
 **Built in:** Phase 1. See [`docs/DEVELOPMENT_PLAN.md`](../../docs/DEVELOPMENT_PLAN.md).
 
-**Module:** `:feature:payees` · package `com.openhand.khata.feature.payees` · Android library (`khata.android.library` + `khata.android.compose`).
+**Module:** `:feature:payees` · package `com.openhand.khata.feature.payees` · Android library (`khata.android.library` + `khata.android.compose` + `khata.android.hilt`).

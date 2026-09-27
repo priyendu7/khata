@@ -26,6 +26,7 @@ import com.openhand.khata.feature.categories.TagsScreen
 import com.openhand.khata.feature.insights.HomeScreen
 import com.openhand.khata.feature.insights.InsightsScreen
 import com.openhand.khata.feature.lock.LockSettingsSection
+import com.openhand.khata.feature.payees.PayeesScreen
 import com.openhand.khata.feature.settings.SettingsPage
 import com.openhand.khata.feature.settings.SettingsRoute
 import com.openhand.khata.feature.transactions.AddTransactionButton
@@ -52,6 +53,7 @@ fun KhataNavigation() {
         composable(Route.ACCOUNTS) { AccountsScreen(onBack = back) }
         composable(Route.CATEGORIES) { CategoriesScreen(onBack = back) }
         composable(Route.TAGS) { TagsScreen(onBack = back) }
+        composable(Route.PAYEES) { PayeesScreen(onBack = back) }
     }
 }
 
@@ -60,6 +62,7 @@ private object Route {
     const val ACCOUNTS = "accounts"
     const val CATEGORIES = "categories"
     const val TAGS = "tags"
+    const val PAYEES = "payees"
 
     /** Add (id 0) or edit a transaction. */
     const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}"
@@ -71,6 +74,7 @@ private fun SettingsPage.route() = when (this) {
     SettingsPage.ACCOUNTS -> Route.ACCOUNTS
     SettingsPage.CATEGORIES -> Route.CATEGORIES
     SettingsPage.TAGS -> Route.TAGS
+    SettingsPage.PAYEES -> Route.PAYEES
 }
 
 /** Bottom-navigation shell: Home, Transactions, Insights, Settings. */
