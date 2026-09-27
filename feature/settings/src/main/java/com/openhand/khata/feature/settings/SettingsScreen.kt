@@ -46,9 +46,9 @@ fun SettingsRoute(
 }
 
 /** Screens that Settings opens; :app maps them to navigation routes. */
-enum class SettingsPage { ACCOUNTS, CATEGORIES, TAGS, PAYEES }
+enum class SettingsPage { ACCOUNTS, CATEGORIES, TAGS, PAYEES, EXPORT, IMPORT }
 
-// TODO(Phase 2-3): backup reminder and parsers become real settings.
+// TODO(Phase 2-3): the backup reminder and parsers become real settings.
 @Composable
 fun SettingsScreen(
     versionName: String,
@@ -93,9 +93,17 @@ fun SettingsScreen(
             choosingLanguage = true
         }
         Row(
-            stringResource(R.string.settings_backup),
-            stringResource(R.string.settings_backup_value)
-        )
+            stringResource(R.string.settings_export),
+            stringResource(R.string.settings_export_value)
+        ) {
+            onOpen(SettingsPage.EXPORT)
+        }
+        Row(
+            stringResource(R.string.settings_import),
+            stringResource(R.string.settings_import_value)
+        ) {
+            onOpen(SettingsPage.IMPORT)
+        }
         HorizontalDivider()
         Row(
             stringResource(R.string.settings_source),

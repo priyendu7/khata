@@ -7,8 +7,10 @@
     <!-- Each language's own name, the same in every language. -->
     <string name="language_english" translatable="false">English</string>
     <string name="language_hindi" translatable="false">हिन्दी</string>
-    <string name="settings_backup">Backup</string>
-    <string name="settings_backup_value">CSV export is coming in a later update.</string>
+    <string name="settings_export">Export to CSV</string>
+    <string name="settings_export_value">Back up all data or a date range as a file you can open in a spreadsheet</string>
+    <string name="settings_import">Import from CSV</string>
+    <string name="settings_import_value">From a Khata export, a spreadsheet or a bank statement</string>
     <string name="settings_source">Source code</string>
     <string name="settings_source_value">Free and open source under GPL v3 · github.com/priyendu7/khata</string>
     <string name="settings_version">Version</string>

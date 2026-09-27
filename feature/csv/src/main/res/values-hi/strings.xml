@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hindi strings. Every string in values/strings.xml needs a Hindi version here. -->
+    <!-- Export -->
+    <string name="export_title">CSV में एक्सपोर्ट करें</string>
+    <string name="export_unencrypted">CSV फ़ाइल एन्क्रिप्टेड नहीं होती, जबकि Khata का अपना डेटा होता है। जो भी यह फ़ाइल खोल सके, वह आपके लेन-देन पढ़ सकता है, इसलिए इसे सुरक्षित जगह रखें।</string>
+    <string name="export_what">क्या एक्सपोर्ट करें</string>
+    <string name="export_all">सारा डेटा</string>
+    <string name="export_range">तारीखों की एक अवधि</string>
+    <string name="export_range_value">%1$s – %2$s</string>
+    <string name="export_last">पिछला एक्सपोर्ट: %1$s</string>
+    <string name="export_never">अभी तक एक्सपोर्ट नहीं किया</string>
+    <string name="export_button">एक्सपोर्ट करें</string>
+    <string name="export_working">एक्सपोर्ट हो रहा है…</string>
+    <plurals name="export_done">
+        <item quantity="one">%d लेन-देन सहेजा गया।</item>
+        <item quantity="other">%d लेन-देन सहेजे गए।</item>
+    </plurals>
+    <string name="export_failed">फ़ाइल सहेजी नहीं जा सकी। फिर से कोशिश करें, या कोई और जगह चुनें।</string>
+
+    <!-- Import -->
+    <string name="import_title">CSV से इम्पोर्ट करें</string>
+    <string name="import_intro">CSV फ़ाइल से लेन-देन जोड़ें: Khata का एक्सपोर्ट, या कॉलम मिलाने के बाद कोई भी स्प्रेडशीट या बैंक स्टेटमेंट। पहले आपको झलक दिखेगी, और जो लेन-देन पहले से सहेजे हैं वे छोड़ दिए जाएँगे।</string>
+    <string name="import_choose_file">CSV फ़ाइल चुनें</string>
+    <string name="import_choose_another">कोई और फ़ाइल चुनें</string>
+    <string name="import_done">हो गया</string>
+    <string name="import_another">एक और फ़ाइल इम्पोर्ट करें</string>
+    <string name="import_failed_unreadable">यह फ़ाइल पढ़ी नहीं जा सकी। देखें कि यह CSV फ़ाइल है, फिर कोशिश करें।</string>
+    <string name="import_failed_empty">इस फ़ाइल में इम्पोर्ट करने के लिए कोई पंक्ति नहीं है। इसमें एक हेडर पंक्ति और कम से कम एक लेन-देन होना चाहिए।</string>
+    <string name="import_failed_save">लेन-देन सहेजे नहीं जा सके। कुछ भी इम्पोर्ट नहीं हुआ।</string>
+    <plurals name="import_added">
+        <item quantity="one">%d लेन-देन जोड़ा गया।</item>
+        <item quantity="other">%d लेन-देन जोड़े गए।</item>
+    </plurals>
+    <plurals name="import_skipped">
+        <item quantity="one">%d पहले से सहेजा था, छोड़ दिया।</item>
+        <item quantity="other">%d पहले से सहेजे थे, छोड़ दिए।</item>
+    </plurals>
+    <plurals name="import_invalid_count">
+        <item quantity="one">%d पंक्ति पढ़ी नहीं जा सकती।</item>
+        <item quantity="other">%d पंक्तियाँ पढ़ी नहीं जा सकतीं।</item>
+    </plurals>
+
+    <!-- Column matching -->
+    <string name="matching_title">कॉलम मिलाएँ</string>
+    <string name="matching_intro">यह फ़ाइल Khata का एक्सपोर्ट नहीं है। बताएँ कि किस कॉलम में क्या है; पहली पंक्ति को कॉलम के नाम माना जाता है।</string>
+    <string name="matching_amount_style">खर्च और आमदनी</string>
+    <string name="matching_date_format">तारीख का फ़ॉर्मैट</string>
+    <string name="matching_continue">आगे बढ़ें</string>
+    <string name="amount_style_signed">एक रकम कॉलम: ऋण (माइनस) वाली रकम खर्च है</string>
+    <string name="amount_style_all_spending">एक रकम कॉलम: हर पंक्ति खर्च है</string>
+    <string name="amount_style_separate">खर्च और आमदनी के अलग कॉलम</string>
+    <string name="column_date">तारीख का कॉलम</string>
+    <string name="column_amount">रकम का कॉलम</string>
+    <string name="column_debit">खर्च (डेबिट) का कॉलम</string>
+    <string name="column_credit">आमदनी (क्रेडिट) का कॉलम</string>
+    <string name="column_description">विवरण का कॉलम (नोट बनेगा)</string>
+    <string name="column_category">श्रेणी का कॉलम</string>
+    <string name="column_none">इस फ़ाइल में नहीं</string>
+    <string name="column_with_sample">%1$s (जैसे %2$s)</string>
+
+    <!-- Preview -->
+    <plurals name="preview_new">
+        <item quantity="one">%d नया लेन-देन</item>
+        <item quantity="other">%d नए लेन-देन</item>
+    </plurals>
+    <plurals name="preview_duplicates">
+        <item quantity="one">%d पहले से सहेजा है, छोड़ा जाएगा</item>
+        <item quantity="other">%d पहले से सहेजे हैं, छोड़े जाएँगे</item>
+    </plurals>
+    <plurals name="preview_import">
+        <item quantity="one">%d लेन-देन इम्पोर्ट करें</item>
+        <item quantity="other">%d लेन-देन इम्पोर्ट करें</item>
+    </plurals>
+    <string name="preview_change_columns">कॉलम बदलें</string>
+    <string name="preview_first_rows">पहली पंक्तियाँ</string>
+    <string name="preview_duplicate">पहले से सहेजा है</string>
+    <string name="preview_problems">जो पंक्तियाँ पढ़ी नहीं जा सकतीं</string>
+    <string name="preview_problem_row">पंक्ति %1$d: %2$s</string>
+    <plurals name="preview_more_problems">
+        <item quantity="one">…और %d।</item>
+        <item quantity="other">…और %d।</item>
+    </plurals>
+    <string name="problem_columns">कॉलम बहुत कम हैं</string>
+    <string name="problem_date">तारीख समझ नहीं आई</string>
+    <string name="problem_time">समय समझ नहीं आया</string>
+    <string name="problem_amount">रकम समझ नहीं आई</string>
+    <string name="problem_direction">दिशा debit, credit, refund या transfer होनी चाहिए</string>
+    <string name="direction_debit">खर्च</string>
+    <string name="direction_credit">आमदनी</string>
+    <string name="direction_refund">रिफ़ंड</string>
+    <string name="direction_transfer">ट्रांसफ़र</string>
+</resources>
