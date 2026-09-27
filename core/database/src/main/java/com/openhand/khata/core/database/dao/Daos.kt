@@ -1,7 +1,9 @@
 package com.openhand.khata.core.database.dao
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Delete
+import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -14,12 +16,32 @@ import com.openhand.khata.core.database.entity.PayeeEntity
 import com.openhand.khata.core.database.entity.TagEntity
 import com.openhand.khata.core.database.entity.TransactionEntity
 import com.openhand.khata.core.database.entity.TransactionTagEntity
+import com.openhand.khata.core.model.Direction
 import kotlinx.coroutines.flow.Flow
 
 // Basic CRUD for the first schema. Feature issues add the queries their screens need.
 
 /** A tag and how many transactions use it. */
 data class TagUsage(val id: Long, val name: String, val usage: Int)
+
+/** One row of the transactions list, joined with its payee, account, category and tags. */
+data class TransactionRow(
+    val id: Long,
+    @ColumnInfo(name = "amount_paise") val amountPaise: Long,
+    val direction: Direction,
+    val timestamp: Long,
+    val note: String?,
+    @ColumnInfo(name = "payee_name") val payeeName: String?,
+    @ColumnInfo(name = "account_name") val accountName: String?,
+    @Embedded(prefix = "category_") val category: CategoryEntity,
+    /** Tag names joined with [TAG_SEPARATOR], or null when there are none. */
+    val tags: String?
+) {
+    companion object {
+        /** ASCII unit separator: can't be typed into a tag name, unlike a comma. */
+        const val TAG_SEPARATOR = '\u001F'
+    }
+}
 
 @Dao
 interface AccountDao {
@@ -149,6 +171,20 @@ interface PayeeDao {
     @Query("SELECT * FROM payees WHERE identifier = :identifier")
     suspend fun getByIdentifier(identifier: String): PayeeEntity?
 
+    @Query("SELECT * FROM payees WHERE id = :id")
+    suspend fun getById(id: Long): PayeeEntity?
+
+    /**
+     * The payee a typed name refers to, ignoring case: one with that display name first, else one
+     * whose identifier (UPI ID, merchant) is exactly that text.
+     */
+    @Query(
+        "SELECT * FROM payees WHERE display_name = :name COLLATE NOCASE " +
+            "OR identifier = :name COLLATE NOCASE " +
+            "ORDER BY (display_name = :name COLLATE NOCASE) DESC, id LIMIT 1"
+    )
+    suspend fun findByName(name: String): PayeeEntity?
+
     @Query("SELECT tag_id FROM payee_default_tags WHERE payee_id = :payeeId")
     suspend fun defaultTagIds(payeeId: Long): List<Long>
 
@@ -197,4 +233,63 @@ interface TransactionDao {
         clearTags(transactionId)
         addTags(tagIds.map { TransactionTagEntity(transactionId, it) })
     }
+
+    @Query(
+        "SELECT g.name FROM transaction_tags tt JOIN tags g ON g.id = tt.tag_id " +
+            "WHERE tt.transaction_id = :transactionId ORDER BY g.name COLLATE NOCASE"
+    )
+    suspend fun tagNames(transactionId: Long): List<String>
+
+    /** Adds (id 0) or updates [transaction] and sets its tags, all or nothing. Returns its id. */
+    @Transaction
+    suspend fun saveWithTags(transaction: TransactionEntity, tagIds: Collection<Long>): Long {
+        val id = if (transaction.id == 0L) {
+            insert(transaction)
+        } else {
+            update(transaction)
+            transaction.id
+        }
+        setTags(id, tagIds)
+        return id
+    }
+
+    @Query("DELETE FROM transactions WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    /**
+     * The transactions list, newest first. Each null argument means "any"; the rest combine.
+     * [query] matches the payee name or note and must have `%`, `_` and `\` escaped with `\`.
+     */
+    @Query(
+        "SELECT t.id, t.amount_paise, t.direction, t.timestamp, t.note, " +
+            "p.display_name AS payee_name, a.name AS account_name, " +
+            "c.id AS category_id, c.name AS category_name, c.seed_key AS category_seed_key, " +
+            "c.color AS category_color, c.icon AS category_icon, " +
+            "c.archived AS category_archived, " +
+            "(SELECT GROUP_CONCAT(g.name, char(31)) FROM transaction_tags tt " +
+            "JOIN tags g ON g.id = tt.tag_id WHERE tt.transaction_id = t.id) AS tags " +
+            "FROM transactions t " +
+            "JOIN categories c ON c.id = t.category_id " +
+            "LEFT JOIN payees p ON p.id = t.payee_id " +
+            "LEFT JOIN accounts a ON a.id = t.account_id " +
+            "WHERE (:categoryId IS NULL OR t.category_id = :categoryId) " +
+            "AND (:accountId IS NULL OR t.account_id = :accountId) " +
+            "AND (:tagId IS NULL OR EXISTS (SELECT 1 FROM transaction_tags x " +
+            "WHERE x.transaction_id = t.id AND x.tag_id = :tagId)) " +
+            "AND (:from IS NULL OR t.timestamp >= :from) " +
+            "AND (:until IS NULL OR t.timestamp < :until) " +
+            "AND (:query IS NULL OR p.display_name LIKE '%' || :query || '%' ESCAPE '\\' " +
+            "OR t.note LIKE '%' || :query || '%' ESCAPE '\\') " +
+            "ORDER BY t.timestamp DESC, t.id DESC"
+    )
+    // Room binds query arguments only from parameters, so each filter needs its own.
+    @Suppress("LongParameterList")
+    fun observeList(
+        query: String?,
+        categoryId: Long?,
+        tagId: Long?,
+        accountId: Long?,
+        from: Long?,
+        until: Long?
+    ): Flow<List<TransactionRow>>
 }

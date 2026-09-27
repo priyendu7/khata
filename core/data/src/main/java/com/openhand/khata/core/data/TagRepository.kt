@@ -26,7 +26,7 @@ class TagRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
 
     /** Existing tags starting with [query], most used first: suggestions while typing. */
     suspend fun suggestions(query: String, limit: Int = SUGGESTIONS): List<Tag> {
-        val escaped = query.trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        val escaped = escapeLike(query.trim())
         return db.io { database -> database.tagDao().search(escaped, limit).map { it.toModel() } }
     }
 

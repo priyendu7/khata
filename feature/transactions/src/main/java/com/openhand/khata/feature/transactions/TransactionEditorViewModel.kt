@@ -1,0 +1,137 @@
+package com.openhand.khata.feature.transactions
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.openhand.khata.core.data.AccountRepository
+import com.openhand.khata.core.data.CategoryRepository
+import com.openhand.khata.core.data.TagRepository
+import com.openhand.khata.core.data.TransactionRepository
+import com.openhand.khata.core.model.Account
+import com.openhand.khata.core.model.Category
+import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+/** Navigation argument: the transaction to edit, or 0 to add a new one. */
+const val TRANSACTION_ID_ARG = "transactionId"
+
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+@HiltViewModel
+class TransactionEditorViewModel @Inject constructor(
+    savedState: SavedStateHandle,
+    private val transactions: TransactionRepository,
+    categories: CategoryRepository,
+    accounts: AccountRepository,
+    private val tags: TagRepository
+) : ViewModel() {
+    val transactionId: Long = savedState[TRANSACTION_ID_ARG] ?: 0L
+    val isNew: Boolean get() = transactionId == 0L
+
+    private val zone: ZoneId get() = ZoneId.systemDefault()
+
+    private val _form = MutableStateFlow(if (isNew) EditorForm.new(ZonedDateTime.now()) else null)
+
+    /** Null while an existing transaction loads. */
+    val form: StateFlow<EditorForm?> = _form.asStateFlow()
+
+    private val _showErrors = MutableStateFlow(false)
+    val showErrors: StateFlow<Boolean> = _showErrors.asStateFlow()
+
+    private val _done = MutableStateFlow(false)
+
+    /** True once saved or deleted (or the transaction no longer exists): the screen closes. */
+    val done: StateFlow<Boolean> = _done.asStateFlow()
+
+    private var busy = false
+
+    /** Active categories, plus the selected one if it has since been archived. */
+    val categories: StateFlow<List<Category>> = combine(
+        categories.observeAll(),
+        _form.map { it?.categoryId }.distinctUntilChanged()
+    ) { all, selected -> all.filter { !it.archived || it.id == selected } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+
+    val accounts: StateFlow<List<Account>> = accounts.observeAccounts()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+
+    private val tagQuery = MutableStateFlow("")
+
+    /** Existing tags matching what's typed (the most used ones when nothing is), minus added ones. */
+    val tagSuggestions: StateFlow<List<String>> = combine(
+        tagQuery.debounce(TAG_DEBOUNCE_MILLIS).mapLatest { tags.suggestions(it) },
+        _form.map { it?.tags.orEmpty() }.distinctUntilChanged()
+    ) { found, added ->
+        found.map { it.name }.filterNot { name -> added.any { it.equals(name, ignoreCase = true) } }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+
+    init {
+        if (!isNew) {
+            viewModelScope.launch {
+                val transaction = transactions.get(transactionId)
+                if (transaction ==
+                    null
+                ) {
+                    _done.value = true
+                } else {
+                    _form.value = EditorForm.from(transaction, zone)
+                }
+            }
+        }
+    }
+
+    fun update(form: EditorForm) {
+        _form.value = form
+    }
+
+    fun onTagQueryChange(query: String) {
+        tagQuery.value = query
+    }
+
+    fun save() {
+        val form = _form.value ?: return
+        if (form.amountError != null) {
+            _showErrors.value = true
+            return
+        }
+        runOnce { transactions.save(form.toTransaction(transactionId, zone)) }
+    }
+
+    fun delete() {
+        if (!isNew) runOnce { transactions.delete(transactionId) }
+    }
+
+    /** Ignores a second tap while the first save or delete is still running. */
+    private fun runOnce(block: suspend () -> Unit) {
+        if (busy) return
+        busy = true
+        viewModelScope.launch {
+            try {
+                block()
+                _done.update { true }
+            } finally {
+                busy = false
+            }
+        }
+    }
+
+    private companion object {
+        const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val TAG_DEBOUNCE_MILLIS = 150L
+    }
+}

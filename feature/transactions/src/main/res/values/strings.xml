@@ -1,5 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Transactions list -->
     <string name="transactions_empty_title">Nothing here yet</string>
-    <string name="transactions_empty_body">Your income and expenses will appear here, grouped by day.</string>
+    <string name="transactions_empty_body">Tap + to add an expense or income. Everything you add appears here, grouped by day.</string>
+    <string name="transactions_no_match_title">No matching transactions</string>
+    <string name="transactions_no_match_body">Try a different search, or clear the filters.</string>
+    <string name="transactions_search">Search payee or note</string>
+    <string name="transactions_clear_search">Clear search</string>
+    <string name="filter_dates">Dates</string>
+    <string name="filter_clear">Clear filters</string>
+    <string name="filter_any_category">All categories</string>
+    <string name="filter_any_tag">All tags</string>
+    <string name="filter_any_account">All accounts</string>
+    <string name="day_today">Today</string>
+    <string name="day_yesterday">Yesterday</string>
+    <string name="day_spent">Spent %1$s</string>
+    <string name="day_received">Received %1$s</string>
+
+    <!-- Add and edit -->
+    <string name="transactions_add">Add transaction</string>
+    <string name="transactions_edit">Edit transaction</string>
+    <string name="direction_debit">Expense</string>
+    <string name="direction_credit">Income</string>
+    <string name="direction_refund">Refund</string>
+    <string name="direction_transfer">Transfer</string>
+    <string name="field_amount">Amount</string>
+    <string name="amount_error_empty">Enter an amount</string>
+    <string name="amount_error_invalid">Enter an amount like 250 or 99.50</string>
+    <string name="amount_error_zero">The amount must be more than ₹0</string>
+    <string name="field_date">Date</string>
+    <string name="field_time">Time</string>
+    <string name="field_payee">Paid to or received from (optional)</string>
+    <string name="field_payee_hint">e.g. Swiggy, Ramesh, landlord</string>
+    <string name="field_category">Category</string>
+    <string name="field_account">Account</string>
+    <string name="no_account">No account</string>
+    <string name="field_tag">Tag</string>
+    <string name="field_tags">Tags (optional)</string>
+    <string name="field_tags_hint">Type a tag, then press Enter</string>
+    <string name="tag_add">Add tag</string>
+    <string name="tag_remove">Remove %1$s</string>
+    <string name="field_note">Note (optional)</string>
+    <string name="transaction_delete">Delete transaction</string>
+    <string name="transaction_delete_title">Delete this transaction?</string>
+    <string name="transaction_delete_body">It will be removed for good. This can\'t be undone.</string>
 </resources>

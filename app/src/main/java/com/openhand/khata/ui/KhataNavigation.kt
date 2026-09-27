@@ -14,9 +14,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.openhand.khata.R
 import com.openhand.khata.feature.accounts.AccountsScreen
 import com.openhand.khata.feature.categories.CategoriesScreen
@@ -26,6 +28,9 @@ import com.openhand.khata.feature.insights.InsightsScreen
 import com.openhand.khata.feature.lock.LockSettingsSection
 import com.openhand.khata.feature.settings.SettingsPage
 import com.openhand.khata.feature.settings.SettingsRoute
+import com.openhand.khata.feature.transactions.AddTransactionButton
+import com.openhand.khata.feature.transactions.TRANSACTION_ID_ARG
+import com.openhand.khata.feature.transactions.TransactionEditorScreen
 import com.openhand.khata.feature.transactions.TransactionsScreen
 
 /** Top-level navigation: the tabs, and the screens opened from them. */
@@ -35,8 +40,15 @@ fun KhataNavigation() {
     val back: () -> Unit = { navController.popBackStack() }
     NavHost(navController, startDestination = Route.TABS) {
         composable(Route.TABS) {
-            MainTabs(onOpen = { page -> navController.navigate(page.route()) })
+            MainTabs(
+                onOpen = { page -> navController.navigate(page.route()) },
+                onOpenTransaction = { id -> navController.navigate(Route.transaction(id)) }
+            )
         }
+        composable(
+            Route.TRANSACTION,
+            arguments = listOf(navArgument(TRANSACTION_ID_ARG) { type = NavType.LongType })
+        ) { TransactionEditorScreen(onDone = back) }
         composable(Route.ACCOUNTS) { AccountsScreen(onBack = back) }
         composable(Route.CATEGORIES) { CategoriesScreen(onBack = back) }
         composable(Route.TAGS) { TagsScreen(onBack = back) }
@@ -48,6 +60,11 @@ private object Route {
     const val ACCOUNTS = "accounts"
     const val CATEGORIES = "categories"
     const val TAGS = "tags"
+
+    /** Add (id 0) or edit a transaction. */
+    const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}"
+
+    fun transaction(id: Long) = "transaction/$id"
 }
 
 private fun SettingsPage.route() = when (this) {
@@ -58,9 +75,14 @@ private fun SettingsPage.route() = when (this) {
 
 /** Bottom-navigation shell: Home, Transactions, Insights, Settings. */
 @Composable
-private fun MainTabs(onOpen: (SettingsPage) -> Unit) {
+private fun MainTabs(onOpen: (SettingsPage) -> Unit, onOpenTransaction: (Long) -> Unit) {
     var current by rememberSaveable { mutableStateOf(Destination.HOME) }
     Scaffold(
+        floatingActionButton = {
+            if (current == Destination.HOME || current == Destination.TRANSACTIONS) {
+                AddTransactionButton(onClick = { onOpenTransaction(0L) })
+            }
+        },
         bottomBar = {
             NavigationBar {
                 Destination.entries.forEach { destination ->
@@ -82,7 +104,7 @@ private fun MainTabs(onOpen: (SettingsPage) -> Unit) {
         val modifier = Modifier.padding(padding)
         when (current) {
             Destination.HOME -> HomeScreen(stringResource(R.string.app_name), modifier)
-            Destination.TRANSACTIONS -> TransactionsScreen(modifier)
+            Destination.TRANSACTIONS -> TransactionsScreen(onOpenTransaction, modifier)
             Destination.INSIGHTS -> InsightsScreen(modifier)
             Destination.SETTINGS -> SettingsRoute(modifier, lockSettings = {
                 LockSettingsSection()
