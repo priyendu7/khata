@@ -90,4 +90,11 @@
     <string name="direction_credit">आमदनी</string>
     <string name="direction_refund">रिफ़ंड</string>
     <string name="direction_transfer">ट्रांसफ़र</string>
+    <!-- Backup reminder notification: never amounts or transaction details. -->
+    <string name="reminder_channel">बैकअप रिमाइंडर</string>
+    <string name="reminder_title">Khata का बैकअप लेने का समय</string>
+    <plurals name="reminder_text">
+        <item quantity="one">आपने %d दिन से बैकअप एक्सपोर्ट नहीं किया है। CSV फ़ाइल सहेजने के लिए टैप करें: फ़ोन खो जाने पर इसके बिना आपका डेटा वापस नहीं मिल सकता।</item>
+        <item quantity="other">आपने %d दिन से बैकअप एक्सपोर्ट नहीं किया है। CSV फ़ाइल सहेजने के लिए टैप करें: फ़ोन खो जाने पर इसके बिना आपका डेटा वापस नहीं मिल सकता।</item>
+    </plurals>
 </resources>

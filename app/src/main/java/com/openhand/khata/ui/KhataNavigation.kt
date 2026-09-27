@@ -7,6 +7,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -23,6 +24,7 @@ import com.openhand.khata.R
 import com.openhand.khata.feature.accounts.AccountsScreen
 import com.openhand.khata.feature.categories.CategoriesScreen
 import com.openhand.khata.feature.categories.TagsScreen
+import com.openhand.khata.feature.csv.BackupReminderNotifier
 import com.openhand.khata.feature.csv.ExportScreen
 import com.openhand.khata.feature.csv.ImportScreen
 import com.openhand.khata.feature.insights.HomeScreen
@@ -40,11 +42,20 @@ import com.openhand.khata.feature.transactions.TRANSACTION_ID_ARG
 import com.openhand.khata.feature.transactions.TransactionEditorScreen
 import com.openhand.khata.feature.transactions.TransactionsScreen
 
-/** Top-level navigation: the tabs, and the screens opened from them. */
+/**
+ * Top-level navigation: the tabs, and the screens opened from them. [openRequest] is a screen to
+ * open from outside (the backup reminder notification opens Export).
+ */
 @Composable
-fun KhataNavigation() {
+fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
     val navController = rememberNavController()
     val back: () -> Unit = { navController.popBackStack() }
+    LaunchedEffect(openRequest) {
+        if (openRequest == BackupReminderNotifier.OPEN_EXPORT) {
+            navController.navigate(Route.EXPORT) { launchSingleTop = true }
+            onOpened()
+        }
+    }
     NavHost(navController, startDestination = Route.TABS) {
         composable(Route.TABS) {
             MainTabs(
@@ -148,7 +159,11 @@ private fun MainTabs(
     ) { padding ->
         val modifier = Modifier.padding(padding)
         when (current) {
-            Destination.HOME -> HomeScreen(stringResource(R.string.app_name), modifier)
+            Destination.HOME -> HomeScreen(
+                stringResource(R.string.app_name),
+                modifier,
+                onBackup = { onOpen(SettingsPage.EXPORT) }
+            )
             Destination.TRANSACTIONS -> TransactionsScreen(onOpenTransaction, modifier)
             Destination.INSIGHTS -> InsightsScreen(onOpenTransactions, modifier)
             Destination.SETTINGS -> SettingsRoute(modifier, lockSettings = {

@@ -36,6 +36,7 @@ fun SettingsRoute(
         versionName = viewModel.versionName,
         modifier = modifier,
         lockSettings = lockSettings,
+        backupReminder = { BackupReminderSection() },
         onOpen = onOpen,
         language = language,
         onLanguage = {
@@ -48,13 +49,15 @@ fun SettingsRoute(
 /** Screens that Settings opens; :app maps them to navigation routes. */
 enum class SettingsPage { ACCOUNTS, CATEGORIES, TAGS, PAYEES, EXPORT, IMPORT }
 
-// TODO(Phase 2-3): the backup reminder and parsers become real settings.
+// TODO(Phase 3): parsers become real settings.
 @Composable
 fun SettingsScreen(
     versionName: String,
     modifier: Modifier = Modifier,
     /** App lock rows, supplied by :feature:lock through :app (features don't depend on each other). */
     lockSettings: @Composable () -> Unit = {},
+    /** Its own ViewModel, so it's a slot that tests can leave empty. */
+    backupReminder: @Composable () -> Unit = {},
     onOpen: (SettingsPage) -> Unit = {},
     language: AppLanguage = AppLanguage.SYSTEM,
     onLanguage: (AppLanguage) -> Unit = {}
@@ -104,6 +107,7 @@ fun SettingsScreen(
         ) {
             onOpen(SettingsPage.IMPORT)
         }
+        backupReminder()
         HorizontalDivider()
         Row(
             stringResource(R.string.settings_source),

@@ -27,6 +27,8 @@ fragment = "1.9.1"
 appcompat = "1.8.0"
 lifecycle = "2.11.0"
 navigation = "2.10.2"
+# Daily backup-reminder check (PRD feature 6).
+work = "2.12.0"
 junit = "4.13.2"
 # compileSdk is the SDK we build against; targetSdk opts in to that release's runtime behaviour
 # and follows Play's minimum target requirement.
@@ -58,6 +60,8 @@ androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "b
 androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "work" }
+androidx-work-testing = { module = "androidx.work:work-testing", version.ref = "work" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "androidx-sqlite" }
 sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }

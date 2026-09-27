@@ -40,4 +40,11 @@
         <item quantity="one">%d month</item>
         <item quantity="other">%d months</item>
     </plurals>
+    <!-- Backup reminder banner (PRD feature 6). -->
+    <string name="home_backup_title">Time to back up</string>
+    <plurals name="home_backup_body">
+        <item quantity="one">No export in %d day. Android backup is off for Khata, so a CSV export is the only copy of your data if this phone is lost.</item>
+        <item quantity="other">No export in %d days. Android backup is off for Khata, so a CSV export is the only copy of your data if this phone is lost.</item>
+    </plurals>
+    <string name="home_backup_action">Export now</string>
 </resources>

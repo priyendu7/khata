@@ -17,6 +17,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.androidx.work.runtime)
 
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
@@ -25,6 +26,7 @@ dependencies {
     // The round-trip tests run on a real, in-memory database, like the repository tests.
     testImplementation(project(":core:database"))
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.work.testing)
     // Adds the empty activity that Compose UI tests host their content in (debug builds only).
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

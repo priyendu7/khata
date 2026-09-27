@@ -95,7 +95,7 @@ By the end of this phase you can import your existing spreadsheet and see all th
 - [x] Write down the CSV format in `docs/csv-format.md`
 - [x] CSV export: all data or a date range, saved through the system file picker
 - [x] CSV import: Khata's own format, plus a column-matching step for any other CSV; show a preview and skip duplicates
-- [ ] Backup reminder after 30 days without an export (interval can be changed), using WorkManager
+- [x] Backup reminder after 30 days without an export (interval can be changed), using WorkManager
 - [ ] Tests: CSV export then import gives back the same data, and chart totals match the database totals
 
 ## Phase 3: SMS reading and custom parsers

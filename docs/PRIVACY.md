@@ -28,7 +28,8 @@ The app only asks for permissions a feature needs, and only uses them for that f
 |---|---|---|
 | Use biometrics / use fingerprint | To unlock Khata with your fingerprint or face through Android's own unlock prompt (the app lock). Khata never sees your fingerprint or face; Android only tells it whether unlocking succeeded. No prompt is shown for this permission. | No |
 | Read SMS, receive SMS _(planned, milestone M3)_ | Only if you turn on SMS import: to read bank transaction messages and record them. OTPs, promotions and messages from non-bank senders are ignored. Manual entry works without it. | No — parsed on the phone only |
-| Notifications _(planned)_ | Only if you turn them on: the optional daily summary and the backup reminder, generated on the phone. | No |
+| Notifications | Asked for only when you turn on the backup reminder (and, later, the optional daily summary). The reminder says only that it's time to export a backup, never any amounts or transactions. If you refuse, the reminder shows inside the app instead. | No |
+| Run at startup, prevent phone from sleeping | So the once-a-day backup-reminder check can run briefly and is rescheduled after the phone restarts. No prompt is shown for these. | No |
 
 Khata never asks to send SMS, read your contacts, or use the internet.
 

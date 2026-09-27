@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -36,15 +37,26 @@ import com.openhand.khata.core.ui.incomeColor
 fun HomeScreen(
     title: String,
     modifier: Modifier = Modifier,
+    onBackup: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val summary by viewModel.summary.collectAsStateWithLifecycle()
-    HomeContent(title, summary, modifier)
+    val backupDueDays by viewModel.backupDueDays.collectAsStateWithLifecycle()
+    HomeContent(title, summary, modifier, backupDueDays, onBackup)
 }
 
-/** This month's spending and income, today's spending and the top category. */
+/**
+ * This month's spending and income, today's spending and the top category, with the backup
+ * reminder on top while [backupDueDays] is set.
+ */
 @Composable
-fun HomeContent(title: String, summary: HomeSummary?, modifier: Modifier = Modifier) {
+fun HomeContent(
+    title: String,
+    summary: HomeSummary?,
+    modifier: Modifier = Modifier,
+    backupDueDays: Int? = null,
+    onBackup: () -> Unit = {}
+) {
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenTitle(title)
         // Nothing until the first load, so the totals never flash ₹0.
@@ -53,6 +65,7 @@ fun HomeContent(title: String, summary: HomeSummary?, modifier: Modifier = Modif
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.padding(horizontal = 16.dp)
         ) {
+            backupDueDays?.let { BackupReminderCard(it, onBackup) }
             MonthCard(summary)
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp)) {
@@ -66,6 +79,31 @@ fun HomeContent(title: String, summary: HomeSummary?, modifier: Modifier = Modif
                 icon = painterResource(UiR.drawable.ic_ledger),
                 title = stringResource(R.string.home_empty_title),
                 body = stringResource(R.string.home_empty_body)
+            )
+        }
+    }
+}
+
+/** Android backup is off, so a CSV export is the only copy of the data (PRD feature 6). */
+@Composable
+private fun BackupReminderCard(days: Int, onBackup: () -> Unit) {
+    Card(
+        onClick = onBackup,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                stringResource(R.string.home_backup_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(pluralStringResource(R.plurals.home_backup_body, days, days))
+            Text(
+                stringResource(R.string.home_backup_action),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }

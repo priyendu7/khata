@@ -22,4 +22,12 @@
     <string name="settings_tags_value">Rename, merge and delete</string>
     <string name="settings_payees">Payees</string>
     <string name="settings_payees_value">Names, default categories and tags; merge duplicates</string>
+    <string name="settings_reminder">Backup reminder</string>
+    <string name="settings_reminder_summary">Remind me when I haven\'t exported for a while</string>
+    <string name="settings_reminder_home_only">Notifications are off, so the reminder shows on Home only</string>
+    <string name="settings_reminder_interval">Remind after</string>
+    <plurals name="settings_reminder_days">
+        <item quantity="one">%d day without an export</item>
+        <item quantity="other">%d days without an export</item>
+    </plurals>
 </resources>

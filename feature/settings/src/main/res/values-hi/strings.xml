@@ -20,4 +20,12 @@
     <string name="settings_tags_value">नाम बदलें, मिलाएँ और मिटाएँ</string>
     <string name="settings_payees">पाने वाले</string>
     <string name="settings_payees_value">नाम, तय श्रेणी और टैग; दोहराए गए को मिलाएँ</string>
+    <string name="settings_reminder">बैकअप रिमाइंडर</string>
+    <string name="settings_reminder_summary">कुछ समय से एक्सपोर्ट न करने पर याद दिलाएँ</string>
+    <string name="settings_reminder_home_only">सूचनाएँ बंद हैं, इसलिए रिमाइंडर सिर्फ़ होम पर दिखेगा</string>
+    <string name="settings_reminder_interval">कितने समय बाद याद दिलाएँ</string>
+    <plurals name="settings_reminder_days">
+        <item quantity="one">%d दिन तक कोई एक्सपोर्ट न होने पर</item>
+        <item quantity="other">%d दिन तक कोई एक्सपोर्ट न होने पर</item>
+    </plurals>
 </resources>

@@ -2,6 +2,7 @@ package com.openhand.khata.feature.insights
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.openhand.khata.core.data.BackupReminderRepository
 import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.Totals
@@ -27,7 +28,10 @@ data class HomeSummary(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
-class HomeViewModel @Inject constructor(transactions: TransactionRepository) : ViewModel() {
+class HomeViewModel @Inject constructor(
+    transactions: TransactionRepository,
+    reminders: BackupReminderRepository
+) : ViewModel() {
     /** Null until the first load; then updated live as transactions change. */
     val summary: StateFlow<HomeSummary?> = currentDate()
         .distinctUntilChanged()
@@ -40,6 +44,11 @@ class HomeViewModel @Inject constructor(transactions: TransactionRepository) : V
                 transactions.observeAny()
             ) { month, day, top, any -> HomeSummary(month, day.spentPaise, top, any) }
         }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+
+    /** The reminder interval in days while a backup is due (PRD feature 6), else null. */
+    val backupDueDays: StateFlow<Int?> = reminders.observeDue()
+        .combine(reminders.settings) { due, settings -> settings.interval.days.takeIf { due } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     private companion object {
