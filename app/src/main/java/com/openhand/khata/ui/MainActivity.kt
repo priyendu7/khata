@@ -3,7 +3,7 @@ package com.openhand.khata.ui
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.fragment.app.FragmentActivity
+import androidx.appcompat.app.AppCompatActivity
 import com.openhand.khata.core.security.lock.LockSettings
 import com.openhand.khata.core.ui.KhataTheme
 import com.openhand.khata.feature.lock.LockGate
@@ -11,9 +11,10 @@ import com.openhand.khata.feature.lock.setSecure
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
-// FragmentActivity (not ComponentActivity) because BiometricPrompt needs one.
+// AppCompatActivity: a FragmentActivity (BiometricPrompt needs one) that also applies the in-app
+// language (AppCompatDelegate.setApplicationLocales) on Android 8–12.
 @AndroidEntryPoint
-class MainActivity : FragmentActivity() {
+class MainActivity : AppCompatActivity() {
     @Inject lateinit var lockSettings: LockSettings
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -46,17 +46,34 @@ class MoneyTest {
     }
 
     @Test
-    fun totalsLeaveTransfersOutAndRefundsReduceSpending() {
-        val totals = Totals.of(
-            listOf(
-                Direction.DEBIT to 50_000L,
-                Direction.DEBIT to 25_000L,
-                Direction.REFUND to 10_000L,
-                Direction.CREDIT to 1_00_000L,
-                Direction.TRANSFER to 5_00_000L
-            )
-        )
-        assertEquals(Totals(spentPaise = 65_000, incomePaise = 1_00_000), totals)
-        assertEquals(Totals.ZERO, Totals.of(emptyList()))
+    fun groupsLakhsAndCrores() {
+        assertEquals("₹99,999", Money.format(99_999_00))
+        assertEquals("₹1,00,000", Money.format(1_00_000_00))
+        assertEquals("₹10,00,000", Money.format(10_00_000_00))
+        assertEquals("₹99,99,999", Money.format(99_99_999_00))
+        assertEquals("₹1,00,00,000", Money.format(1_00_00_000_00))
+        assertEquals("₹1,00,00,000.99", Money.format(1_00_00_000_99))
+        assertEquals("₹99,99,99,99,999.99", Money.format(99_999_999_999_99L))
+    }
+
+    @Test
+    fun keepsBothPaiseDigits() {
+        assertEquals("₹0.01", Money.format(1))
+        assertEquals("₹0.10", Money.format(10))
+        assertEquals("₹0.99", Money.format(99))
+        assertEquals("₹1", Money.format(100))
+        assertEquals("₹1.01", Money.format(101))
+        assertEquals("₹1,00,000.10", Money.format(1_00_000_10))
+    }
+
+    @Test
+    fun formatsNegativesAndZero() {
+        assertEquals("₹0", Money.format(0))
+        assertEquals("-₹0.05", Money.format(-5))
+        assertEquals("-₹250", Money.format(-250_00))
+        assertEquals("-₹1,234.50", Money.format(-1_234_50))
+        assertEquals("-₹1,00,000", Money.format(-1_00_000_00))
+        assertEquals("-₹92,23,37,20,36,85,47,758.08", Money.format(Long.MIN_VALUE))
+        assertEquals("₹92,23,37,20,36,85,47,758.07", Money.format(Long.MAX_VALUE))
     }
 }

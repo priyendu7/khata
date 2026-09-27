@@ -4,4 +4,4 @@
 
 **Built in:** Phase 1 (language), Phase 2 (backup reminder), Phase 3 (SMS, parsers). See [`docs/DEVELOPMENT_PLAN.md`](../../docs/DEVELOPMENT_PLAN.md).
 
-**Module:** `:feature:settings` · package `com.openhand.khata.feature.settings` · Android library (`khata.android.library` + `khata.android.compose`).
+**Module:** `:feature:settings` · package `com.openhand.khata.feature.settings` · Android library (`khata.android.library` + `khata.android.compose` + `khata.android.hilt`).

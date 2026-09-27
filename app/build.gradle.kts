@@ -106,6 +106,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(project(":core:security"))
     implementation(libs.androidx.fragment)
+    implementation(libs.androidx.appcompat)
 
     // Feature dependencies from docs/DEVELOPMENT_PLAN.md are added during feature work, in the PR that uses them.
 

@@ -9,9 +9,16 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.openhand.khata.core.ui.Choice
+import com.openhand.khata.core.ui.ChoiceDialog
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
 
@@ -23,26 +30,36 @@ fun SettingsRoute(
     onOpen: (SettingsPage) -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
+    // Changing it recreates the activity, so this is read afresh in the new language.
+    var language by remember { mutableStateOf(AppLanguage.current()) }
     SettingsScreen(
         versionName = viewModel.versionName,
         modifier = modifier,
         lockSettings = lockSettings,
-        onOpen = onOpen
+        onOpen = onOpen,
+        language = language,
+        onLanguage = {
+            language = it
+            it.applyToApp()
+        }
     )
 }
 
 /** Screens that Settings opens; :app maps them to navigation routes. */
 enum class SettingsPage { ACCOUNTS, CATEGORIES, TAGS, PAYEES }
 
-// TODO(Phase 1-3): language switch, backup reminder and parsers become real settings.
+// TODO(Phase 2-3): backup reminder and parsers become real settings.
 @Composable
 fun SettingsScreen(
     versionName: String,
     modifier: Modifier = Modifier,
     /** App lock rows, supplied by :feature:lock through :app (features don't depend on each other). */
     lockSettings: @Composable () -> Unit = {},
-    onOpen: (SettingsPage) -> Unit = {}
+    onOpen: (SettingsPage) -> Unit = {},
+    language: AppLanguage = AppLanguage.SYSTEM,
+    onLanguage: (AppLanguage) -> Unit = {}
 ) {
+    var choosingLanguage by rememberSaveable { mutableStateOf(false) }
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenTitle(stringResource(UiR.string.nav_settings))
         Row(
@@ -72,10 +89,9 @@ fun SettingsScreen(
             stringResource(R.string.settings_privacy_value)
         )
         lockSettings()
-        Row(
-            stringResource(R.string.settings_language),
-            stringResource(R.string.settings_language_value)
-        )
+        Row(stringResource(R.string.settings_language), languageName(language)) {
+            choosingLanguage = true
+        }
         Row(
             stringResource(R.string.settings_backup),
             stringResource(R.string.settings_backup_value)
@@ -87,7 +103,29 @@ fun SettingsScreen(
         )
         Row(stringResource(R.string.settings_version), versionName)
     }
+    if (choosingLanguage) {
+        ChoiceDialog(
+            title = stringResource(R.string.settings_language),
+            choices = AppLanguage.entries.map { Choice(it, languageName(it)) },
+            selected = language,
+            onSelect = {
+                choosingLanguage = false
+                if (it != language) onLanguage(it)
+            },
+            onDismiss = { choosingLanguage = false }
+        )
+    }
 }
+
+/** English and हिन्दी are always written in their own script, so either can be found. */
+@Composable
+private fun languageName(language: AppLanguage) = stringResource(
+    when (language) {
+        AppLanguage.SYSTEM -> R.string.language_system
+        AppLanguage.ENGLISH -> R.string.language_english
+        AppLanguage.HINDI -> R.string.language_hindi
+    }
+)
 
 @Composable
 private fun Row(title: String, value: String, onClick: (() -> Unit)? = null) {

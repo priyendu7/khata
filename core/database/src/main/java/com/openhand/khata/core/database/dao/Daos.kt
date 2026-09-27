@@ -43,6 +43,21 @@ data class TransactionRow(
     }
 }
 
+/**
+ * Spending and income over a period. Spent is expenses minus refunds; transfers count as neither
+ * (the same rules as `Totals.of` in :core:model).
+ */
+data class TotalsRow(
+    @ColumnInfo(name = "spent_paise") val spentPaise: Long,
+    @ColumnInfo(name = "income_paise") val incomePaise: Long
+)
+
+/** A category and its spending (expenses minus refunds) over a period. */
+data class CategorySpendRow(
+    @Embedded(prefix = "category_") val category: CategoryEntity,
+    @ColumnInfo(name = "spent_paise") val spentPaise: Long
+)
+
 /** A payee with its default tag names and how many transactions it has. */
 data class PayeeRow(
     val id: Long,
@@ -302,6 +317,36 @@ interface TransactionDao {
 
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("SELECT EXISTS (SELECT 1 FROM transactions)")
+    fun observeAny(): Flow<Boolean>
+
+    /** Totals for timestamps in [from, until). Transfers are left out; refunds reduce spending. */
+    @Query(
+        "SELECT COALESCE(SUM(CASE direction WHEN 'debit' THEN amount_paise " +
+            "WHEN 'refund' THEN -amount_paise ELSE 0 END), 0) AS spent_paise, " +
+            "COALESCE(SUM(CASE direction WHEN 'credit' THEN amount_paise ELSE 0 END), 0) " +
+            "AS income_paise " +
+            "FROM transactions WHERE timestamp >= :from AND timestamp < :until"
+    )
+    fun observeTotals(from: Long, until: Long): Flow<TotalsRow>
+
+    /**
+     * The category with the most spending (expenses minus refunds) for timestamps in
+     * [from, until), or null when nothing was spent. Ties go to the older category.
+     */
+    @Query(
+        "SELECT c.id AS category_id, c.name AS category_name, " +
+            "c.seed_key AS category_seed_key, c.color AS category_color, " +
+            "c.icon AS category_icon, c.archived AS category_archived, " +
+            "SUM(CASE t.direction WHEN 'debit' THEN t.amount_paise ELSE -t.amount_paise END) " +
+            "AS spent_paise " +
+            "FROM transactions t JOIN categories c ON c.id = t.category_id " +
+            "WHERE t.direction IN ('debit', 'refund') " +
+            "AND t.timestamp >= :from AND t.timestamp < :until " +
+            "GROUP BY c.id HAVING spent_paise > 0 ORDER BY spent_paise DESC, c.id LIMIT 1"
+    )
+    fun observeTopCategory(from: Long, until: Long): Flow<CategorySpendRow?>
 
     /**
      * The transactions list, newest first. Each null argument means "any"; the rest combine.

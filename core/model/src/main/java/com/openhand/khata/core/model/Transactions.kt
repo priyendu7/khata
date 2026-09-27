@@ -77,3 +77,6 @@ data class Totals(val spentPaise: Long, val incomePaise: Long) {
         }
     }
 }
+
+/** How much went to [category] over a period: its expenses minus its refunds. */
+data class CategorySpend(val category: Category, val spentPaise: Long)

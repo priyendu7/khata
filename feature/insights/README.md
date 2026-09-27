@@ -4,4 +4,4 @@
 
 **Built in:** Phase 1 (home summary); Phase 2 (charts). See [`docs/DEVELOPMENT_PLAN.md`](../../docs/DEVELOPMENT_PLAN.md).
 
-**Module:** `:feature:insights` · package `com.openhand.khata.feature.insights` · Android library (`khata.android.library` + `khata.android.compose`).
+**Module:** `:feature:insights` · package `com.openhand.khata.feature.insights` · Android library (`khata.android.library` + `khata.android.compose` + `khata.android.hilt`).
