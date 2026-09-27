@@ -30,6 +30,10 @@ import com.openhand.khata.feature.payees.PayeesScreen
 import com.openhand.khata.feature.settings.SettingsPage
 import com.openhand.khata.feature.settings.SettingsRoute
 import com.openhand.khata.feature.transactions.AddTransactionButton
+import com.openhand.khata.feature.transactions.FILTER_CATEGORY_ARG
+import com.openhand.khata.feature.transactions.FILTER_FROM_ARG
+import com.openhand.khata.feature.transactions.FILTER_UNTIL_ARG
+import com.openhand.khata.feature.transactions.NO_FILTER
 import com.openhand.khata.feature.transactions.TRANSACTION_ID_ARG
 import com.openhand.khata.feature.transactions.TransactionEditorScreen
 import com.openhand.khata.feature.transactions.TransactionsScreen
@@ -43,7 +47,24 @@ fun KhataNavigation() {
         composable(Route.TABS) {
             MainTabs(
                 onOpen = { page -> navController.navigate(page.route()) },
-                onOpenTransaction = { id -> navController.navigate(Route.transaction(id)) }
+                onOpenTransaction = { id -> navController.navigate(Route.transaction(id)) },
+                onOpenTransactions = { categoryId, from, until ->
+                    navController.navigate(Route.transactions(categoryId, from, until))
+                }
+            )
+        }
+        composable(
+            Route.TRANSACTIONS,
+            arguments = listOf(FILTER_CATEGORY_ARG, FILTER_FROM_ARG, FILTER_UNTIL_ARG).map {
+                navArgument(it) {
+                    type = NavType.LongType
+                    defaultValue = NO_FILTER
+                }
+            }
+        ) {
+            TransactionsScreen(
+                onOpen = { id -> navController.navigate(Route.transaction(id)) },
+                onBack = back
             )
         }
         composable(
@@ -68,6 +89,14 @@ private object Route {
     const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}"
 
     fun transaction(id: Long) = "transaction/$id"
+
+    /** The transactions list, filtered by a category (null for any) and a date range. */
+    const val TRANSACTIONS = "transactions?$FILTER_CATEGORY_ARG={$FILTER_CATEGORY_ARG}" +
+        "&$FILTER_FROM_ARG={$FILTER_FROM_ARG}&$FILTER_UNTIL_ARG={$FILTER_UNTIL_ARG}"
+
+    fun transactions(categoryId: Long?, from: Long, until: Long) =
+        "transactions?$FILTER_CATEGORY_ARG=${categoryId ?: NO_FILTER}" +
+            "&$FILTER_FROM_ARG=$from&$FILTER_UNTIL_ARG=$until"
 }
 
 private fun SettingsPage.route() = when (this) {
@@ -79,7 +108,11 @@ private fun SettingsPage.route() = when (this) {
 
 /** Bottom-navigation shell: Home, Transactions, Insights, Settings. */
 @Composable
-private fun MainTabs(onOpen: (SettingsPage) -> Unit, onOpenTransaction: (Long) -> Unit) {
+private fun MainTabs(
+    onOpen: (SettingsPage) -> Unit,
+    onOpenTransaction: (Long) -> Unit,
+    onOpenTransactions: (categoryId: Long?, from: Long, until: Long) -> Unit
+) {
     var current by rememberSaveable { mutableStateOf(Destination.HOME) }
     Scaffold(
         floatingActionButton = {
@@ -109,7 +142,7 @@ private fun MainTabs(onOpen: (SettingsPage) -> Unit, onOpenTransaction: (Long) -
         when (current) {
             Destination.HOME -> HomeScreen(stringResource(R.string.app_name), modifier)
             Destination.TRANSACTIONS -> TransactionsScreen(onOpenTransaction, modifier)
-            Destination.INSIGHTS -> InsightsScreen(modifier)
+            Destination.INSIGHTS -> InsightsScreen(onOpenTransactions, modifier)
             Destination.SETTINGS -> SettingsRoute(modifier, lockSettings = {
                 LockSettingsSection()
             }, onOpen = onOpen)

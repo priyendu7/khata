@@ -162,7 +162,7 @@ The app is a native Android app written in Kotlin with Jetpack Compose. It suppo
 | Language / UI | Kotlin, Jetpack Compose, Material 3, with English and Hindi strings | Modern and well supported; Material 3 matches the phone's own colors (dynamic color) |
 | Architecture | MVVM, one module per feature, Hilt for wiring | Easy to test, and easy for outside contributors to work in |
 | Storage | Room + SQLCipher, Android Keystore for the key | Encrypted, and fully offline |
-| Charts | Vico for the pie and bar charts; a custom Compose Canvas for the calendar heatmap | Vico is open source and built for Compose; no library offers a GitHub-style heatmap |
+| Charts | Compose Canvas for all three charts (donut, bars and calendar heatmap), with one shared chart theme | No chart library is on the release dependency allowlist, and no library offers a GitHub-style heatmap, which needs Canvas anyway |
 | Security | androidx.biometric, FLAG_SECURE | App lock and hiding the screen in recent apps |
 | Background work | WorkManager | Daily summary and backup reminders |
 | SMS | BroadcastReceiver for new SMS, plus a one-time inbox scan | Parsers are pure Kotlin with unit tests |

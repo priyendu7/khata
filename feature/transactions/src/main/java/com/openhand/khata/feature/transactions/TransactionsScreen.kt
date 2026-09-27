@@ -46,9 +46,11 @@ import com.openhand.khata.core.model.TransactionListItem
 import com.openhand.khata.core.ui.CategoryBadge
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
+import com.openhand.khata.core.ui.DateRangeDialog
 import com.openhand.khata.core.ui.EmptyState
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
+import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.categoryName
 import java.time.Instant
 import java.time.LocalDate
@@ -65,18 +67,36 @@ fun AddTransactionButton(onClick: () -> Unit) {
     }
 }
 
-/** Every transaction, newest first and grouped by day, with search and filters. */
+/**
+ * Every transaction, newest first and grouped by day, with search and filters. Opened from another
+ * screen (with [onBack]), it has a back arrow and starts with the filters it was opened with.
+ */
 @Composable
 fun TransactionsScreen(
     onOpen: (transactionId: Long) -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
     viewModel: TransactionsViewModel = hiltViewModel()
 ) {
+    val title = stringResource(UiR.string.nav_transactions)
+    if (onBack == null) {
+        Column(modifier.fillMaxSize()) {
+            ScreenTitle(title)
+            TransactionList(onOpen, viewModel)
+        }
+    } else {
+        SubScreen(title, onBack, modifier) { padding ->
+            Column(Modifier.fillMaxSize().padding(padding)) { TransactionList(onOpen, viewModel) }
+        }
+    }
+}
+
+@Composable
+private fun TransactionList(onOpen: (Long) -> Unit, viewModel: TransactionsViewModel) {
     val filter by viewModel.filter.collectAsStateWithLifecycle()
     val state by viewModel.days.collectAsStateWithLifecycle()
 
-    Column(modifier.fillMaxSize()) {
-        ScreenTitle(stringResource(UiR.string.nav_transactions))
+    Column {
         SearchField(filter.query, viewModel::setQuery)
         FilterRow(filter, viewModel)
         val days = state?.days

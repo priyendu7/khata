@@ -8,9 +8,17 @@
     <string name="home_top_category">इस महीने सबसे ज़्यादा खर्च</string>
     <string name="home_empty_title">अभी कोई लेन-देन नहीं</string>
     <string name="home_empty_body">आय या खर्च जोड़ने के लिए + दबाएँ। आप जो भी जोड़ेंगे, वह इसी फ़ोन पर रहेगा।</string>
-    <string name="insights_heatmap_title">रोज़ का खर्च</string>
-    <string name="insights_less">कम</string>
-    <string name="insights_more">ज़्यादा</string>
-    <string name="insights_empty_title">लेन-देन जोड़ते ही चार्ट भरेंगे</string>
-    <string name="insights_empty_body">लेन-देन जोड़ने के बाद आप श्रेणी के हिसाब से खर्च, खर्च का कैलेंडर और महीने-दर-महीने तुलना देख पाएँगे।</string>
+    <string name="insights_period_week">हफ़्ता</string>
+    <string name="insights_period_month">महीना</string>
+    <string name="insights_period_year">साल</string>
+    <string name="insights_period_custom">अपनी तारीख़ें</string>
+    <string name="insights_by_category">श्रेणी के हिसाब से खर्च</string>
+    <string name="insights_spent">खर्च</string>
+    <string name="insights_other">अन्य</string>
+    <string name="insights_share">%1$d%%</string>
+    <string name="insights_slice_description">%1$s, %2$s, खर्च का %3$d%%</string>
+    <string name="insights_refunded_title">खर्च से ज़्यादा रिफ़ंड</string>
+    <string name="insights_refunded_body">चार्ट में नहीं, पर कुल में गिना गया है।</string>
+    <string name="insights_nothing_spent_title">इस अवधि में कोई खर्च नहीं</string>
+    <string name="insights_nothing_spent_body">कोई और अवधि चुनें, या होम या लेन-देन से खर्च जोड़ें।</string>
 </resources>

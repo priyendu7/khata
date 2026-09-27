@@ -1,5 +1,6 @@
 package com.openhand.khata.feature.transactions
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openhand.khata.core.data.AccountRepository
@@ -29,18 +30,31 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
+/** Navigation arguments that open the list already filtered; [NO_FILTER] (or none) means "any". */
+const val FILTER_CATEGORY_ARG = "category"
+const val FILTER_FROM_ARG = "from"
+const val FILTER_UNTIL_ARG = "until"
+const val NO_FILTER = -1L
+
 /** What the list shows: the filter, and the days that match it (null until the first load). */
 data class ListState(val filter: TransactionFilter, val days: List<DaySection>?)
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
 class TransactionsViewModel @Inject constructor(
+    savedState: SavedStateHandle,
     private val transactions: TransactionRepository,
     categories: CategoryRepository,
     tags: TagRepository,
     accounts: AccountRepository
 ) : ViewModel() {
-    private val _filter = MutableStateFlow(TransactionFilter())
+    private val _filter = MutableStateFlow(
+        TransactionFilter(
+            categoryId = savedState.filterArg(FILTER_CATEGORY_ARG),
+            from = savedState.filterArg(FILTER_FROM_ARG),
+            until = savedState.filterArg(FILTER_UNTIL_ARG)
+        )
+    )
     val filter: StateFlow<TransactionFilter> = _filter.asStateFlow()
 
     /** The matching transactions grouped by day; typing in search waits for a short pause. */
@@ -92,3 +106,6 @@ class TransactionsViewModel @Inject constructor(
         const val SEARCH_DEBOUNCE_MILLIS = 200L
     }
 }
+
+private fun SavedStateHandle.filterArg(key: String): Long? =
+    get<Long>(key)?.takeUnless { it == NO_FILTER }

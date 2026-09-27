@@ -7,9 +7,17 @@
     <string name="home_top_category">Top category this month</string>
     <string name="home_empty_title">No transactions yet</string>
     <string name="home_empty_body">Tap + to add income or an expense. Everything you add stays on this phone.</string>
-    <string name="insights_heatmap_title">Spending by day</string>
-    <string name="insights_less">Less</string>
-    <string name="insights_more">More</string>
-    <string name="insights_empty_title">Charts fill in as you go</string>
-    <string name="insights_empty_body">Once you add transactions, you\'ll see spending by category, a calendar of your spending and a month-by-month comparison.</string>
+    <string name="insights_period_week">Week</string>
+    <string name="insights_period_month">Month</string>
+    <string name="insights_period_year">Year</string>
+    <string name="insights_period_custom">Custom</string>
+    <string name="insights_by_category">Spending by category</string>
+    <string name="insights_spent">Spent</string>
+    <string name="insights_other">Other</string>
+    <string name="insights_share">%1$d%%</string>
+    <string name="insights_slice_description">%1$s, %2$s, %3$d%% of spending</string>
+    <string name="insights_refunded_title">More refunded than spent</string>
+    <string name="insights_refunded_body">Not in the chart, but counted in the total.</string>
+    <string name="insights_nothing_spent_title">Nothing spent in this period</string>
+    <string name="insights_nothing_spent_body">Pick another period, or add expenses from Home or Transactions.</string>
 </resources>

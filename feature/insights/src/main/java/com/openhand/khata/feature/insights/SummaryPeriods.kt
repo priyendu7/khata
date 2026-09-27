@@ -1,5 +1,6 @@
 package com.openhand.khata.feature.insights
 
+import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
@@ -20,13 +21,13 @@ data class SummaryPeriods(
 ) {
     companion object {
         fun of(today: LocalDate, zone: ZoneId): SummaryPeriods {
-            fun LocalDate.start() = atStartOfDay(zone).toInstant().toEpochMilli()
-            val firstOfMonth = today.withDayOfMonth(1)
+            val month = DateSpan.of(ChartPeriod.MONTH, today, DayOfWeek.MONDAY)
+            val day = DateSpan(today, today)
             return SummaryPeriods(
-                monthFrom = firstOfMonth.start(),
-                monthUntil = firstOfMonth.plusMonths(1).start(),
-                todayFrom = today.start(),
-                todayUntil = today.plusDays(1).start()
+                monthFrom = month.from(zone),
+                monthUntil = month.until(zone),
+                todayFrom = day.from(zone),
+                todayUntil = day.until(zone)
             )
         }
     }
@@ -34,7 +35,8 @@ data class SummaryPeriods(
 
 /**
  * Today's date, emitted again just after each midnight so "today" and "this month" roll over while
- * Home is open. (Home stops collecting in the background and starts afresh when it's back.)
+ * Home or Insights is open. (Screens stop collecting in the background and start afresh when
+ * they're back.)
  */
 internal fun currentDate(): Flow<LocalDate> = flow {
     while (true) {

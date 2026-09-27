@@ -349,6 +349,24 @@ interface TransactionDao {
     fun observeTopCategory(from: Long, until: Long): Flow<CategorySpendRow?>
 
     /**
+     * Every category's spending (expenses minus refunds) for timestamps in [from, until), biggest
+     * first, with the same rules as [observeTopCategory]. A category with more refunds than
+     * spending comes last with a negative total; categories that net to zero are left out.
+     */
+    @Query(
+        "SELECT c.id AS category_id, c.name AS category_name, " +
+            "c.seed_key AS category_seed_key, c.color AS category_color, " +
+            "c.icon AS category_icon, c.archived AS category_archived, " +
+            "SUM(CASE t.direction WHEN 'debit' THEN t.amount_paise ELSE -t.amount_paise END) " +
+            "AS spent_paise " +
+            "FROM transactions t JOIN categories c ON c.id = t.category_id " +
+            "WHERE t.direction IN ('debit', 'refund') " +
+            "AND t.timestamp >= :from AND t.timestamp < :until " +
+            "GROUP BY c.id HAVING spent_paise != 0 ORDER BY spent_paise DESC, c.id"
+    )
+    fun observeCategorySpending(from: Long, until: Long): Flow<List<CategorySpendRow>>
+
+    /**
      * The transactions list, newest first. Each null argument means "any"; the rest combine.
      * [query] matches the payee name or note and must have `%`, `_` and `\` escaped with `\`.
      */

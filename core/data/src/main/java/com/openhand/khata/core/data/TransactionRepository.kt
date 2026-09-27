@@ -50,6 +50,14 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
         db.observe { it.transactionDao().observeTopCategory(from, until) }
             .map { row -> row?.let { CategorySpend(it.category.toModel(), it.spentPaise) } }
 
+    /**
+     * Every category's spending in [from, until), biggest first, with the same rules as
+     * [observeTotals]: added up, they give its spent figure. Refunds beyond spending are negative.
+     */
+    fun observeCategorySpending(from: Long, until: Long): Flow<List<CategorySpend>> =
+        db.observe { it.transactionDao().observeCategorySpending(from, until) }
+            .map { rows -> rows.map { CategorySpend(it.category.toModel(), it.spentPaise) } }
+
     /** The transaction with [id] as the edit screen shows it, or null if it's gone. */
     suspend fun get(id: Long): Transaction? = db.io { database ->
         val dao = database.transactionDao()
