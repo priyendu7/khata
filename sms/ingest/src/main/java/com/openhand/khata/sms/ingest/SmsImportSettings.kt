@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * the database; it holds only a switch and counts, no SMS or transactions.
  */
 @Singleton
-class SmsImportSettings @Inject constructor(@ApplicationContext context: Context) {
+class SmsImportSettings @Inject constructor(@ApplicationContext private val context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private val _enabled = MutableStateFlow(prefs.getBoolean(ENABLED, false))
     private val _lastScan = MutableStateFlow(readSummary())
@@ -23,9 +23,17 @@ class SmsImportSettings @Inject constructor(@ApplicationContext context: Context
     val enabled: StateFlow<Boolean> = _enabled.asStateFlow()
     val lastScan: StateFlow<ScanSummary?> = _lastScan.asStateFlow()
 
+    /**
+     * Brings the new-SMS receiver in line with the switch. Call at app start: the receiver starts
+     * disabled in the manifest, and may be out of step after an update.
+     */
+    fun syncReceiver() = SmsReceiver.setEnabled(context, _enabled.value)
+
+    /** Also turns the new-SMS receiver on or off. */
     fun setEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(ENABLED, enabled).apply()
         _enabled.value = enabled
+        SmsReceiver.setEnabled(context, enabled)
     }
 
     fun saveSummary(summary: ScanSummary) {

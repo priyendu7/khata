@@ -38,14 +38,14 @@
     <string name="sms_point_ignored">OTPs, offers and reminders are ignored.</string>
     <string name="sms_point_private">Everything stays on this phone. Khata has no internet access and never sends SMS.</string>
     <string name="sms_switch">Read bank SMS</string>
-    <string name="sms_switch_on">On</string>
+    <string name="sms_switch_on">On. New bank SMS are recorded as they arrive.</string>
     <string name="sms_switch_off">Off. Adding transactions by hand works without it.</string>
     <string name="sms_refused">Permission not given. Adding transactions by hand still works.</string>
     <string name="sms_blocked">The SMS permission is turned off for Khata. To use SMS import, allow it in the app settings.</string>
     <string name="sms_still_allowed">Khata still has the SMS permission. To remove it too, open the app settings.</string>
     <string name="sms_open_settings">Open app settings</string>
     <string name="sms_import_title">Import past SMS</string>
-    <string name="sms_import_note">Records bank SMS already on this phone. Run it again at any time: transactions already saved are skipped.</string>
+    <string name="sms_import_note">Records bank SMS that were already on this phone. Transactions already saved are skipped.</string>
     <string name="sms_import_from">From</string>
     <string name="sms_import_button">Import</string>
     <string name="sms_import_starting">Starting…</string>
