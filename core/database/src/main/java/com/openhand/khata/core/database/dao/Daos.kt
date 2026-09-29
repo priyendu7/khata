@@ -121,6 +121,10 @@ interface AccountDao {
     @Query("SELECT * FROM accounts WHERE name = :name COLLATE NOCASE ORDER BY id LIMIT 1")
     suspend fun getByName(name: String): AccountEntity?
 
+    /** Accounts with these last 4 digits (or with none, for null), oldest first. For SMS import. */
+    @Query("SELECT * FROM accounts WHERE last4 IS :last4 ORDER BY id")
+    suspend fun getByLast4(last4: String?): List<AccountEntity>
+
     @Query("SELECT COUNT(*) FROM transactions WHERE account_id = :accountId")
     suspend fun transactionCount(accountId: Long): Int
 
@@ -485,4 +489,40 @@ interface BackupDao {
             "FROM transactions t LEFT JOIN payees p ON p.id = t.payee_id"
     )
     suspend fun duplicateKeys(): List<DuplicateKeyRow>
+}
+
+/** The duplicate checks SMS import runs before saving (sms/ingest via SmsImporter). */
+@Dao
+interface SmsImportDao {
+    /** A transaction saved from exactly this SMS text within [from, until]. */
+    @Query(
+        "SELECT id FROM transactions WHERE raw_sms = :rawSms " +
+            "AND timestamp BETWEEN :from AND :until LIMIT 1"
+    )
+    suspend fun findSameSms(rawSms: String, from: Long, until: Long): Long?
+
+    /**
+     * The transaction nearest [at] within [from, until] with this amount and direction, on this
+     * account or on none (manual and CSV entries often have no account), whose reference number
+     * doesn't contradict [referenceNo].
+     */
+    @Query(
+        "SELECT id FROM transactions WHERE amount_paise = :amountPaise " +
+            "AND direction = :direction " +
+            "AND (account_id IS :accountId OR account_id IS NULL) " +
+            "AND timestamp BETWEEN :from AND :until " +
+            "AND (reference_no IS NULL OR :referenceNo IS NULL) " +
+            "ORDER BY ABS(timestamp - :at), id LIMIT 1"
+    )
+    // Room binds query arguments only from parameters, so each one needs its own.
+    @Suppress("LongParameterList")
+    suspend fun findNear(
+        amountPaise: Long,
+        direction: Direction,
+        accountId: Long?,
+        referenceNo: String?,
+        at: Long,
+        from: Long,
+        until: Long
+    ): Long?
 }
