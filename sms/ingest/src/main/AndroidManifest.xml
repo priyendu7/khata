@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- New bank SMS (PRD feature 7). Off until the user turns SMS import on, which enables
+             this component (SmsReceiver.setEnabled). BROADCAST_SMS means only the system can
+             deliver to it. The READ_SMS / RECEIVE_SMS permissions are declared by :app. -->
+        <receiver
+            android:name=".SmsReceiver"
+            android:enabled="false"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

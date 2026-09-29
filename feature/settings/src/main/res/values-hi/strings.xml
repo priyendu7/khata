@@ -36,14 +36,14 @@
     <string name="sms_point_ignored">OTP, ऑफ़र और रिमाइंडर अनदेखे किए जाते हैं।</string>
     <string name="sms_point_private">सब कुछ इसी फ़ोन पर रहता है। खाता के पास इंटरनेट की अनुमति नहीं है और यह कभी SMS नहीं भेजता।</string>
     <string name="sms_switch">बैंक SMS पढ़ें</string>
-    <string name="sms_switch_on">चालू</string>
+    <string name="sms_switch_on">चालू। नए बैंक SMS आते ही दर्ज हो जाते हैं।</string>
     <string name="sms_switch_off">बंद। लेन-देन हाथ से जोड़ना इसके बिना भी काम करता है।</string>
     <string name="sms_refused">अनुमति नहीं मिली। लेन-देन हाथ से जोड़ना अब भी काम करता है।</string>
     <string name="sms_blocked">खाता के लिए SMS की अनुमति बंद है। SMS इम्पोर्ट के लिए ऐप सेटिंग्स में इसे चालू करें।</string>
     <string name="sms_still_allowed">खाता के पास अब भी SMS की अनुमति है। उसे भी हटाने के लिए ऐप सेटिंग्स खोलें।</string>
     <string name="sms_open_settings">ऐप सेटिंग्स खोलें</string>
     <string name="sms_import_title">पुराने SMS इम्पोर्ट करें</string>
-    <string name="sms_import_note">इस फ़ोन पर पहले से मौजूद बैंक SMS दर्ज करता है। इसे कभी भी दोबारा चलाएँ: पहले से सहेजे गए लेन-देन छोड़ दिए जाते हैं।</string>
+    <string name="sms_import_note">इस फ़ोन पर पहले से मौजूद बैंक SMS दर्ज करता है। पहले से सहेजे गए लेन-देन छोड़ दिए जाते हैं।</string>
     <string name="sms_import_from">कब से</string>
     <string name="sms_import_button">इम्पोर्ट करें</string>
     <string name="sms_import_starting">शुरू हो रहा है…</string>
