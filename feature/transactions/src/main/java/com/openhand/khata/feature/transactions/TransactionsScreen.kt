@@ -76,12 +76,16 @@ fun TransactionsScreen(
     onOpen: (transactionId: Long) -> Unit,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
-    viewModel: TransactionsViewModel = hiltViewModel()
+    onReview: () -> Unit = {},
+    viewModel: TransactionsViewModel = hiltViewModel(),
+    reviewCount: ReviewCountViewModel = hiltViewModel()
 ) {
     val title = stringResource(UiR.string.nav_transactions)
     if (onBack == null) {
+        val toReview by reviewCount.count.collectAsStateWithLifecycle()
         Column(modifier.fillMaxSize()) {
             ScreenTitle(title)
+            if (toReview > 0) ReviewBanner(toReview, onReview)
             TransactionList(onOpen, viewModel)
         }
     } else {

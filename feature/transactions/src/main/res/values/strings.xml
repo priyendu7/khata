@@ -43,4 +43,25 @@
     <string name="transaction_delete">Delete transaction</string>
     <string name="transaction_delete_title">Delete this transaction?</string>
     <string name="transaction_delete_body">It will be removed for good. This can\'t be undone.</string>
+    <string name="review_title">To review</string>
+    <plurals name="review_left">
+        <item quantity="one">%d left</item>
+        <item quantity="other">%d left</item>
+    </plurals>
+    <string name="review_from_sms">In the SMS: %1$s</string>
+    <string name="review_show_sms">Show the SMS</string>
+    <string name="review_hide_sms">Hide the SMS</string>
+    <string name="review_payee_name">Payee name</string>
+    <plurals name="review_fills_others">
+        <item quantity="one">Saving also fills in %d more from this payee.</item>
+        <item quantity="other">Saving also fills in %d more from this payee.</item>
+    </plurals>
+    <string name="review_skip">Skip</string>
+    <string name="review_save">Save</string>
+    <string name="review_done_title">All caught up</string>
+    <string name="review_done_body">New payees from bank SMS show up here. Name each one once, and later payments to it are filled in for you.</string>
+    <plurals name="review_banner">
+        <item quantity="one">%d transaction to review</item>
+        <item quantity="other">%d transactions to review</item>
+    </plurals>
 </resources>

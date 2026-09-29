@@ -106,6 +106,9 @@ dependencies {
     implementation(project(":sms:ingest"))
     implementation(project(":core:data"))
     implementation(libs.androidx.navigation.compose)
+    // The To review badge on the Transactions tab reads its count from a ViewModel.
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(project(":core:security"))
     implementation(libs.androidx.fragment)
     implementation(libs.androidx.appcompat)

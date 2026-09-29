@@ -38,16 +38,18 @@ fun HomeScreen(
     title: String,
     modifier: Modifier = Modifier,
     onBackup: () -> Unit = {},
+    onReview: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val backupDueDays by viewModel.backupDueDays.collectAsStateWithLifecycle()
-    HomeContent(title, summary, modifier, backupDueDays, onBackup)
+    val reviewCount by viewModel.reviewCount.collectAsStateWithLifecycle()
+    HomeContent(title, summary, modifier, backupDueDays, onBackup, reviewCount, onReview)
 }
 
 /**
  * This month's spending and income, today's spending and the top category, with the backup
- * reminder on top while [backupDueDays] is set.
+ * reminder on top while [backupDueDays] is set, and the To review count while [reviewCount] > 0.
  */
 @Composable
 fun HomeContent(
@@ -55,7 +57,9 @@ fun HomeContent(
     summary: HomeSummary?,
     modifier: Modifier = Modifier,
     backupDueDays: Int? = null,
-    onBackup: () -> Unit = {}
+    onBackup: () -> Unit = {},
+    reviewCount: Int = 0,
+    onReview: () -> Unit = {}
 ) {
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenTitle(title)
@@ -65,6 +69,7 @@ fun HomeContent(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.padding(horizontal = 16.dp)
         ) {
+            if (reviewCount > 0) ReviewCard(reviewCount, onReview)
             backupDueDays?.let { BackupReminderCard(it, onBackup) }
             MonthCard(summary)
             Card(modifier = Modifier.fillMaxWidth()) {
@@ -85,6 +90,30 @@ fun HomeContent(
 }
 
 /** Android backup is off, so a CSV export is the only copy of the data (PRD feature 6). */
+@Composable
+private fun ReviewCard(count: Int, onReview: () -> Unit) {
+    Card(
+        onClick = onReview,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                pluralStringResource(R.plurals.home_review_title, count, count),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(stringResource(R.string.home_review_body))
+            Text(
+                stringResource(R.string.home_review_action),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
 @Composable
 private fun BackupReminderCard(days: Int, onBackup: () -> Unit) {
     Card(

@@ -7,6 +7,7 @@ import com.openhand.khata.core.database.dao.AccountDao
 import com.openhand.khata.core.database.dao.BackupDao
 import com.openhand.khata.core.database.dao.CategoryDao
 import com.openhand.khata.core.database.dao.PayeeDao
+import com.openhand.khata.core.database.dao.ReviewDao
 import com.openhand.khata.core.database.dao.SmsImportDao
 import com.openhand.khata.core.database.dao.TagDao
 import com.openhand.khata.core.database.dao.TransactionDao
@@ -55,6 +56,8 @@ abstract class KhataDatabase : RoomDatabase() {
     abstract fun backupDao(): BackupDao
 
     abstract fun smsImportDao(): SmsImportDao
+
+    abstract fun reviewDao(): ReviewDao
 
     companion object {
         const val NAME = "khata.db"

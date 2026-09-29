@@ -45,4 +45,25 @@
     <string name="transaction_delete">लेन-देन मिटाएँ</string>
     <string name="transaction_delete_title">यह लेन-देन मिटाएँ?</string>
     <string name="transaction_delete_body">यह हमेशा के लिए हट जाएगा। इसे वापस नहीं लाया जा सकता।</string>
+    <string name="review_title">देखना बाकी</string>
+    <plurals name="review_left">
+        <item quantity="one">%d बाकी</item>
+        <item quantity="other">%d बाकी</item>
+    </plurals>
+    <string name="review_from_sms">SMS में: %1$s</string>
+    <string name="review_show_sms">SMS दिखाएँ</string>
+    <string name="review_hide_sms">SMS छिपाएँ</string>
+    <string name="review_payee_name">पाने वाले का नाम</string>
+    <plurals name="review_fills_others">
+        <item quantity="one">सहेजने पर इस पाने वाले के %d और लेन-देन भी भर जाएँगे।</item>
+        <item quantity="other">सहेजने पर इस पाने वाले के %d और लेन-देन भी भर जाएँगे।</item>
+    </plurals>
+    <string name="review_skip">छोड़ें</string>
+    <string name="review_save">सहेजें</string>
+    <string name="review_done_title">सब देख लिया</string>
+    <string name="review_done_body">बैंक SMS से आए नए पाने वाले यहाँ दिखते हैं। हर एक का नाम एक बार रखें, फिर उसे होने वाले भुगतान अपने-आप भर जाएँगे।</string>
+    <plurals name="review_banner">
+        <item quantity="one">%d लेन-देन देखना बाकी</item>
+        <item quantity="other">%d लेन-देन देखना बाकी</item>
+    </plurals>
 </resources>
