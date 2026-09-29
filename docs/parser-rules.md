@@ -98,12 +98,16 @@ Every rule, built-in or pasted, is checked first (`RuleValidator`). The error co
 
 ## What the engine returns
 
-For each SMS, the first rule (custom rules first, then built-in ones) whose sender and pattern match gives the transaction. Otherwise:
+For each SMS, the first rule (custom rules first, then built-in ones) whose sender and pattern match gives the transaction. If none matches:
 
-- **Not a transaction:** a promotional sender, or a bank SMS with no amount in it at all (for example "Biometric authentication is enabled"). Ignored.
-- **Unparsed:** a bank SMS that has an amount but no rule matched. It goes to the review inbox with its raw text, so a new format is noticed.
-- **Unknown sender:** not from any bank the rules know. Never stored.
+- **Not a transaction**, ignored: a promotional sender, or an SMS that clearly isn't a transaction. That means no amount at all (for example "Biometric authentication is enabled"), an OTP, a UPI collect request, a bill or due-date reminder, a balance-only message, an e-mandate being set up, an offer, or a failed or declined payment (unless money has come back for it: "refund of", "credited back", "reversed").
+- **Unparsed**, anything else from a known bank: it goes to the review inbox with its raw text, so a new format is noticed rather than lost.
+- **Unknown sender**: not from any bank the rules know. Never stored.
+
+The not-a-transaction checks run only after every rule has failed, so they can never drop an SMS a rule read. Real transaction SMS often mention these words too ("Never share card details/OTP"). A rule, in turn, should never match a failed payment or an OTP.
 
 ## Tests
+
+Every built-in bank has real SMS samples, with personal details replaced, in [`sms/parser/src/test/resources/samples/`](../sms/parser/src/test/resources/samples/). The test fails if fewer than 95% of a bank's samples parse correctly, or if a sample still contains something that looks like a real account, card or phone number.
 
 The shared test vectors in [`sms/parser/src/test/resources/rule-vectors/`](../sms/parser/src/test/resources/rule-vectors/) pin down this behaviour, and the parser website runs the same files.
