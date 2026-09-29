@@ -1,0 +1,551 @@
+{
+  "description": "Rules the validator must reject, with the error codes it gives (RuleError).",
+  "rules": [
+    {
+      "name": "valid (control)",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": []
+    },
+    {
+      "name": "newer format version",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unknown_version"
+      ]
+    },
+    {
+      "name": "id with spaces",
+      "rule": {
+        "v": 1,
+        "id": "my rule",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "bad_id"
+      ]
+    },
+    {
+      "name": "blank bank",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": " ",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "bad_bank"
+      ]
+    },
+    {
+      "name": "no senders",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "bad_senders"
+      ]
+    },
+    {
+      "name": "a phone number as sender",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "9876543210"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "bad_senders"
+      ]
+    },
+    {
+      "name": "a promotional sender",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "AX-TESTBK-P"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "bad_senders"
+      ]
+    },
+    {
+      "name": "no direction",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "accountType": "bank"
+      },
+      "errors": [
+        "direction"
+      ]
+    },
+    {
+      "name": "both direction and words",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank",
+        "directionWords": {
+          "debit": [
+            "paid"
+          ]
+        }
+      },
+      "errors": [
+        "direction"
+      ]
+    },
+    {
+      "name": "empty word list",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "accountType": "bank",
+        "directionWords": {
+          "debit": []
+        }
+      },
+      "errors": [
+        "direction"
+      ]
+    },
+    {
+      "name": "no amount group",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<payee>\\w+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "missing_amount"
+      ]
+    },
+    {
+      "name": "unknown group name",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+) (?<shop>\\w+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "same group twice",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "(?<amount>Rs\\.\\d+)|(?<amount>INR \\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "lookahead",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?=Rs)(?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "negative lookahead",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?!Rs\\.0)(?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "lookbehind",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "(?<=Paid )(?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "negative lookbehind",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "(?<!Not )Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "backreference",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "(?<payee>\\w+) (?<amount>Rs\\.\\d+) \\1",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "Python-style named group",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?P<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "atomic group",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "(?>Paid) (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "inline flag",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "(?i)paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "possessive quantifier",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid\\s++(?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "Java-only escape",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "\\APaid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "Unicode property",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\p{Nd}+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "nested character class",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.[0-9[,]]+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "class intersection",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.[0-9&&[^5]]+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "unsupported_pattern"
+      ]
+    },
+    {
+      "name": "does not compile",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "bad_pattern"
+      ]
+    },
+    {
+      "name": "nested repetition is allowed: RE2 matches in linear time",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "(?<amount>(a+)+)$",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": []
+    },
+    {
+      "name": "date group without a format",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+) on (?<date>\\S+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "date_without_format"
+      ]
+    },
+    {
+      "name": "date format without a date group",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank",
+        "dateFormat": "dd-MM-yy"
+      },
+      "errors": [
+        "date_format_without_date"
+      ]
+    },
+    {
+      "name": "unreadable date format",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+) on (?<date>\\S+)",
+        "direction": "debit",
+        "accountType": "bank",
+        "dateFormat": "dd-bb-yy"
+      },
+      "errors": [
+        "bad_date_format"
+      ]
+    },
+    {
+      "name": "pattern too long",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "(?<amount>Rs\\.\\d+)xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "pattern_too_long"
+      ]
+    }
+  ]
+}

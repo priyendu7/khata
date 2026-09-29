@@ -1,0 +1,132 @@
+{
+  "description": "Direction decided by words: from the dir group when there is one, otherwise the whole SMS, checked in the order refund, debit, credit.",
+  "zone": "Asia/Kolkata",
+  "rules": [
+    {
+      "v": 1,
+      "id": "test-nach",
+      "bank": "Test Bank",
+      "senders": [
+        "TESTBK"
+      ],
+      "pattern": "(?<amount>(?:Rs\\.?|INR|₹)\\s?[\\d,]+(?:\\.\\d{1,2})?) is (?<dir>credited|debited) (?:to|from) your Account\\s+X*(?<account>\\d{4}) on (?<date>\\d{2}/\\d{2}/\\d{4}) towards (?<payee>[^.]+?)(?: Test Bank)?$",
+      "directionWords": {
+        "debit": [
+          "debited"
+        ],
+        "credit": [
+          "credited"
+        ]
+      },
+      "accountType": "bank",
+      "dateFormat": "dd/MM/yyyy"
+    },
+    {
+      "v": 1,
+      "id": "test-card",
+      "bank": "Test Bank",
+      "senders": [
+        "TESTBK"
+      ],
+      "pattern": "(?<amount>(?:Rs\\.?|INR|₹)\\s?[\\d,]+(?:\\.\\d{1,2})?) .*?card (?:XX)?(?<account>\\d{4})",
+      "directionWords": {
+        "refund": [
+          "refund",
+          "reversal"
+        ],
+        "debit": [
+          "spent",
+          "debited"
+        ],
+        "credit": [
+          "credited"
+        ]
+      },
+      "accountType": "credit_card"
+    }
+  ],
+  "cases": [
+    {
+      "name": "credited, read from the dir group",
+      "sender": "AX-TESTBK-S",
+      "body": "INR 18.00 is credited to your Account  XXXXXX1234 on 21/09/2026 towards NACH-ECS-SOME COMPANY LTD Test Bank",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-nach",
+        "bank": "Test Bank",
+        "amountPaise": 1800,
+        "direction": "credit",
+        "accountType": "bank",
+        "account": "1234",
+        "payee": "NACH-ECS-SOME COMPANY LTD",
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "debited, read from the dir group",
+      "sender": "AX-TESTBK-S",
+      "body": "INR 1,250.00 is debited from your Account XXXXXX1234 on 20/09/2026 towards NACH-ECS-INSURANCE CO",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-nach",
+        "bank": "Test Bank",
+        "amountPaise": 125000,
+        "direction": "debit",
+        "accountType": "bank",
+        "account": "1234",
+        "payee": "NACH-ECS-INSURANCE CO",
+        "ref": null,
+        "timestamp": "2026-09-20T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "refund wins over credited in the whole SMS",
+      "sender": "AX-TESTBK-S",
+      "body": "Refund of Rs.499.00 credited to your credit card XX5678.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-card",
+        "bank": "Test Bank",
+        "amountPaise": 49900,
+        "direction": "refund",
+        "accountType": "credit_card",
+        "account": "5678",
+        "payee": null,
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "debit wins over credited in the whole SMS",
+      "sender": "AX-TESTBK-S",
+      "body": "Rs.2,000 spent on card XX5678 at A SHOP; merchant credited.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-card",
+        "bank": "Test Bank",
+        "amountPaise": 200000,
+        "direction": "debit",
+        "accountType": "credit_card",
+        "account": "5678",
+        "payee": null,
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "no direction word: the rule doesn't match",
+      "sender": "AX-TESTBK-S",
+      "body": "Rs.2,000 on hold on card XX5678.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "unparsed",
+        "bank": "Test Bank"
+      }
+    }
+  ]
+}
