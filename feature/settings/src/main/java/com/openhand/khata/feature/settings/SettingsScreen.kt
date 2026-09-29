@@ -47,7 +47,7 @@ fun SettingsRoute(
 }
 
 /** Screens that Settings opens; :app maps them to navigation routes. */
-enum class SettingsPage { ACCOUNTS, CATEGORIES, TAGS, PAYEES, EXPORT, IMPORT }
+enum class SettingsPage { SMS_IMPORT, ACCOUNTS, CATEGORIES, TAGS, PAYEES, EXPORT, IMPORT }
 
 // TODO(Phase 3): parsers become real settings.
 @Composable
@@ -65,6 +65,9 @@ fun SettingsScreen(
     var choosingLanguage by rememberSaveable { mutableStateOf(false) }
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenTitle(stringResource(UiR.string.nav_settings))
+        Row(stringResource(R.string.settings_sms), stringResource(R.string.settings_sms_value)) {
+            onOpen(SettingsPage.SMS_IMPORT)
+        }
         Row(
             stringResource(R.string.settings_accounts),
             stringResource(R.string.settings_accounts_value)

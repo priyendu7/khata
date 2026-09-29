@@ -33,6 +33,7 @@ import com.openhand.khata.feature.lock.LockSettingsSection
 import com.openhand.khata.feature.payees.PayeesScreen
 import com.openhand.khata.feature.settings.SettingsPage
 import com.openhand.khata.feature.settings.SettingsRoute
+import com.openhand.khata.feature.settings.SmsImportScreen
 import com.openhand.khata.feature.transactions.AddTransactionButton
 import com.openhand.khata.feature.transactions.FILTER_CATEGORY_ARG
 import com.openhand.khata.feature.transactions.FILTER_FROM_ARG
@@ -90,6 +91,7 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         composable(Route.PAYEES) { PayeesScreen(onBack = back) }
         composable(Route.EXPORT) { ExportScreen(onBack = back) }
         composable(Route.IMPORT) { ImportScreen(onBack = back) }
+        composable(Route.SMS_IMPORT) { SmsImportScreen(onBack = back) }
     }
 }
 
@@ -101,6 +103,7 @@ private object Route {
     const val PAYEES = "payees"
     const val EXPORT = "export"
     const val IMPORT = "import"
+    const val SMS_IMPORT = "sms_import"
 
     /** Add (id 0) or edit a transaction. */
     const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}"
@@ -117,6 +120,7 @@ private object Route {
 }
 
 private fun SettingsPage.route() = when (this) {
+    SettingsPage.SMS_IMPORT -> Route.SMS_IMPORT
     SettingsPage.ACCOUNTS -> Route.ACCOUNTS
     SettingsPage.CATEGORIES -> Route.CATEGORIES
     SettingsPage.TAGS -> Route.TAGS
