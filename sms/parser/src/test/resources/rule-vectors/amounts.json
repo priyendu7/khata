@@ -1,0 +1,155 @@
+{
+  "description": "Amounts become whole paise: currency prefix, commas and up to two decimals. A zero amount doesn't count as a match.",
+  "zone": "Asia/Kolkata",
+  "rules": [
+    {
+      "v": 1,
+      "id": "test-paid",
+      "bank": "Test Bank",
+      "senders": [
+        "TESTBK"
+      ],
+      "pattern": "Paid (?<amount>(?:Rs\\.?|INR|₹)\\s?[\\d,]+(?:\\.\\d{1,2})?|[\\d,]+(?:\\.\\d{1,2})?) at (?<payee>[A-Z ]+)",
+      "direction": "debit",
+      "accountType": "debit_card"
+    }
+  ],
+  "cases": [
+    {
+      "name": "Indian grouping with paise",
+      "sender": "AX-TESTBK-S",
+      "body": "Paid Rs.1,23,456.50 at SHOP",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-paid",
+        "bank": "Test Bank",
+        "amountPaise": 12345650,
+        "direction": "debit",
+        "accountType": "debit_card",
+        "account": null,
+        "payee": "SHOP",
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "Rs and a space",
+      "sender": "AX-TESTBK-S",
+      "body": "Paid Rs 500 at SHOP",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-paid",
+        "bank": "Test Bank",
+        "amountPaise": 50000,
+        "direction": "debit",
+        "accountType": "debit_card",
+        "account": null,
+        "payee": "SHOP",
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "INR with decimals",
+      "sender": "AX-TESTBK-S",
+      "body": "Paid INR 1,000.00 at SHOP",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-paid",
+        "bank": "Test Bank",
+        "amountPaise": 100000,
+        "direction": "debit",
+        "accountType": "debit_card",
+        "account": null,
+        "payee": "SHOP",
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "rupee sign",
+      "sender": "AX-TESTBK-S",
+      "body": "Paid ₹99 at SHOP",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-paid",
+        "bank": "Test Bank",
+        "amountPaise": 9900,
+        "direction": "debit",
+        "accountType": "debit_card",
+        "account": null,
+        "payee": "SHOP",
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "lower case rs",
+      "sender": "AX-TESTBK-S",
+      "body": "Paid rs.75 at SHOP",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-paid",
+        "bank": "Test Bank",
+        "amountPaise": 7500,
+        "direction": "debit",
+        "accountType": "debit_card",
+        "account": null,
+        "payee": "SHOP",
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "one decimal",
+      "sender": "AX-TESTBK-S",
+      "body": "Paid Rs.60.9 at SHOP",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-paid",
+        "bank": "Test Bank",
+        "amountPaise": 6090,
+        "direction": "debit",
+        "accountType": "debit_card",
+        "account": null,
+        "payee": "SHOP",
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "no currency",
+      "sender": "AX-TESTBK-S",
+      "body": "Paid 250 at SHOP",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-paid",
+        "bank": "Test Bank",
+        "amountPaise": 25000,
+        "direction": "debit",
+        "accountType": "debit_card",
+        "account": null,
+        "payee": "SHOP",
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "zero",
+      "sender": "AX-TESTBK-S",
+      "body": "Paid Rs.0.00 at SHOP",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "unparsed",
+        "bank": "Test Bank"
+      }
+    }
+  ]
+}

@@ -17,3 +17,4 @@ jakarta.inject                          # Jakarta @Inject annotation API used by
 com.google.code.findbugs:jsr305         # Nullness annotations (pulled in by Dagger), no code
 org.jspecify                            # Nullness annotations (pulled in by AndroidX), no code
 com.google.guava:listenablefuture       # Empty placeholder artifact that stops full Guava being pulled in
+com.google.re2j:re2j                    # RE2J: linear-time regex for SMS parser rules (sms/parser); pure Java, no dependencies, no I/O
