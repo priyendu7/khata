@@ -43,11 +43,11 @@ class ParserPartsTest {
 
     @Test
     fun accountAndText() {
-        assertEquals("4266", Fields.last4("X4266"))
-        assertEquals("4266", Fields.last4("XXXXXXXXX404266"))
+        assertEquals("1234", Fields.last4("X1234"))
+        assertEquals("1234", Fields.last4("XXXXXXXXX501234"))
         assertEquals("123", Fields.last4("XX123"))
         assertNull(Fields.last4("XX12"))
-        assertEquals("MATA PITA TRADING", Fields.clean("  MATA  PITA\nTRADING. "))
+        assertEquals("GENERAL STORE", Fields.clean("  GENERAL  \n STORE. "))
         assertNull(Fields.clean(" . "))
     }
 

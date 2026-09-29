@@ -50,9 +50,7 @@ class SmsParser(
         val parsed = candidates.firstNotNullOfOrNull { tryRule(it, body, receivedAt) }
         return when {
             parsed != null -> ParseResult.Parsed(parsed)
-            // A bank notice with no amount at all (a login alert, a card registered) isn't a
-            // transaction we missed, so it shouldn't wait in the review inbox.
-            !AMOUNT_LIKE.containsMatchIn(body) -> ParseResult.NotTransaction
+            NotTransactionFilter.isNotTransaction(body) -> ParseResult.NotTransaction
             else -> ParseResult.Unparsed(candidates.first().rule.bank)
         }
     }
@@ -135,20 +133,19 @@ class SmsParser(
         /** Refund first: a refund SMS often also says "credited". */
         private val DIRECTION_ORDER =
             listOf(RuleDirection.REFUND, RuleDirection.DEBIT, RuleDirection.CREDIT)
-
-        /** `Rs.500`, `INR 18.00`, `₹99`; the word boundary keeps "hours 5" from counting. */
-        private val AMOUNT_LIKE =
-            Regex("""(?:\b(?:rs\.?|inr)|₹)\s*\d""", RegexOption.IGNORE_CASE)
     }
 }
 
 sealed interface ParseResult {
     data class Parsed(val sms: ParsedSms) : ParseResult
 
-    /** From a known bank but not a transaction: promotional, or a notice with no amount. */
+    /**
+     * From a known bank but not a transaction: a promotional sender, or no rule matched and
+     * [NotTransactionFilter] recognised it (an OTP, an offer, a reminder, a notice with no amount).
+     */
     data object NotTransaction : ParseResult
 
-    /** From a known bank, has an amount, but no rule matched. Goes to the review inbox. */
+    /** From a known bank, no rule matched, and it may be a transaction. Goes to the review inbox. */
     data class Unparsed(val bank: String) : ParseResult
 
     /** Not from any bank the rules know. Never stored. */
