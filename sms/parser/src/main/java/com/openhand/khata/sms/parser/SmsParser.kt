@@ -33,6 +33,13 @@ class SmsParser(
     private val knownHeaders: Set<String> = rules.flatMapTo(mutableSetOf()) { it.headers }
 
     /**
+     * Whether [sender] is a bank the rules know. SMS import checks this first, so it can skip
+     * everyone else's messages without reading their text.
+     */
+    fun isKnownSender(sender: String): Boolean =
+        SenderId.parse(sender)?.let { it.header in knownHeaders && !it.promotional } == true
+
+    /**
      * @param receivedAt when the phone received the SMS, epoch millis. Used as the transaction
      *   time unless the SMS has a date on a different day.
      */

@@ -42,6 +42,16 @@ class ParserPartsTest {
     }
 
     @Test
+    fun knownSenders() {
+        val parser = SmsParser(BuiltInRules.load())
+        listOf("JM-KOTAKB-S", "AX-KOTAKB-T", "KOTAKB").forEach {
+            assertTrue(it, parser.isKnownSender(it))
+        }
+        listOf("VM-KOTAKB-P", "AX-OTHRBK-S", "+919876543210", "")
+            .forEach { assertTrue(it, !parser.isKnownSender(it)) }
+    }
+
+    @Test
     fun accountAndText() {
         assertEquals("1234", Fields.last4("X1234"))
         assertEquals("1234", Fields.last4("XXXXXXXXX501234"))
