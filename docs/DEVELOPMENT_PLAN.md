@@ -4,7 +4,7 @@
 
 ## Summary
 
-The plan takes Khata from an empty repo to a Play Store release in five phases. It follows the milestones in the PRD. Every phase ends with a working app you can install, not just finished code. There are no deadlines: each phase starts when the one before it is done.
+The plan takes Khata from an empty repo to a Play Store release in seven phases. It follows the milestones in the PRD. Every phase ends with a working app you can install, not just finished code. There are no deadlines: each phase starts when the one before it is done.
 
 | Phase | Result you can see |
 | --- | --- |
@@ -12,7 +12,9 @@ The plan takes Khata from an empty repo to a Play Store release in five phases. 
 | 1 Manual tracking | Add income and expenses by hand, in English or Hindi, with payee memory |
 | 2 Charts and CSV | Pie, calendar heatmap and monthly chart; import your spreadsheet |
 | 3 SMS and custom parsers | Your bank SMS are recorded automatically; the parser website is live |
-| 4 Release | Closed test with 12 testers, then live on the Play Store |
+| 4 Enhancements and feedback | Using and testing the app turns into improvements: payee memory for old transactions, events, new categories from the editor |
+| 5 More banks and SMS extras | HDFC, ICICI, Axis and Federal built in, more Kotak formats, transfers detected, optional daily summary |
+| 6 Release | Closed test with 12 testers, then live on the Play Store |
 
 Spending alerts come after the release, as the first update.
 
@@ -54,34 +56,34 @@ khata/
 
 By the end of this phase the app opens behind the phone lock, stores data encrypted, and CI fails if anyone adds the internet permission.
 
-- [ ] Create the GitHub repo with the GPLv3 license, README, `CONTRIBUTING.md`, issue templates and a code of conduct
-- [ ] Set up the Gradle project: Kotlin, Compose, Material 3, Hilt, min SDK 26, target the latest SDK
-- [ ] Split the project into the module structure above, with version catalog (`libs.versions.toml`)
-- [ ] Add Room with SQLCipher; generate the database key on first launch and store it in the Android Keystore
-- [ ] Write the first schema: Account, Category, Tag, Payee, Transaction, TransactionTag (amounts as paise), with Room migration tests
-- [ ] Seed the default categories in English and Hindi
-- [ ] App lock: BiometricPrompt using the phone's screen lock, lock again after a timeout, FLAG_SECURE
-- [ ] Turn off Android backup (`allowBackup=false`, data extraction rules)
-- [ ] GitHub Actions: build, unit tests, ktlint, detekt, Android lint
-- [ ] CI check that fails if `android.permission.INTERNET` appears in the merged manifest
-- [ ] App theme, icon placeholder, bottom navigation shell (Home, Transactions, Insights, Settings)
+- [x] Create the GitHub repo with the GPLv3 license, README, `CONTRIBUTING.md`, issue templates and a code of conduct
+- [x] Set up the Gradle project: Kotlin, Compose, Material 3, Hilt, min SDK 26, target the latest SDK
+- [x] Split the project into the module structure above, with version catalog (`libs.versions.toml`)
+- [x] Add Room with SQLCipher; generate the database key on first launch and store it in the Android Keystore
+- [x] Write the first schema: Account, Category, Tag, Payee, Transaction, TransactionTag (amounts as paise), with Room migration tests
+- [x] Seed the default categories in English and Hindi
+- [x] App lock: BiometricPrompt using the phone's screen lock, lock again after a timeout, FLAG_SECURE
+- [x] Turn off Android backup (`allowBackup=false`, data extraction rules)
+- [x] GitHub Actions: build, unit tests, ktlint, detekt, Android lint
+- [x] CI check that fails if `android.permission.INTERNET` appears in the merged manifest
+- [x] App theme, icon placeholder, bottom navigation shell (Home, Transactions, Insights, Settings)
 
 ## Phase 1: Manual tracking
 
 By the end of this phase you can track a full month of income and spending by hand, in English or Hindi.
 
-- [ ] Accounts screen: add bank accounts, credit cards, debit cards and wallets (name, bank, last 4 digits)
-- [ ] Add and edit transaction screen: amount, direction (expense, income, refund, transfer), date and time, account, payee, category, tags, note
-- [ ] Transactions list: grouped by day, with search and filters for category, tag, account and date range
-- [ ] Categories screen: add, rename, recolor, choose an icon, archive
-- [ ] Tags: create them while adding a transaction, and rename or merge them later
-- [ ] Payee memory: save the display name, default category and tags; fill them in automatically; allow an override for one transaction
-- [ ] Payees screen: list, edit and merge payees
-- [ ] Transfers are left out of spending and income totals
-- [ ] Home summary: income and spending this month, spent today, top category
-- [ ] Language switch in Settings (English and Hindi), using Android's per-app language setting
-- [ ] Indian number formatting (₹1,00,000) everywhere amounts are shown
-- [ ] Unit tests for repositories and totals; UI tests for adding and editing a transaction
+- [x] Accounts screen: add bank accounts, credit cards, debit cards and wallets (name, bank, last 4 digits)
+- [x] Add and edit transaction screen: amount, direction (expense, income, refund, transfer), date and time, account, payee, category, tags, note
+- [x] Transactions list: grouped by day, with search and filters for category, tag, account and date range
+- [x] Categories screen: add, rename, recolor, choose an icon, archive
+- [x] Tags: create them while adding a transaction, and rename or merge them later
+- [x] Payee memory: save the display name, default category and tags; fill them in automatically; allow an override for one transaction
+- [x] Payees screen: list, edit and merge payees
+- [x] Transfers are left out of spending and income totals
+- [x] Home summary: income and spending this month, spent today, top category
+- [x] Language switch in Settings (English and Hindi), using Android's per-app language setting
+- [x] Indian number formatting (₹1,00,000) everywhere amounts are shown
+- [x] Unit tests for repositories and totals; UI tests for adding and editing a transaction
 
 ## Phase 2: Charts and CSV
 
@@ -102,7 +104,7 @@ By the end of this phase you can import your existing spreadsheet and see all th
 
 By the end of this phase your bank SMS are recorded automatically, and anyone can add a bank using the parser website. This is the longest phase, because parsing needs real SMS samples to get right.
 
-**Built-in banks: Kotak now, others through custom parsers.** Kotak ships built in. Other banks (HDFC, ICICI, Federal, Axis) and more Kotak formats are added with custom parsers from the parser website, which work at once with no app update. A custom rule becomes a built-in one by adding it to the repo with real samples, so those follow after launch as needed (milestone "After launch": #53, #63, #66).
+**Built-in banks: Kotak now, others through custom parsers.** Kotak ships built in. Other banks (HDFC, ICICI, Federal, Axis) and more Kotak formats are added with custom parsers from the parser website, which work at once with no app update. A custom rule becomes a built-in one by adding it to the repo with real samples; that happens in Phase 5 (#53, #63, #66).
 
 **Parsers**
 
@@ -111,15 +113,15 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 - [x] Rule engine that turns a rule and an SMS into a transaction, or nothing
 - [x] Write the built-in Kotak parsers as rules in the same format, so built-in and custom parsers work the same way
 - [x] Filter out OTP, promotional and balance-only messages
-- [x] Detect transfers: credit card bill payments (including CRED) and moving money between your own accounts
 - [x] Match duplicates by reference number, or by amount, time and account when there is no reference
+- [x] Detect transfers: credit card bill payments (including CRED) and moving money between your own accounts
+
 
 **Reading SMS on the phone**
 
 - [ ] Ask for SMS permissions only when the user turns SMS import on, with a clear explanation screen first
 - [ ] Receiver for new SMS, plus a one-time scan of the inbox from a start date the user picks
 - [ ] Review inbox: cards for new payees with a count badge; name, category and tags; skip
-- [ ] Local daily summary notification (optional)
 - [ ] Unparsed bank SMS appear in the review inbox with their raw text
 
 **Custom parsers**
@@ -131,9 +133,31 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 
 **Target:** at least 95% of each built-in bank's sample SMS parse correctly in the test suite before the phase is done.
 
-## Phase 4: Release
+## Phase 4: Enhancements and feedback
 
-By the end of this phase Khata is live on the Play Store. Most of the wait is Google's required 14-day closed test, so start recruiting testers during Phase 3.
+This phase is for using the app day to day, testing it, and acting on what comes up. Its issues improve features that already exist rather than adding new areas.
+
+- [ ] Payee memory fills in old uncategorized transactions (#72)
+- [ ] Events: tag every transaction in a date range (#73)
+- [ ] Create a category from the transaction editor (#74)
+
+New feedback issues go in this phase's milestone as they're found.
+
+## Phase 5: More banks and SMS extras
+
+By the end of this phase more banks are built in and SMS import handles the harder cases. Custom parsers from Phase 3 cover these banks until then.
+
+- [ ] HDFC rules with real samples (#53)
+- [ ] Built-in rules for ICICI, Axis and Federal (#63)
+- [ ] More Kotak formats: cards, NEFT/IMPS, refunds, ATM (#66)
+- [ ] Detect transfers: credit card bill payments (including CRED) and moving money between your own accounts (#56)
+- [ ] Local daily summary notification, optional (#58)
+
+**Target:** the same 95% sample accuracy as Phase 3 for every bank added here.
+
+## Phase 6: Release
+
+By the end of this phase Khata is live on the Play Store. Most of the wait is Google's required 14-day closed test, so start recruiting testers during Phase 4.
 
 - [ ] Create the Play developer account and complete identity verification (start this in Phase 0, since verification can take days)
 - [ ] Final app icon, feature graphic and screenshots in English and Hindi
@@ -146,7 +170,7 @@ By the end of this phase Khata is live on the Play Store. Most of the wait is Go
 - [ ] GitHub release with the signed APK and changelog
 - [ ] Apply for production access and roll out in stages (10%, 50%, 100%)
 
-**After launch:** spending alerts (monthly limit per category, alerts at 80% and 100%) are the first update, followed by parsers for more banks based on GitHub requests.
+**After launch:** spending alerts (monthly limit per category, alerts at 80% and 100%) are the first update, followed by parsers for further banks based on GitHub requests.
 
 ## Testing, CI and quality gates
 
@@ -179,8 +203,8 @@ Work is tracked as GitHub issues and delivered as small pull requests, one featu
 
 The first step is to create the repo, which only you can do. After that, Phase 0 work can start.
 
-- [ ] You: create an empty public repo named `khata` on GitHub, and connect it to this project
+- [x] You: create an empty public repo named `khata` on GitHub, and connect it to this project
 - [ ] You: start the Google Play developer account registration, because identity verification can take several days
-- [ ] Claude: open the first PR with the project skeleton, GPLv3 license, CI and the INTERNET-permission check
-- [ ] Claude: create GitHub issues and milestones from this plan
+- [x] Claude: open the first PR with the project skeleton, GPLv3 license, CI and the INTERNET-permission check
+- [x] Claude: create GitHub issues and milestones from this plan
 - [ ] You: start saving bank SMS samples for Phase 3 (blank out names, account numbers and balances)
