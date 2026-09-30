@@ -53,6 +53,23 @@ class HomeContentTest {
     }
 
     @Test
+    fun reviewCardOpensTheInboxAndHidesWhenNothingWaits() {
+        var opened = false
+        compose.setContent {
+            HomeContent("Khata", summary, reviewCount = 3, onReview = { opened = true })
+        }
+        compose.onNodeWithText("3 transactions to review").assertIsDisplayed()
+        compose.onNodeWithText("Review").performClick()
+        assertTrue(opened)
+    }
+
+    @Test
+    fun noReviewCardWhenNothingWaits() {
+        compose.setContent { HomeContent("Khata", summary, reviewCount = 0) }
+        compose.onNodeWithText("to review", substring = true).assertDoesNotExist()
+    }
+
+    @Test
     fun noBackupReminderWhenNotDue() {
         compose.setContent { HomeContent("Khata", summary, backupDueDays = null) }
         compose.onNodeWithText("Time to back up").assertDoesNotExist()

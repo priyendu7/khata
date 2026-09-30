@@ -47,4 +47,10 @@
         <item quantity="other">No export in %d days. Android backup is off for Khata, so a CSV export is the only copy of your data if this phone is lost.</item>
     </plurals>
     <string name="home_backup_action">Export now</string>
+    <plurals name="home_review_title">
+        <item quantity="one">%d transaction to review</item>
+        <item quantity="other">%d transactions to review</item>
+    </plurals>
+    <string name="home_review_body">From payees you haven\'t named yet. Name each one once, and later payments are filled in for you.</string>
+    <string name="home_review_action">Review</string>
 </resources>

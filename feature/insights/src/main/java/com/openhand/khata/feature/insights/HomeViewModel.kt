@@ -3,6 +3,7 @@ package com.openhand.khata.feature.insights
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openhand.khata.core.data.BackupReminderRepository
+import com.openhand.khata.core.data.ReviewRepository
 import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.Totals
@@ -30,7 +31,8 @@ data class HomeSummary(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     transactions: TransactionRepository,
-    reminders: BackupReminderRepository
+    reminders: BackupReminderRepository,
+    review: ReviewRepository
 ) : ViewModel() {
     /** Null until the first load; then updated live as transactions change. */
     val summary: StateFlow<HomeSummary?> = currentDate()
@@ -50,6 +52,10 @@ class HomeViewModel @Inject constructor(
     val backupDueDays: StateFlow<Int?> = reminders.observeDue()
         .combine(reminders.settings) { due, settings -> settings.interval.days.takeIf { due } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+
+    /** Transactions from new payees waiting in To review (PRD feature 4). */
+    val reviewCount: StateFlow<Int> = review.observeCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), 0)
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
