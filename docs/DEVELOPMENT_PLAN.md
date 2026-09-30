@@ -4,7 +4,7 @@
 
 ## Summary
 
-The plan takes Khata from an empty repo to a Play Store release in six phases. It follows the milestones in the PRD. Every phase ends with a working app you can install, not just finished code. There are no deadlines: each phase starts when the one before it is done.
+The plan takes Khata from an empty repo to a Play Store release in seven phases. It follows the milestones in the PRD. Every phase ends with a working app you can install, not just finished code. There are no deadlines: each phase starts when the one before it is done.
 
 | Phase | Result you can see |
 | --- | --- |
@@ -12,8 +12,9 @@ The plan takes Khata from an empty repo to a Play Store release in six phases. I
 | 1 Manual tracking | Add income and expenses by hand, in English or Hindi, with payee memory |
 | 2 Charts and CSV | Pie, calendar heatmap and monthly chart; import your spreadsheet |
 | 3 SMS and custom parsers | Your bank SMS are recorded automatically; the parser website is live |
-| 4 More banks and SMS extras | HDFC, ICICI, Axis and Federal built in, more Kotak formats, transfers detected, optional daily summary |
-| 5 Release | Closed test with 12 testers, then live on the Play Store |
+| 4 Enhancements and feedback | Using and testing the app turns into improvements: payee memory for old transactions, events, new categories from the editor |
+| 5 More banks and SMS extras | HDFC, ICICI, Axis and Federal built in, more Kotak formats, transfers detected, optional daily summary |
+| 6 Release | Closed test with 12 testers, then live on the Play Store |
 
 Spending alerts come after the release, as the first update.
 
@@ -103,7 +104,7 @@ By the end of this phase you can import your existing spreadsheet and see all th
 
 By the end of this phase your bank SMS are recorded automatically, and anyone can add a bank using the parser website. This is the longest phase, because parsing needs real SMS samples to get right.
 
-**Built-in banks: Kotak now, others through custom parsers.** Kotak ships built in. Other banks (HDFC, ICICI, Federal, Axis) and more Kotak formats are added with custom parsers from the parser website, which work at once with no app update. A custom rule becomes a built-in one by adding it to the repo with real samples; that happens in Phase 4 (#53, #63, #66).
+**Built-in banks: Kotak now, others through custom parsers.** Kotak ships built in. Other banks (HDFC, ICICI, Federal, Axis) and more Kotak formats are added with custom parsers from the parser website, which work at once with no app update. A custom rule becomes a built-in one by adding it to the repo with real samples; that happens in Phase 5 (#53, #63, #66).
 
 **Parsers**
 
@@ -130,7 +131,17 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 
 **Target:** at least 95% of each built-in bank's sample SMS parse correctly in the test suite before the phase is done.
 
-## Phase 4: More banks and SMS extras
+## Phase 4: Enhancements and feedback
+
+This phase is for using the app day to day, testing it, and acting on what comes up. Its issues improve features that already exist rather than adding new areas.
+
+- [ ] Payee memory fills in old uncategorized transactions (#72)
+- [ ] Events: tag every transaction in a date range (#73)
+- [ ] Create a category from the transaction editor (#74)
+
+New feedback issues go in this phase's milestone as they're found.
+
+## Phase 5: More banks and SMS extras
 
 By the end of this phase more banks are built in and SMS import handles the harder cases. Custom parsers from Phase 3 cover these banks until then.
 
@@ -142,9 +153,9 @@ By the end of this phase more banks are built in and SMS import handles the hard
 
 **Target:** the same 95% sample accuracy as Phase 3 for every bank added here.
 
-## Phase 5: Release
+## Phase 6: Release
 
-By the end of this phase Khata is live on the Play Store. Most of the wait is Google's required 14-day closed test, so start recruiting testers during Phase 3.
+By the end of this phase Khata is live on the Play Store. Most of the wait is Google's required 14-day closed test, so start recruiting testers during Phase 4.
 
 - [ ] Create the Play developer account and complete identity verification (start this in Phase 0, since verification can take days)
 - [ ] Final app icon, feature graphic and screenshots in English and Hindi
