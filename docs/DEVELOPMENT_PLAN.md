@@ -56,34 +56,34 @@ khata/
 
 By the end of this phase the app opens behind the phone lock, stores data encrypted, and CI fails if anyone adds the internet permission.
 
-- [ ] Create the GitHub repo with the GPLv3 license, README, `CONTRIBUTING.md`, issue templates and a code of conduct
-- [ ] Set up the Gradle project: Kotlin, Compose, Material 3, Hilt, min SDK 26, target the latest SDK
-- [ ] Split the project into the module structure above, with version catalog (`libs.versions.toml`)
-- [ ] Add Room with SQLCipher; generate the database key on first launch and store it in the Android Keystore
-- [ ] Write the first schema: Account, Category, Tag, Payee, Transaction, TransactionTag (amounts as paise), with Room migration tests
-- [ ] Seed the default categories in English and Hindi
-- [ ] App lock: BiometricPrompt using the phone's screen lock, lock again after a timeout, FLAG_SECURE
-- [ ] Turn off Android backup (`allowBackup=false`, data extraction rules)
-- [ ] GitHub Actions: build, unit tests, ktlint, detekt, Android lint
-- [ ] CI check that fails if `android.permission.INTERNET` appears in the merged manifest
-- [ ] App theme, icon placeholder, bottom navigation shell (Home, Transactions, Insights, Settings)
+- [x] Create the GitHub repo with the GPLv3 license, README, `CONTRIBUTING.md`, issue templates and a code of conduct
+- [x] Set up the Gradle project: Kotlin, Compose, Material 3, Hilt, min SDK 26, target the latest SDK
+- [x] Split the project into the module structure above, with version catalog (`libs.versions.toml`)
+- [x] Add Room with SQLCipher; generate the database key on first launch and store it in the Android Keystore
+- [x] Write the first schema: Account, Category, Tag, Payee, Transaction, TransactionTag (amounts as paise), with Room migration tests
+- [x] Seed the default categories in English and Hindi
+- [x] App lock: BiometricPrompt using the phone's screen lock, lock again after a timeout, FLAG_SECURE
+- [x] Turn off Android backup (`allowBackup=false`, data extraction rules)
+- [x] GitHub Actions: build, unit tests, ktlint, detekt, Android lint
+- [x] CI check that fails if `android.permission.INTERNET` appears in the merged manifest
+- [x] App theme, icon placeholder, bottom navigation shell (Home, Transactions, Insights, Settings)
 
 ## Phase 1: Manual tracking
 
 By the end of this phase you can track a full month of income and spending by hand, in English or Hindi.
 
-- [ ] Accounts screen: add bank accounts, credit cards, debit cards and wallets (name, bank, last 4 digits)
-- [ ] Add and edit transaction screen: amount, direction (expense, income, refund, transfer), date and time, account, payee, category, tags, note
-- [ ] Transactions list: grouped by day, with search and filters for category, tag, account and date range
-- [ ] Categories screen: add, rename, recolor, choose an icon, archive
-- [ ] Tags: create them while adding a transaction, and rename or merge them later
-- [ ] Payee memory: save the display name, default category and tags; fill them in automatically; allow an override for one transaction
-- [ ] Payees screen: list, edit and merge payees
-- [ ] Transfers are left out of spending and income totals
-- [ ] Home summary: income and spending this month, spent today, top category
-- [ ] Language switch in Settings (English and Hindi), using Android's per-app language setting
-- [ ] Indian number formatting (₹1,00,000) everywhere amounts are shown
-- [ ] Unit tests for repositories and totals; UI tests for adding and editing a transaction
+- [x] Accounts screen: add bank accounts, credit cards, debit cards and wallets (name, bank, last 4 digits)
+- [x] Add and edit transaction screen: amount, direction (expense, income, refund, transfer), date and time, account, payee, category, tags, note
+- [x] Transactions list: grouped by day, with search and filters for category, tag, account and date range
+- [x] Categories screen: add, rename, recolor, choose an icon, archive
+- [x] Tags: create them while adding a transaction, and rename or merge them later
+- [x] Payee memory: save the display name, default category and tags; fill them in automatically; allow an override for one transaction
+- [x] Payees screen: list, edit and merge payees
+- [x] Transfers are left out of spending and income totals
+- [x] Home summary: income and spending this month, spent today, top category
+- [x] Language switch in Settings (English and Hindi), using Android's per-app language setting
+- [x] Indian number formatting (₹1,00,000) everywhere amounts are shown
+- [x] Unit tests for repositories and totals; UI tests for adding and editing a transaction
 
 ## Phase 2: Charts and CSV
 
@@ -201,8 +201,8 @@ Work is tracked as GitHub issues and delivered as small pull requests, one featu
 
 The first step is to create the repo, which only you can do. After that, Phase 0 work can start.
 
-- [ ] You: create an empty public repo named `khata` on GitHub, and connect it to this project
+- [x] You: create an empty public repo named `khata` on GitHub, and connect it to this project
 - [ ] You: start the Google Play developer account registration, because identity verification can take several days
-- [ ] Claude: open the first PR with the project skeleton, GPLv3 license, CI and the INTERNET-permission check
-- [ ] Claude: create GitHub issues and milestones from this plan
+- [x] Claude: open the first PR with the project skeleton, GPLv3 license, CI and the INTERNET-permission check
+- [x] Claude: create GitHub issues and milestones from this plan
 - [ ] You: start saving bank SMS samples for Phase 3 (blank out names, account numbers and balances)
