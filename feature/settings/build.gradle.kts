@@ -15,6 +15,8 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:ui"))
     implementation(project(":sms:ingest"))
+    implementation(project(":sms:parser"))
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.compose)

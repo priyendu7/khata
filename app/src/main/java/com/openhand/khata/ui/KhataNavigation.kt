@@ -35,6 +35,8 @@ import com.openhand.khata.feature.insights.HomeScreen
 import com.openhand.khata.feature.insights.InsightsScreen
 import com.openhand.khata.feature.lock.LockSettingsSection
 import com.openhand.khata.feature.payees.PayeesScreen
+import com.openhand.khata.feature.settings.AddParserScreen
+import com.openhand.khata.feature.settings.ParsersScreen
 import com.openhand.khata.feature.settings.SettingsPage
 import com.openhand.khata.feature.settings.SettingsRoute
 import com.openhand.khata.feature.settings.SmsImportScreen
@@ -109,6 +111,10 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         composable(Route.EXPORT) { ExportScreen(onBack = back) }
         composable(Route.IMPORT) { ImportScreen(onBack = back) }
         composable(Route.SMS_IMPORT) { SmsImportScreen(onBack = back) }
+        composable(Route.PARSERS) {
+            ParsersScreen(onBack = back, onAdd = { navController.navigate(Route.ADD_PARSER) })
+        }
+        composable(Route.ADD_PARSER) { AddParserScreen(onDone = back) }
         composable(Route.REVIEW) {
             ReviewScreen(
                 onBack = back,
@@ -129,6 +135,8 @@ private object Route {
     const val EXPORT = "export"
     const val IMPORT = "import"
     const val SMS_IMPORT = "sms_import"
+    const val PARSERS = "parsers"
+    const val ADD_PARSER = "parsers/add"
     const val REVIEW = "review"
 
     /** Add (id 0) or edit a transaction. */
@@ -154,6 +162,7 @@ private object Route {
 
 private fun SettingsPage.route() = when (this) {
     SettingsPage.SMS_IMPORT -> Route.SMS_IMPORT
+    SettingsPage.PARSERS -> Route.PARSERS
     SettingsPage.ACCOUNTS -> Route.ACCOUNTS
     SettingsPage.CATEGORIES -> Route.CATEGORIES
     SettingsPage.TAGS -> Route.TAGS

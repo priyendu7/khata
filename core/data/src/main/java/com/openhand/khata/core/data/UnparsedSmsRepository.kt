@@ -18,7 +18,11 @@ import kotlinx.coroutines.flow.map
 class UnparsedSmsRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
     /** Newest first. */
     fun observeAll(): Flow<List<UnparsedSms>> = db.observe { it.unparsedSmsDao().observeAll() }
-        .map { rows -> rows.map { UnparsedSms(it.id, it.sender, it.body, it.receivedAt) } }
+        .map { rows -> rows.map(UnparsedSmsEntity::toModel) }
+
+    /** Oldest first, to read again with a new parser rule. */
+    suspend fun getAll(): List<UnparsedSms> =
+        db.io { database -> database.unparsedSmsDao().getAll().map(UnparsedSmsEntity::toModel) }
 
     /**
      * Stores an SMS from a known bank that no rule read. The same text seen again within a day
@@ -44,3 +48,5 @@ class UnparsedSmsRepository @Inject constructor(private val db: Lazy<KhataDataba
         val SAME_SMS_WINDOW = TimeUnit.DAYS.toMillis(1)
     }
 }
+
+private fun UnparsedSmsEntity.toModel() = UnparsedSms(id, sender, body, receivedAt)

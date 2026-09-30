@@ -31,8 +31,9 @@ class NewSmsHandler @Inject constructor(
     suspend fun handle(parts: List<SmsPart>): List<IngestOutcome> {
         if (!settings.enabled.value || !context.hasSmsPermissions()) return emptyList()
         // The sender is checked before the text is used, so no one else's SMS is ever read.
-        return joinParts(parts.filter { ingestor.isBankSender(it.sender) })
-            .map { ingestor.ingest(it.sender, it.body, it.receivedAt) }
+        val parser = ingestor.parser()
+        return joinParts(parts.filter { parser.isKnownSender(it.sender) })
+            .map { ingestor.ingest(it.sender, it.body, it.receivedAt, parser) }
     }
 
     private fun Context.hasSmsPermissions() =

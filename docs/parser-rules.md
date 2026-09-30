@@ -77,6 +77,10 @@ To share a rule, the app turns it into a **rule code**: `khata1:` followed by th
 | `bad_json` | Not a JSON object, a field has the wrong type, or there's an unknown field |
 | `unknown_version` | Missing `v`, or made for a newer version of Khata |
 
+### Adding a code in the app
+
+In **Settings > Parsers > Add**, paste the code. The app shows why a code can't be used (the messages for the codes above and below), and lets you test the rule on one of your recent SMS from that bank, or on one you paste, before saving. Saved rules are kept in the encrypted database and can be switched off or deleted. Pasting a rule with the same `id` as a saved one replaces it. After saving, the app offers to read the bank SMS waiting in To review with the new rule.
+
 ## Checks before a rule is used
 
 Every rule, built-in, made in the app or pasted, is checked first (`RuleValidator`):

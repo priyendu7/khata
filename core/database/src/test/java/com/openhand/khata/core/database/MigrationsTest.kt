@@ -57,4 +57,30 @@ class MigrationsTest {
             }
         }
     }
+
+    @Test
+    fun version2To3AddsCustomParsersAndKeepsUnparsedSms() {
+        helper.createDatabase(dbName, 2).use { db ->
+            db.execSQL(
+                "INSERT INTO unparsed_sms (sender, body, received_at) " +
+                    "VALUES ('JM-KOTAKB-S', 'Rs.2,000 withdrawn at ATM', 1790000000000)"
+            )
+        }
+
+        helper.runMigrationsAndValidate(dbName, 3, true, *KhataMigrations.ALL).use { db ->
+            db.query("SELECT body FROM unparsed_sms").use {
+                it.moveToFirst()
+                assertEquals("Rs.2,000 withdrawn at ATM", it.getString(0))
+            }
+            db.execSQL(
+                "INSERT INTO custom_parsers (rule_id, bank, code, enabled, added_at) " +
+                    "VALUES ('hdfc-upi', 'HDFC', 'khata1:e30', 1, 1790000000000)"
+            )
+            db.query("SELECT rule_id, enabled FROM custom_parsers").use {
+                it.moveToFirst()
+                assertEquals("hdfc-upi", it.getString(0))
+                assertEquals(1, it.getInt(1))
+            }
+        }
+    }
 }
