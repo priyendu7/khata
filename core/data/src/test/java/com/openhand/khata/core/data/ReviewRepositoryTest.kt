@@ -150,4 +150,16 @@ class ReviewRepositoryTest : RepositoryTest() {
         const val HOUR = 3_600_000L
         const val DAY = 24 * HOUR
     }
+
+    @Test
+    fun reviewingAlsoFilesASkippedTransactionFromThatPayee() = runTest {
+        val skipped = sms("GENERAL STORE", "1", at = AT)
+        review.skip(skipped)
+        val pending = sms("GENERAL STORE", "2", at = AT + HOUR)
+
+        val filed = review.review(pending, "General Store", food(), emptyList())
+
+        assertEquals(2, filed)
+        assertEquals(food(), db.transactionDao().getById(skipped)!!.categoryId)
+    }
 }

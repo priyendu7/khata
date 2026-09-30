@@ -222,13 +222,13 @@ class TransactionEditorTest {
     @Test
     fun offersToRememberANewPayee() {
         show(blank.copy(amount = "80"), isNew = true, payees = listOf(swiggy))
-        val remember = "Remember this category and tags for next time"
+        val remember = "Remember this category and tags"
 
-        compose.onNodeWithText(remember).assertDoesNotExist()
+        compose.onNodeWithText(remember, substring = true).assertDoesNotExist()
         compose.onNodeWithText("Paid to or received from (optional)").performTextInput("Ramesh")
-        compose.onNodeWithText(remember)
+        compose.onNodeWithText(remember, substring = true)
             .performScrollTo().performClick()
-        compose.onNodeWithText(remember).assertIsOff()
+        compose.onNodeWithText(remember, substring = true).assertIsOff()
         compose.onNodeWithText("Save").performClick()
 
         assertEquals("Ramesh", saved!!.payeeName)

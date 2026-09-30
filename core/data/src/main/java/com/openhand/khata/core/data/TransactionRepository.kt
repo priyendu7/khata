@@ -88,8 +88,9 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
      * Fields the screen doesn't show (source, reference number, SMS text) are kept on update.
      *
      * With [rememberPayeeDefaults], a payee that has no defaults yet takes this transaction's
-     * category and tags as its defaults. A payee that already has some keeps them: a different
-     * category here overrides them for this transaction only (PRD feature 3).
+     * category and tags as its defaults, and its Uncategorized transactions take the category. A
+     * payee that already has some keeps them: a different category here overrides them for this
+     * transaction only (PRD feature 3).
      */
     suspend fun save(transaction: Transaction, rememberPayeeDefaults: Boolean = false): Long {
         require(transaction.amountPaise > 0) { "Amount must be more than zero" }
@@ -108,7 +109,7 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
             val categoryId = transaction.categoryId ?: uncategorizedId
             if (payee != null && rememberPayeeDefaults) {
                 val defaultCategoryId = categoryId.takeUnless { it == uncategorizedId }
-                rememberDefaults(database, payee, defaultCategoryId, tagIds)
+                rememberDefaults(database, payee, defaultCategoryId, tagIds, uncategorizedId)
             }
             val dao = database.transactionDao()
             val existing = if (transaction.id == 0L) null else dao.getById(transaction.id)
@@ -131,18 +132,23 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
         }
     }
 
-    /** Saves defaults for a payee that has none; never replaces ones already saved. */
+    /**
+     * Saves defaults for a payee that has none; never replaces ones already saved. A remembered
+     * category also files the payee's older Uncategorized transactions (tags aren't applied).
+     */
     private suspend fun rememberDefaults(
         database: KhataDatabase,
         payee: PayeeEntity,
         categoryId: Long?,
-        tagIds: List<Long>
+        tagIds: List<Long>,
+        uncategorizedId: Long
     ) {
         val dao = database.payeeDao()
         val hasDefaults =
             payee.defaultCategoryId != null || dao.defaultTagIds(payee.id).isNotEmpty()
         if (hasDefaults || (categoryId == null && tagIds.isEmpty())) return
         dao.updateWithDefaultTags(payee.copy(defaultCategoryId = categoryId), tagIds)
+        categoryId?.let { dao.categorizeUncategorized(payee.id, it, uncategorizedId) }
     }
 
     suspend fun delete(id: Long) {

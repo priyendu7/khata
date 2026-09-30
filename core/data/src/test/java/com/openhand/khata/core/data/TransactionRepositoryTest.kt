@@ -6,6 +6,7 @@ import com.openhand.khata.core.database.entity.TransactionEntity
 import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.SmsTransaction
 import com.openhand.khata.core.model.Transaction
 import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.model.TransactionSource
@@ -117,6 +118,43 @@ class TransactionRepositoryTest : RepositoryTest() {
             rememberPayeeDefaults = true
         )
         assertEquals(food, PayeeRepository(lazyDb).find("Ramesh")!!.defaultCategoryId)
+    }
+
+    @Test
+    fun rememberingACategoryFilesOnlyThatPayeesUncategorizedTransactions() = runTest {
+        val groceries = db.categoryDao().getBySeedKey("groceries")!!.id
+        val travel = db.categoryDao().getBySeedKey("travel")!!.id
+        val fromSms = SmsImporter(lazyDb).import(
+            SmsTransaction(
+                amountPaise = 5_000,
+                direction = Direction.DEBIT,
+                timestamp = DAY,
+                bank = "Kotak",
+                accountType = AccountType.BANK,
+                accountLast4 = "1234",
+                payee = "SANTOSH GYANDEV MANM",
+                referenceNo = "1",
+                rawSms = "Sent to SANTOSH GYANDEV MANM"
+            )
+        ) as SmsImportResult.Saved
+        val filedElsewhere = transactions.save(
+            expense { copy(payeeName = "santosh gyandev manm", categoryId = travel) }
+        )
+        val otherPayee = transactions.save(expense { copy(payeeName = "Ramesh") })
+
+        transactions.save(
+            expense {
+                copy(payeeName = "SANTOSH GYANDEV MANM", categoryId = groceries, tags = listOf("x"))
+            },
+            rememberPayeeDefaults = true
+        )
+
+        val old = db.transactionDao().getById(fromSms.transactionId)!!
+        assertEquals(groceries, old.categoryId)
+        assertFalse(old.needsReview)
+        assertEquals(emptyList<Long>(), db.transactionDao().tagIds(old.id))
+        assertEquals(travel, db.transactionDao().getById(filedElsewhere)!!.categoryId)
+        assertEquals(uncategorizedId(), db.transactionDao().getById(otherPayee)!!.categoryId)
     }
 
     @Test

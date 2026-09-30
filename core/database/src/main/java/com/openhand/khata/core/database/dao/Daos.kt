@@ -293,6 +293,17 @@ interface PayeeDao {
         setDefaultTags(payee.id, tagIds)
     }
 
+    /**
+     * Files [payeeId]'s Uncategorized transactions under its new default [categoryId] and takes
+     * them out of the review inbox (payee memory for old transactions). Ones the user already
+     * filed elsewhere keep their category. Returns how many changed.
+     */
+    @Query(
+        "UPDATE transactions SET category_id = :categoryId, needs_review = 0 " +
+            "WHERE payee_id = :payeeId AND category_id = :uncategorizedId"
+    )
+    suspend fun categorizeUncategorized(payeeId: Long, categoryId: Long, uncategorizedId: Long): Int
+
     @Query("UPDATE transactions SET payee_id = :into WHERE payee_id = :from")
     suspend fun moveTransactions(from: Long, into: Long)
 
