@@ -48,4 +48,10 @@
         <item quantity="other">%d दिन से कोई एक्सपोर्ट नहीं। Khata के लिए Android बैकअप बंद है, इसलिए फ़ोन खो जाने पर CSV एक्सपोर्ट ही आपके डेटा की एकमात्र कॉपी है।</item>
     </plurals>
     <string name="home_backup_action">अभी एक्सपोर्ट करें</string>
+    <plurals name="home_review_title">
+        <item quantity="one">%d लेन-देन देखना बाकी</item>
+        <item quantity="other">%d लेन-देन देखना बाकी</item>
+    </plurals>
+    <string name="home_review_body">ऐसे पाने वालों से जिनका नाम आपने अभी नहीं रखा। हर एक का नाम एक बार रखें, फिर आगे के भुगतान अपने-आप भर जाएँगे।</string>
+    <string name="home_review_action">देखें</string>
 </resources>

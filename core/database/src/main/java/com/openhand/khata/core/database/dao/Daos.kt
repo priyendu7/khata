@@ -526,3 +526,49 @@ interface SmsImportDao {
         until: Long
     ): Long?
 }
+
+/** A waiting transaction with what its review card shows, joined in. */
+data class ReviewRow(
+    val id: Long,
+    @ColumnInfo(name = "amount_paise") val amountPaise: Long,
+    val direction: Direction,
+    val timestamp: Long,
+    @ColumnInfo(name = "raw_sms") val rawSms: String?,
+    @ColumnInfo(name = "account_name") val accountName: String?,
+    @ColumnInfo(name = "payee_id") val payeeId: Long?,
+    @ColumnInfo(name = "payee_identifier") val payeeIdentifier: String?,
+    @ColumnInfo(name = "payee_name") val payeeName: String?,
+    @ColumnInfo(name = "payee_pending") val payeePending: Int
+)
+
+/** The To review inbox (PRD feature 4): transactions with `needs_review` set. */
+@Dao
+interface ReviewDao {
+    @Query("SELECT COUNT(*) FROM transactions WHERE needs_review = 1")
+    fun observeCount(): Flow<Int>
+
+    /** Waiting transactions, newest first. */
+    @Query(
+        "SELECT t.id, t.amount_paise, t.direction, t.timestamp, t.raw_sms, " +
+            "a.name AS account_name, p.id AS payee_id, p.identifier AS payee_identifier, " +
+            "p.display_name AS payee_name, " +
+            "(SELECT COUNT(*) FROM transactions o WHERE o.needs_review = 1 " +
+            "AND o.payee_id = t.payee_id) AS payee_pending " +
+            "FROM transactions t " +
+            "LEFT JOIN accounts a ON a.id = t.account_id " +
+            "LEFT JOIN payees p ON p.id = t.payee_id " +
+            "WHERE t.needs_review = 1 ORDER BY t.timestamp DESC, t.id DESC"
+    )
+    fun observeQueue(): Flow<List<ReviewRow>>
+
+    @Query("SELECT id FROM transactions WHERE needs_review = 1 AND payee_id = :payeeId")
+    suspend fun pendingIds(payeeId: Long): List<Long>
+
+    /** Files [ids] under [categoryId] and takes them out of the inbox. */
+    @Query("UPDATE transactions SET category_id = :categoryId, needs_review = 0 WHERE id IN (:ids)")
+    suspend fun markReviewed(ids: List<Long>, categoryId: Long)
+
+    /** Takes [id] out of the inbox as it is (Uncategorized, for an unknown payee). */
+    @Query("UPDATE transactions SET needs_review = 0 WHERE id = :id")
+    suspend fun skip(id: Long)
+}

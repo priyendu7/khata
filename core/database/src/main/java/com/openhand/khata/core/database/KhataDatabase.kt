@@ -7,6 +7,7 @@ import com.openhand.khata.core.database.dao.AccountDao
 import com.openhand.khata.core.database.dao.BackupDao
 import com.openhand.khata.core.database.dao.CategoryDao
 import com.openhand.khata.core.database.dao.PayeeDao
+import com.openhand.khata.core.database.dao.ReviewDao
 import com.openhand.khata.core.database.dao.SmsImportDao
 import com.openhand.khata.core.database.dao.TagDao
 import com.openhand.khata.core.database.dao.TransactionDao
@@ -33,9 +34,10 @@ import com.openhand.khata.core.database.entity.TransactionTagEntity
         PayeeDefaultTagEntity::class,
         TransactionEntity::class,
         TransactionTagEntity::class,
-        MetadataEntity::class
+        MetadataEntity::class,
+        UnparsedSmsEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(EnumConverters::class)
@@ -55,6 +57,10 @@ abstract class KhataDatabase : RoomDatabase() {
     abstract fun backupDao(): BackupDao
 
     abstract fun smsImportDao(): SmsImportDao
+
+    abstract fun reviewDao(): ReviewDao
+
+    abstract fun unparsedSmsDao(): UnparsedSmsDao
 
     companion object {
         const val NAME = "khata.db"

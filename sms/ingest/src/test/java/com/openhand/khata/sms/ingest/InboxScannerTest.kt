@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.openhand.khata.core.data.SmsImporter
+import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.model.Direction
@@ -70,7 +71,18 @@ class InboxScannerTest {
             FakeSmsInbox.Sms("JM-KOTAKB-S", "Rs.2,000 withdrawn at ATM using card XX5678.", at(14)),
             FakeSmsInbox.Sms("VM-KOTAKB-P", "Pre-approved loan of Rs.5,00,000!", at(15))
         )
-        scanner = InboxScanner(SmsInbox(context), SmsIngestor(SmsImporter(Lazy { db })))
+        scanner =
+            InboxScanner(
+                SmsInbox(context),
+                SmsIngestor(
+                    SmsImporter(
+                        Lazy {
+                            db
+                        }
+                    ),
+                    UnparsedSmsRepository(Lazy { db })
+                )
+            )
     }
 
     @After
@@ -95,6 +107,14 @@ class InboxScannerTest {
         assertEquals(listOf(36_600L, 150L), saved.map { it.amountPaise })
         assertEquals(listOf(Direction.DEBIT, Direction.CREDIT), saved.map { it.direction })
         assertEquals(setOf(TransactionSource.SMS), saved.map { it.source }.toSet())
+        // The ATM SMS no rule reads is kept for the review inbox, not the OTP or anything else.
+        val unreadable = db.unparsedSmsDao().observeAll().first()
+        assertEquals(
+            listOf("Rs.2,000 withdrawn at ATM using card XX5678."),
+            unreadable.map {
+                it.body
+            }
+        )
     }
 
     @Test
@@ -110,7 +130,9 @@ class InboxScannerTest {
         val again = scanner.scan(since = at(1))
 
         assertEquals(1, again.recorded)
-        assertEquals(2, again.alreadyThere)
+        // The two transactions, and the ATM SMS already kept for review.
+        assertEquals(3, again.alreadyThere)
+        assertEquals(0, again.unreadable)
         assertEquals(3, db.transactionDao().observeAll().first().size)
     }
 

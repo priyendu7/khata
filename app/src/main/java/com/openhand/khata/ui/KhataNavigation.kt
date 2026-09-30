@@ -1,6 +1,8 @@
 package com.openhand.khata.ui
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -15,6 +17,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -38,7 +42,13 @@ import com.openhand.khata.feature.transactions.AddTransactionButton
 import com.openhand.khata.feature.transactions.FILTER_CATEGORY_ARG
 import com.openhand.khata.feature.transactions.FILTER_FROM_ARG
 import com.openhand.khata.feature.transactions.FILTER_UNTIL_ARG
+import com.openhand.khata.feature.transactions.FROM_UNPARSED_ARG
 import com.openhand.khata.feature.transactions.NO_FILTER
+import com.openhand.khata.feature.transactions.NO_PREFILL
+import com.openhand.khata.feature.transactions.PREFILL_AMOUNT_ARG
+import com.openhand.khata.feature.transactions.PREFILL_AT_ARG
+import com.openhand.khata.feature.transactions.ReviewCountViewModel
+import com.openhand.khata.feature.transactions.ReviewScreen
 import com.openhand.khata.feature.transactions.TRANSACTION_ID_ARG
 import com.openhand.khata.feature.transactions.TransactionEditorScreen
 import com.openhand.khata.feature.transactions.TransactionsScreen
@@ -64,7 +74,8 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
                 onOpenTransaction = { id -> navController.navigate(Route.transaction(id)) },
                 onOpenTransactions = { categoryId, from, until ->
                     navController.navigate(Route.transactions(categoryId, from, until))
-                }
+                },
+                onReview = { navController.navigate(Route.REVIEW) { launchSingleTop = true } }
             )
         }
         composable(
@@ -83,7 +94,13 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         }
         composable(
             Route.TRANSACTION,
-            arguments = listOf(navArgument(TRANSACTION_ID_ARG) { type = NavType.LongType })
+            arguments = listOf(navArgument(TRANSACTION_ID_ARG) { type = NavType.LongType }) +
+                listOf(PREFILL_AMOUNT_ARG, PREFILL_AT_ARG, FROM_UNPARSED_ARG).map {
+                    navArgument(it) {
+                        type = NavType.LongType
+                        defaultValue = NO_PREFILL
+                    }
+                }
         ) { TransactionEditorScreen(onDone = back) }
         composable(Route.ACCOUNTS) { AccountsScreen(onBack = back) }
         composable(Route.CATEGORIES) { CategoriesScreen(onBack = back) }
@@ -92,6 +109,14 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         composable(Route.EXPORT) { ExportScreen(onBack = back) }
         composable(Route.IMPORT) { ImportScreen(onBack = back) }
         composable(Route.SMS_IMPORT) { SmsImportScreen(onBack = back) }
+        composable(Route.REVIEW) {
+            ReviewScreen(
+                onBack = back,
+                onAddByHand = { amount, at, unparsedId ->
+                    navController.navigate(Route.addFromSms(amount, at, unparsedId))
+                }
+            )
+        }
     }
 }
 
@@ -104,11 +129,19 @@ private object Route {
     const val EXPORT = "export"
     const val IMPORT = "import"
     const val SMS_IMPORT = "sms_import"
+    const val REVIEW = "review"
 
     /** Add (id 0) or edit a transaction. */
-    const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}"
+    const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}" +
+        "?$PREFILL_AMOUNT_ARG={$PREFILL_AMOUNT_ARG}&$PREFILL_AT_ARG={$PREFILL_AT_ARG}" +
+        "&$FROM_UNPARSED_ARG={$FROM_UNPARSED_ARG}"
 
     fun transaction(id: Long) = "transaction/$id"
+
+    /** Add a transaction for an SMS no rule could read, with what's known filled in. */
+    fun addFromSms(amountPaise: Long?, at: Long, unparsedId: Long) =
+        "transaction/0?$PREFILL_AMOUNT_ARG=${amountPaise ?: NO_PREFILL}" +
+            "&$PREFILL_AT_ARG=$at&$FROM_UNPARSED_ARG=$unparsedId"
 
     /** The transactions list, filtered by a category (null for any) and a date range. */
     const val TRANSACTIONS = "transactions?$FILTER_CATEGORY_ARG={$FILTER_CATEGORY_ARG}" +
@@ -134,9 +167,12 @@ private fun SettingsPage.route() = when (this) {
 private fun MainTabs(
     onOpen: (SettingsPage) -> Unit,
     onOpenTransaction: (Long) -> Unit,
-    onOpenTransactions: (categoryId: Long?, from: Long, until: Long) -> Unit
+    onOpenTransactions: (categoryId: Long?, from: Long, until: Long) -> Unit,
+    onReview: () -> Unit,
+    reviewCount: ReviewCountViewModel = hiltViewModel()
 ) {
     var current by rememberSaveable { mutableStateOf(Destination.HOME) }
+    val toReview by reviewCount.count.collectAsStateWithLifecycle()
     Scaffold(
         floatingActionButton = {
             if (current == Destination.HOME || current == Destination.TRANSACTIONS) {
@@ -150,10 +186,14 @@ private fun MainTabs(
                         selected = destination == current,
                         onClick = { current = destination },
                         icon = {
-                            Icon(
-                                painterResource(destination.icon),
-                                contentDescription = null
-                            )
+                            // PRD feature 4: the To review count as a badge on Transactions.
+                            val badge = toReview.takeIf {
+                                destination == Destination.TRANSACTIONS &&
+                                    it > 0
+                            }
+                            BadgedBox(badge = { badge?.let { Badge { Text("$it") } } }) {
+                                Icon(painterResource(destination.icon), contentDescription = null)
+                            }
                         },
                         label = { Text(stringResource(destination.label)) }
                     )
@@ -166,9 +206,14 @@ private fun MainTabs(
             Destination.HOME -> HomeScreen(
                 stringResource(R.string.app_name),
                 modifier,
-                onBackup = { onOpen(SettingsPage.EXPORT) }
+                onBackup = { onOpen(SettingsPage.EXPORT) },
+                onReview = onReview
             )
-            Destination.TRANSACTIONS -> TransactionsScreen(onOpenTransaction, modifier)
+            Destination.TRANSACTIONS -> TransactionsScreen(
+                onOpenTransaction,
+                modifier,
+                onReview = onReview
+            )
             Destination.INSIGHTS -> InsightsScreen(onOpenTransactions, modifier)
             Destination.SETTINGS -> SettingsRoute(modifier, lockSettings = {
                 LockSettingsSection()
