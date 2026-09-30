@@ -16,11 +16,13 @@ class InboxScanner @Inject constructor(
         now: () -> Long = System::currentTimeMillis,
         onProgress: suspend (done: Int, total: Int) -> Unit = { _, _ -> }
     ): ScanSummary {
-        val messages = inbox.bankMessages(since, ingestor::isBankSender)
+        val parser = ingestor.parser()
+        val messages = inbox.bankMessages(since, parser::isKnownSender)
         val counts = IngestOutcome.entries.associateWithTo(mutableMapOf()) { 0 }
         onProgress(0, messages.size)
         messages.forEachIndexed { index, message ->
-            val outcome = ingestor.ingest(message.sender, message.body, message.receivedAt)
+            val outcome =
+                ingestor.ingest(message.sender, message.body, message.receivedAt, parser)
             counts[outcome] = counts.getValue(outcome) + 1
             onProgress(index + 1, messages.size)
         }

@@ -24,5 +24,21 @@ object KhataMigrations {
         }
     }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2)
+    /** 2 → 3: parser rules the user pasted in Settings > Parsers (#59). */
+    val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `custom_parsers` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`rule_id` TEXT NOT NULL, `bank` TEXT NOT NULL, `code` TEXT NOT NULL, " +
+                    "`enabled` INTEGER NOT NULL, `added_at` INTEGER NOT NULL)"
+            )
+            db.execSQL(
+                "CREATE UNIQUE INDEX IF NOT EXISTS `index_custom_parsers_rule_id` " +
+                    "ON `custom_parsers` (`rule_id`)"
+            )
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
 }

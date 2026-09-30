@@ -3,6 +3,7 @@ package com.openhand.khata.sms.ingest
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.openhand.khata.core.data.CustomParserRepository
 import com.openhand.khata.core.data.SmsImporter
 import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
@@ -80,7 +81,8 @@ class InboxScannerTest {
                             db
                         }
                     ),
-                    UnparsedSmsRepository(Lazy { db })
+                    UnparsedSmsRepository(Lazy { db }),
+                    CustomParserRepository(Lazy { db })
                 )
             )
     }

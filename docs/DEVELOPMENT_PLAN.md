@@ -125,7 +125,7 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 **Custom parsers**
 
 - [ ] Parser website in `parser-web/`: paste an SMS, highlight the fields, generate a rule code; runs fully in the browser; published on GitHub Pages
-- [ ] In the app: Settings > Parsers > Add, paste the code, test it on a recent SMS, then save; list, disable and delete saved parsers
+- [x] In the app: Settings > Parsers > Add, paste the code, test it on a recent SMS, then save; list, disable and delete saved parsers
 - [x] Check every rule before saving: known version, valid pattern, required fields present; patterns run on RE2J, so a bad pattern can't freeze the app
 - [ ] Contributing guide for submitting a rule to the repo
 
