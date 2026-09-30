@@ -57,9 +57,9 @@
     <string name="sms_summary_already_there">Already saved: %1$d</string>
     <string name="sms_summary_unreadable">Bank SMS that couldn\'t be read: %1$d</string>
     <string name="settings_parsers">Parsers</string>
-    <string name="settings_parsers_value">Read SMS from more banks with rule codes from the parser website</string>
+    <string name="settings_parsers_value">Read SMS from more banks with parser rules</string>
     <string name="parsers_title">Parsers</string>
-    <string name="parsers_intro">Khata reads bank SMS with parser rules. For a bank or SMS format it doesn\'t know yet, make a rule code on the Khata parser website and add it here. Your rules are tried before the built-in ones.</string>
+    <string name="parsers_intro">Khata reads bank SMS with parser rules. For a bank or SMS format it doesn\'t know yet, add a rule code someone shared with you. Your rules are tried before the built-in ones.</string>
     <string name="parsers_custom_header">Your rules</string>
     <string name="parsers_custom_empty">None yet. Tap + to add a rule code.</string>
     <string name="parsers_rule_off">%1$s · Off</string>
@@ -72,11 +72,11 @@
         <item quantity="other">%1$d rules · %2$s</item>
     </plurals>
     <string name="parser_add_title">Add parser</string>
-    <string name="parser_add_intro">Paste a rule code made on the Khata parser website. It starts with khata1:</string>
+    <string name="parser_add_intro">Paste a rule code someone shared with you. It starts with khata1:</string>
     <string name="parser_code_label">Rule code</string>
     <string name="parser_code_bad_prefix">This isn\'t a rule code. Rule codes start with khata1:</string>
     <string name="parser_code_bad_base64">The code is damaged. Copy the whole code again, from khata1: to the end.</string>
-    <string name="parser_code_bad_json">The code doesn\'t hold a rule Khata can read. Make it again on the parser website.</string>
+    <string name="parser_code_bad_json">The code doesn\'t hold a rule Khata can read. Ask for the code again.</string>
     <string name="parser_code_unknown_version">This rule is for a newer version of Khata. Update the app, then try again.</string>
     <string name="parser_invalid_title">This rule can\'t be used:</string>
     <string name="parser_rule_unknown_version">It\'s for a newer version of Khata.</string>

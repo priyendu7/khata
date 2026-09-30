@@ -23,7 +23,7 @@ Popular Indian expense apps need an account, show ads, and upload your SMS and s
 5. **Charts** — category donut, 12-month calendar heatmap, month-by-month comparison, and a home summary.
 6. **CSV export and import** — your backup, and a way in from existing spreadsheets.
 7. **SMS reading** — on-device parsing, with Kotak built in and other banks added through custom parsers (milestone M3).
-8. **Custom parsers** — add a bank yourself with a declarative rule built on the in-browser parser website (M3).
+8. **Custom parsers** — add a bank yourself with a declarative rule made in the app from one of its SMS (M3).
 
 Everything is protected by an app lock and an encrypted database, in English and Hindi. **Out of scope for v1:** iOS, cloud sync or accounts, bill reminders, investments, reading PDF statements or email, any analytics/crash-reporting/ads SDK, and F-Droid.
 
@@ -68,7 +68,7 @@ gradle/libs.versions.toml  All plugin and library versions
 ```
 
 Each module has a README saying what it owns and which milestone builds it. Every module uses the
-`com.openhand.khata.<module>` package. `parser-web/` (the custom-parser website) arrives in Phase 3.
+`com.openhand.khata.<module>` package.
 
 ## Getting started
 

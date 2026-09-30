@@ -55,9 +55,9 @@
     <string name="sms_summary_already_there">पहले से सहेजे हुए: %1$d</string>
     <string name="sms_summary_unreadable">बैंक SMS जो पढ़े नहीं जा सके: %1$d</string>
     <string name="settings_parsers">पार्सर</string>
-    <string name="settings_parsers_value">पार्सर वेबसाइट के रूल कोड से और बैंकों के SMS पढ़ें</string>
+    <string name="settings_parsers_value">पार्सर रूल से और बैंकों के SMS पढ़ें</string>
     <string name="parsers_title">पार्सर</string>
-    <string name="parsers_intro">खाता बैंक SMS को पार्सर रूल से पढ़ता है। जिस बैंक या SMS फ़ॉर्मेट को खाता अभी नहीं जानता, उसके लिए खाता पार्सर वेबसाइट पर रूल कोड बनाएँ और यहाँ जोड़ें। आपके रूल पहले से मौजूद रूल से पहले आज़माए जाते हैं।</string>
+    <string name="parsers_intro">खाता बैंक SMS को पार्सर रूल से पढ़ता है। जिस बैंक या SMS फ़ॉर्मेट को खाता अभी नहीं जानता, उसके लिए किसी का शेयर किया रूल कोड यहाँ जोड़ें। आपके रूल पहले से मौजूद रूल से पहले आज़माए जाते हैं।</string>
     <string name="parsers_custom_header">आपके रूल</string>
     <string name="parsers_custom_empty">अभी कोई नहीं। रूल कोड जोड़ने के लिए + दबाएँ।</string>
     <string name="parsers_rule_off">%1$s · बंद</string>
@@ -70,11 +70,11 @@
         <item quantity="other">%1$d रूल · %2$s</item>
     </plurals>
     <string name="parser_add_title">पार्सर जोड़ें</string>
-    <string name="parser_add_intro">खाता पार्सर वेबसाइट पर बना रूल कोड यहाँ पेस्ट करें। यह khata1: से शुरू होता है।</string>
+    <string name="parser_add_intro">किसी का शेयर किया रूल कोड यहाँ पेस्ट करें। यह khata1: से शुरू होता है।</string>
     <string name="parser_code_label">रूल कोड</string>
     <string name="parser_code_bad_prefix">यह रूल कोड नहीं है। रूल कोड khata1: से शुरू होते हैं।</string>
     <string name="parser_code_bad_base64">कोड खराब हो गया है। पूरा कोड, khata1: से आख़िर तक, फिर से कॉपी करें।</string>
-    <string name="parser_code_bad_json">इस कोड में ऐसा रूल नहीं है जिसे खाता पढ़ सके। पार्सर वेबसाइट पर इसे फिर से बनाएँ।</string>
+    <string name="parser_code_bad_json">इस कोड में ऐसा रूल नहीं है जिसे खाता पढ़ सके। कोड फिर से माँगें।</string>
     <string name="parser_code_unknown_version">यह रूल खाता के नए वर्ज़न के लिए है। ऐप अपडेट करें, फिर से कोशिश करें।</string>
     <string name="parser_invalid_title">यह रूल इस्तेमाल नहीं हो सकता:</string>
     <string name="parser_rule_unknown_version">यह खाता के नए वर्ज़न के लिए है।</string>

@@ -37,7 +37,7 @@ Khata never asks to send SMS, read your contacts, or use the internet.
 
 **The app does not connect to the internet.** It doesn't declare Android's `INTERNET` permission, so the operating system itself blocks it from opening network connections. Every build is checked automatically, and the build fails if any library tries to add that permission. You can confirm it in your phone's app info, which lists no network access.
 
-The custom-parser website (planned) is a static page that runs entirely in your browser; the SMS you paste into it is never uploaded.
+Custom parsers are made inside the app from SMS already on your phone, so those SMS are never uploaded anywhere.
 
 ## Google Play
 

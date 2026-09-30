@@ -1,6 +1,6 @@
 # Rule test vectors
 
-Shared by the app (`RuleVectorsTest`) and the parser website, so both read every rule the same way. The rule format is in [`docs/parser-rules.md`](../../../../../../docs/parser-rules.md). All SMS here are made up.
+Read by `RuleVectorsTest`, so every rule is read the same way whatever changes in the engine. The rule format is in [`docs/parser-rules.md`](../../../../../../docs/parser-rules.md). All SMS here are made up.
 
 **Parse vectors** (every file except `invalid-rules.json`):
 
