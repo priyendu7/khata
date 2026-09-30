@@ -12,7 +12,7 @@ The plan takes Khata from an empty repo to a Play Store release in seven phases.
 | 1 Manual tracking | Add income and expenses by hand, in English or Hindi, with payee memory |
 | 2 Charts and CSV | Pie, calendar heatmap and monthly chart; import your spreadsheet |
 | 3 SMS and custom parsers | Your bank SMS are recorded automatically; you can make a parser for any bank in the app |
-| 4 Enhancements and feedback | Using and testing the app turns into improvements: payee memory for old transactions, events, new categories from the editor |
+| 4 Enhancements and feedback | Using and testing the app turns into improvements: events, new categories from the editor |
 | 5 More banks and SMS extras | HDFC, ICICI, Axis and Federal built in, more Kotak formats, transfers detected, optional daily summary |
 | 6 Release | Closed test with 12 testers, then live on the Play Store |
 
@@ -118,7 +118,7 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 
 - [ ] Ask for SMS permissions only when the user turns SMS import on, with a clear explanation screen first
 - [ ] Receiver for new SMS, plus a one-time scan of the inbox from a start date the user picks
-- [ ] Review inbox: cards for new payees with a count badge; name, category and tags; skip
+- [ ] Review inbox: cards for new payees with a count badge; name, category and tags; skip. A remembered category also files the payee's older uncategorized transactions (#57)
 - [ ] Unparsed bank SMS appear in the review inbox with their raw text
 
 **Custom parsers**
@@ -134,7 +134,6 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 
 This phase is for using the app day to day, testing it, and acting on what comes up. Its issues improve features that already exist rather than adding new areas.
 
-- [ ] Payee memory fills in old uncategorized transactions (#72)
 - [ ] Events: tag every transaction in a date range (#73)
 - [ ] Create a category from the transaction editor (#74)
 
