@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.openhand.khata.core.data.SmsImporter
+import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
 import dagger.Lazy
@@ -48,7 +49,19 @@ class NewSmsTest {
             .allowMainThreadQueries()
             .build()
         settings = SmsImportSettings(context)
-        handler = NewSmsHandler(context, settings, SmsIngestor(SmsImporter(Lazy { db })))
+        handler =
+            NewSmsHandler(
+                context,
+                settings,
+                SmsIngestor(
+                    SmsImporter(
+                        Lazy {
+                            db
+                        }
+                    ),
+                    UnparsedSmsRepository(Lazy { db })
+                )
+            )
     }
 
     @After

@@ -64,4 +64,13 @@
         <item quantity="one">%d transaction to review</item>
         <item quantity="other">%d transactions to review</item>
     </plurals>
+    <string name="review_unparsed_title">A bank SMS Khata couldn\'t read</string>
+    <string name="review_unparsed_body">It has an amount, but its format is new to Khata. Add it by hand, or dismiss it if it isn\'t a transaction.</string>
+    <string name="review_add_by_hand">Add by hand</string>
+    <string name="review_dismiss">Dismiss</string>
+    <string name="review_copy">Copy for a bug report</string>
+    <string name="review_copied_title">SMS copied</string>
+    <string name="review_copied_body">Before sharing it, remove names, account and card numbers, balances and anything else personal. Then paste it into a new issue on GitHub, so this format can be added. Khata itself sends nothing.</string>
+    <string name="review_open_github">Open GitHub</string>
+    <string name="review_close">Close</string>
 </resources>

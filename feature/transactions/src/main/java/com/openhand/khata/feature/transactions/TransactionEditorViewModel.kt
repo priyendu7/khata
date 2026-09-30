@@ -8,9 +8,12 @@ import com.openhand.khata.core.data.CategoryRepository
 import com.openhand.khata.core.data.PayeeRepository
 import com.openhand.khata.core.data.TagRepository
 import com.openhand.khata.core.data.TransactionRepository
+import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Category
+import com.openhand.khata.core.model.Money
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import javax.inject.Inject
@@ -33,22 +36,38 @@ import kotlinx.coroutines.launch
 /** Navigation argument: the transaction to edit, or 0 to add a new one. */
 const val TRANSACTION_ID_ARG = "transactionId"
 
+/** For a new transaction started from an SMS no rule could read: its amount in paise, if found. */
+const val PREFILL_AMOUNT_ARG = "amount"
+
+/** …when it arrived (epoch millis). */
+const val PREFILL_AT_ARG = "at"
+
+/** …and that SMS, deleted from the review inbox once the transaction is saved. */
+const val FROM_UNPARSED_ARG = "unparsed"
+
+/** The value an optional editor argument has when it isn't given. */
+const val NO_PREFILL = -1L
+
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
+// Hilt injects one repository per kind of data the editor reads or writes.
+@Suppress("LongParameterList")
 class TransactionEditorViewModel @Inject constructor(
     savedState: SavedStateHandle,
     private val transactions: TransactionRepository,
     categories: CategoryRepository,
     accounts: AccountRepository,
     private val tags: TagRepository,
-    private val payees: PayeeRepository
+    private val payees: PayeeRepository,
+    private val unparsed: UnparsedSmsRepository
 ) : ViewModel() {
     val transactionId: Long = savedState[TRANSACTION_ID_ARG] ?: 0L
     val isNew: Boolean get() = transactionId == 0L
+    private val fromUnparsed: Long = savedState[FROM_UNPARSED_ARG] ?: NO_PREFILL
 
     private val zone: ZoneId get() = ZoneId.systemDefault()
 
-    private val _form = MutableStateFlow(if (isNew) EditorForm.new(ZonedDateTime.now()) else null)
+    private val _form = MutableStateFlow(if (isNew) newForm(savedState) else null)
 
     /** Null while an existing transaction loads. */
     val form: StateFlow<EditorForm?> = _form.asStateFlow()
@@ -132,6 +151,8 @@ class TransactionEditorViewModel @Inject constructor(
                 form.toTransaction(transactionId, zone),
                 rememberPayeeDefaults = form.rememberPayee
             )
+            // Added by hand from the review inbox: that SMS has been dealt with.
+            if (fromUnparsed != NO_PREFILL) unparsed.delete(fromUnparsed)
         }
     }
 
@@ -151,6 +172,16 @@ class TransactionEditorViewModel @Inject constructor(
                 busy = false
             }
         }
+    }
+
+    /** Dated now, or filled in from an SMS no rule could read. */
+    private fun newForm(savedState: SavedStateHandle): EditorForm {
+        val at = savedState.get<Long>(PREFILL_AT_ARG)?.takeIf { it != NO_PREFILL }
+        val amount = savedState.get<Long>(PREFILL_AMOUNT_ARG)?.takeIf { it > 0 }
+        val form = EditorForm.new(
+            at?.let { Instant.ofEpochMilli(it).atZone(zone) } ?: ZonedDateTime.now()
+        )
+        return amount?.let { form.copy(amount = Money.toInput(it)) } ?: form
     }
 
     private companion object {

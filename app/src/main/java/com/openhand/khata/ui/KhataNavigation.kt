@@ -42,7 +42,11 @@ import com.openhand.khata.feature.transactions.AddTransactionButton
 import com.openhand.khata.feature.transactions.FILTER_CATEGORY_ARG
 import com.openhand.khata.feature.transactions.FILTER_FROM_ARG
 import com.openhand.khata.feature.transactions.FILTER_UNTIL_ARG
+import com.openhand.khata.feature.transactions.FROM_UNPARSED_ARG
 import com.openhand.khata.feature.transactions.NO_FILTER
+import com.openhand.khata.feature.transactions.NO_PREFILL
+import com.openhand.khata.feature.transactions.PREFILL_AMOUNT_ARG
+import com.openhand.khata.feature.transactions.PREFILL_AT_ARG
 import com.openhand.khata.feature.transactions.ReviewCountViewModel
 import com.openhand.khata.feature.transactions.ReviewScreen
 import com.openhand.khata.feature.transactions.TRANSACTION_ID_ARG
@@ -90,7 +94,13 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         }
         composable(
             Route.TRANSACTION,
-            arguments = listOf(navArgument(TRANSACTION_ID_ARG) { type = NavType.LongType })
+            arguments = listOf(navArgument(TRANSACTION_ID_ARG) { type = NavType.LongType }) +
+                listOf(PREFILL_AMOUNT_ARG, PREFILL_AT_ARG, FROM_UNPARSED_ARG).map {
+                    navArgument(it) {
+                        type = NavType.LongType
+                        defaultValue = NO_PREFILL
+                    }
+                }
         ) { TransactionEditorScreen(onDone = back) }
         composable(Route.ACCOUNTS) { AccountsScreen(onBack = back) }
         composable(Route.CATEGORIES) { CategoriesScreen(onBack = back) }
@@ -99,7 +109,14 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         composable(Route.EXPORT) { ExportScreen(onBack = back) }
         composable(Route.IMPORT) { ImportScreen(onBack = back) }
         composable(Route.SMS_IMPORT) { SmsImportScreen(onBack = back) }
-        composable(Route.REVIEW) { ReviewScreen(onBack = back) }
+        composable(Route.REVIEW) {
+            ReviewScreen(
+                onBack = back,
+                onAddByHand = { amount, at, unparsedId ->
+                    navController.navigate(Route.addFromSms(amount, at, unparsedId))
+                }
+            )
+        }
     }
 }
 
@@ -115,9 +132,16 @@ private object Route {
     const val REVIEW = "review"
 
     /** Add (id 0) or edit a transaction. */
-    const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}"
+    const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}" +
+        "?$PREFILL_AMOUNT_ARG={$PREFILL_AMOUNT_ARG}&$PREFILL_AT_ARG={$PREFILL_AT_ARG}" +
+        "&$FROM_UNPARSED_ARG={$FROM_UNPARSED_ARG}"
 
     fun transaction(id: Long) = "transaction/$id"
+
+    /** Add a transaction for an SMS no rule could read, with what's known filled in. */
+    fun addFromSms(amountPaise: Long?, at: Long, unparsedId: Long) =
+        "transaction/0?$PREFILL_AMOUNT_ARG=${amountPaise ?: NO_PREFILL}" +
+            "&$PREFILL_AT_ARG=$at&$FROM_UNPARSED_ARG=$unparsedId"
 
     /** The transactions list, filtered by a category (null for any) and a date range. */
     const val TRANSACTIONS = "transactions?$FILTER_CATEGORY_ARG={$FILTER_CATEGORY_ARG}" +
