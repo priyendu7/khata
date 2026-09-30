@@ -119,13 +119,13 @@ Parsing happens entirely on the device, with a rule set for each sender. Kotak i
 
 Users can add a parser for any bank we don't support yet, without waiting for a release.
 
-1. On the Khata parser website (GitHub Pages), the user pastes a sample SMS and marks the amount, payee, account and reference number.
-2. The site generates a parser rule, a short text code containing a pattern and field mapping.
-3. In the app, the user opens Settings > Parsers > Add, pastes the code, tests it against a recent SMS on the phone, and saves it.
+1. In the app, the user picks an SMS the app couldn't read (from the review inbox, or Settings > Parsers > Add) and marks the amount, payee, account and reference number.
+2. The app turns that into a parser rule, a pattern and field mapping, and tests it against the other recent SMS from that sender on the phone.
+3. The user saves it. A rule can also be shared as a short text code, and pasted into Settings > Parsers > Add on another phone.
 
 Three rules keep this safe:
 
-- **The website runs entirely in the browser.** It is a static page with no server, so the pasted SMS never leaves the user's device. The page asks users to blank out personal details anyway.
+- **The SMS never leaves the phone.** The rule is made in the app, which has no internet permission; there's no website to paste it into.
 - **A parser is data, not code.** The app only accepts a declarative rule (a pattern plus field names), never executable code. This protects users from malicious parsers, and Google Play does not allow apps to download and run code.
 - **Sharing is optional.** Users can submit a rule to the GitHub repo so it ships to everyone in the next release.
 
@@ -169,7 +169,7 @@ The app is a native Android app written in Kotlin with Jetpack Compose. It suppo
 | CSV | Storage Access Framework (the system file picker) and a small CSV library | The user picks where files go, without broad storage permissions |
 | Build / CI | Gradle, GitHub Actions: lint, unit tests, a check that fails if the INTERNET permission appears, reproducible release builds | Enforces the privacy promise automatically |
 
-**SMS parser design.** Each bank has its own rules, in the same declarative format as custom parsers ([`docs/parser-rules.md`](parser-rules.md)): the engine takes the sender ID and message body and returns a transaction or nothing. The sender ID is matched by its header, for example `KOTAKB` in `JM-KOTAKB-S`. Each bank's rules are tested against real SMS samples with personal details blanked out, kept in the repo. Adding a new bank means adding its rule file (made on the parser website) and its sample SMS, which is a simple first contribution for newcomers.
+**SMS parser design.** Each bank has its own rules, in the same declarative format as custom parsers ([`docs/parser-rules.md`](parser-rules.md)): the engine takes the sender ID and message body and returns a transaction or nothing. The sender ID is matched by its header, for example `KOTAKB` in `JM-KOTAKB-S`. Each bank's rules are tested against real SMS samples with personal details blanked out, kept in the repo. Adding a new bank means adding its rule file (made in the app) and its sample SMS, which is a simple first contribution for newcomers.
 
 ## Distribution
 
@@ -195,7 +195,7 @@ We build in five milestones. The app is useful from M2 on, before any SMS parsin
 | M0 Foundation | Repo, GPLv3, CI including the check that fails if the INTERNET permission appears, encrypted Room database, app lock | The app opens behind a PIN or fingerprint, and CI is green |
 | M1 Manual tracking | Add, edit and delete transactions; categories, tags, accounts, payee memory, income, English and Hindi interface | You can track a month of spending by hand |
 | M2 Charts and CSV | Category pie, calendar heatmap, monthly comparison, CSV export and import, backup reminder | You can import an existing spreadsheet and see all three charts |
-| M3 SMS reading | Built-in Kotak parsers, other banks through custom parsers; inbox scan; review inbox; transfer detection; custom parser website and import | A week of real SMS is recorded correctly with no double counting |
+| M3 SMS reading | Built-in Kotak parsers, other banks through custom parsers; inbox scan; review inbox; transfer detection; making and importing custom parsers in the app | A week of real SMS is recorded correctly with no double counting |
 | M4 Release | Closed test with 12 testers, Play forms and video, GitHub release APK, store listing | Live on the Play Store |
 
 ## Success metrics and risks

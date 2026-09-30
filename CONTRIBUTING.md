@@ -24,7 +24,7 @@ Each phase is a GitHub milestone, with one issue per checklist item in the devel
 | 0 Foundation | Module split, encrypted Room database, app lock, CI privacy checks, navigation shell |
 | 1 Manual tracking | Accounts, transactions, categories, tags, payee memory, English + Hindi |
 | 2 Charts and CSV | Donut, calendar heatmap, monthly comparison, CSV export/import, backup reminder |
-| 3 SMS and custom parsers | Bank parsers, inbox scan, review inbox, transfer detection, parser website |
+| 3 SMS and custom parsers | Bank parsers, inbox scan, review inbox, making parsers in the app |
 | 4 Release | Closed test, Play forms, store listing, staged rollout |
 
 **Adding a bank parser is a great first contribution:** a parser rule plus 5–10 redacted sample SMS as tests (Phase 3 onward).
