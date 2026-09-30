@@ -36,20 +36,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.sms.ingest.SmsInbox
 import com.openhand.khata.sms.parser.CodeCheck
 import com.openhand.khata.sms.parser.CompiledRule
 import com.openhand.khata.sms.parser.CustomRules
-import com.openhand.khata.sms.parser.ParseResult
-import com.openhand.khata.sms.parser.ParsedSms
-import com.openhand.khata.sms.parser.SmsParser
 
 /** Settings > Parsers > Add (PRD feature 8): paste a rule code, test it on an SMS, save it. */
 @Composable
-fun AddParserScreen(onDone: () -> Unit, viewModel: AddParserViewModel = hiltViewModel()) {
+fun AddParserScreen(
+    onDone: () -> Unit,
+    onMake: () -> Unit,
+    viewModel: AddParserViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     val savedIds by viewModel.savedIds.collectAsStateWithLifecycle()
     val recent by viewModel.recent.collectAsStateWithLifecycle()
@@ -64,6 +64,7 @@ fun AddParserScreen(onDone: () -> Unit, viewModel: AddParserViewModel = hiltView
     LaunchedEffect(step) { if (step == SaveStep.Done) onDone() }
     AddParserContent(
         onBack = onDone,
+        onMake = onMake,
         code = code,
         onCode = { code = it },
         check = check,
@@ -85,6 +86,7 @@ fun AddParserScreen(onDone: () -> Unit, viewModel: AddParserViewModel = hiltView
 @Composable
 fun AddParserContent(
     onBack: () -> Unit,
+    onMake: () -> Unit,
     code: String,
     onCode: (String) -> Unit,
     check: CodeCheck?,
@@ -104,6 +106,7 @@ fun AddParserContent(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            MakeCard(onMake)
             Text(
                 stringResource(R.string.parser_add_intro),
                 style = MaterialTheme.typography.bodyMedium
@@ -143,8 +146,26 @@ fun AddParserContent(
     }
 }
 
+/** Most people make a rule from an SMS on the phone rather than paste one. */
 @Composable
-private fun ErrorText(text: String) {
+private fun MakeCard(onMake: () -> Unit) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                stringResource(R.string.parser_add_make_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                stringResource(R.string.parser_add_make_body),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Button(onClick = onMake) { Text(stringResource(R.string.parser_make_title)) }
+        }
+    }
+}
+
+@Composable
+internal fun ErrorText(text: String) {
     Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
 }
 
@@ -188,10 +209,10 @@ private fun RuleTest(
     var pasted by rememberSaveable(rule.rule) { mutableStateOf("") }
     Text(stringResource(R.string.parser_test_title), style = MaterialTheme.typography.titleMedium)
     when {
-        !canReadSms -> Hint(stringResource(R.string.parser_test_no_permission))
-        recent.isEmpty() -> Hint(stringResource(R.string.parser_test_no_recent))
+        !canReadSms -> ParserHint(stringResource(R.string.parser_test_no_permission))
+        recent.isEmpty() -> ParserHint(stringResource(R.string.parser_test_no_recent))
         else -> {
-            Hint(stringResource(R.string.parser_test_recent))
+            ParserHint(stringResource(R.string.parser_test_recent))
             recent.forEachIndexed { index, sms ->
                 ListItem(
                     headlineContent = {
@@ -229,53 +250,8 @@ private fun RuleTest(
     TestResult(result)
 }
 
-/**
- * What [rule] alone reads from an SMS, or null if it doesn't. A pasted SMS has no sender, so it's
- * tested as if it came from the rule's first sender.
- */
-internal fun testRule(rule: CompiledRule, sender: String?, body: String, at: Long): ParsedSms? {
-    val from = sender ?: rule.headers.first()
-    return (SmsParser(listOf(rule)).parse(from, body, at) as? ParseResult.Parsed)?.sms
-}
-
 @Composable
-private fun TestResult(sms: ParsedSms?) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            if (sms == null) {
-                Text(
-                    stringResource(R.string.parser_test_no_match),
-                    color = MaterialTheme.colorScheme.error
-                )
-                return@Column
-            }
-            Text(
-                stringResource(R.string.parser_test_found),
-                style = MaterialTheme.typography.titleSmall
-            )
-            Field(R.string.parser_field_amount, Money.format(sms.amountPaise))
-            Field(R.string.parser_field_direction, stringResource(directionLabel(sms.direction)))
-            Field(R.string.parser_field_payee, sms.payee)
-            Field(R.string.parser_field_account, sms.accountLast4)
-            Field(R.string.parser_field_reference, sms.reference)
-        }
-    }
-}
-
-@Composable
-private fun Field(label: Int, value: String?) {
-    Text(
-        stringResource(
-            R.string.parser_field,
-            stringResource(label),
-            value ?: stringResource(R.string.parser_field_none)
-        ),
-        style = MaterialTheme.typography.bodyMedium
-    )
-}
-
-@Composable
-private fun Hint(text: String) {
+internal fun ParserHint(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.bodyMedium,
@@ -285,7 +261,7 @@ private fun Hint(text: String) {
 
 /** After saving: offer to read the SMS waiting in To review with the new rule. */
 @Composable
-private fun ReadWaitingDialog(count: Int, onRead: () -> Unit, onSkip: () -> Unit) {
+internal fun ReadWaitingDialog(count: Int, onRead: () -> Unit, onSkip: () -> Unit) {
     AlertDialog(
         onDismissRequest = onSkip,
         title = { Text(pluralStringResource(R.plurals.parser_retry_title, count, count)) },

@@ -81,6 +81,23 @@ To share a rule, the app turns it into a **rule code**: `khata1:` followed by th
 
 In **Settings > Parsers > Add**, paste the code. The app shows why a code can't be used (the messages for the codes above and below), and lets you test the rule on one of your recent SMS from that bank, or on one you paste, before saving. Saved rules are kept in the encrypted database and can be switched off or deleted. Pasting a rule with the same `id` as a saved one replaces it. After saving, the app offers to read the bank SMS waiting in To review with the new rule.
 
+### Making a rule in the app
+
+Most rules are made from an SMS on the phone rather than written by hand. Open an SMS no rule could read in **To review** and tap **Make a parser**, or go to **Settings > Parsers > Add > Make a parser** and pick one of your recent bank SMS (or paste one). Then:
+
+1. Tap a word to select it, or tap the first and last word of a run, and say what it is: amount, payee, account, reference or date. For a date, pick its format; the common formats that read the marked date are offered.
+2. Choose the direction and account type. The bank name and sender ID come from the SMS sender and can be changed.
+3. The app makes the pattern (`RuleMaker` in `sms/parser`) and checks it with `RuleValidator`. **Check** shows what the rule reads from this SMS and from your other recent SMS from the same senders, or that it doesn't match them.
+4. **Save** it. It's used at once, and the app offers to read the SMS waiting in To review with it. The rule code is then shown with a copy button, to share if you like.
+
+How the pattern is made:
+
+- Each marked part becomes its named group: the amount as `[\d,]+(?:\.\d{1,2})?` after any of `Rs.`, `Rs`, `INR` or `₹`; the payee as `.+?` (or `.+` at the very end of the SMS); the account as a mask and at least 3 digits (`X1234`, `*1234`); the reference as letters and digits; the date from its format (`dd-MMM-yy` → `\d{2}-[a-z]{3}-\d{2}`). A label inside a marked word, such as `Ref:` in `Ref:1234`, stays literal text.
+- Punctuation at the ends of a marked word (the `.` in `23-09-26.`) stays literal text.
+- The text between the marked parts, two words before the first and one word after the last, is literal: escaped (`.`, `+`, `*`, brackets and so on), with any run of spaces matching `\s+` and any number (a balance, a time) matching any number. Text further out, such as a helpline footer, is left out so it can change.
+
+The SMS never leaves the phone: the app has no internet permission. To add a rule to the repo for everyone, file an issue or pull request yourself with the code and a sample SMS with personal details blanked out.
+
 ## Checks before a rule is used
 
 Every rule, built-in, made in the app or pasted, is checked first (`RuleValidator`):

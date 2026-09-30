@@ -59,9 +59,9 @@
     <string name="settings_parsers">Parsers</string>
     <string name="settings_parsers_value">Read SMS from more banks with parser rules</string>
     <string name="parsers_title">Parsers</string>
-    <string name="parsers_intro">Khata reads bank SMS with parser rules. For a bank or SMS format it doesn\'t know yet, add a rule code someone shared with you. Your rules are tried before the built-in ones.</string>
+    <string name="parsers_intro">Khata reads bank SMS with parser rules. For a bank or SMS format it doesn\'t know yet, make a rule from one of its SMS, or add a rule code someone shared with you. Your rules are tried before the built-in ones.</string>
     <string name="parsers_custom_header">Your rules</string>
-    <string name="parsers_custom_empty">None yet. Tap + to add a rule code.</string>
+    <string name="parsers_custom_empty">None yet. Tap + to make one from an SMS or add a rule code.</string>
     <string name="parsers_rule_off">%1$s · Off</string>
     <string name="parsers_delete_label">Delete %1$s</string>
     <string name="parsers_delete_title">Delete %1$s?</string>
@@ -125,4 +125,35 @@
     </plurals>
     <string name="parser_retry_yes">Record</string>
     <string name="parser_retry_no">Not now</string>
+    <string name="parser_field_date">Date</string>
+    <string name="parser_add_make_title">Make one from an SMS</string>
+    <string name="parser_add_make_body">Mark the amount, payee and other parts of a bank SMS on your phone, and Khata makes the rule. The SMS stays on your phone.</string>
+    <string name="parser_make_title">Make a parser</string>
+    <string name="parser_make_intro">Pick an SMS from your bank, or paste one. You mark the amount, payee and other parts, and Khata makes a rule that reads SMS like it. The SMS stays on your phone.</string>
+    <string name="parser_make_pick_recent">Recent bank SMS with an amount:</string>
+    <string name="parser_make_no_candidates">No bank SMS with an amount in the last 60 days. You can paste one below.</string>
+    <string name="parser_make_use">Use this SMS</string>
+    <string name="parser_make_mark_hint">Tap a word to select it. For several words, tap the first and then the last. Then tap what it is.</string>
+    <string name="parser_make_unmark">Clear</string>
+    <string name="parser_make_date_format">Date format</string>
+    <string name="parser_make_date_format_other">Date format (java.time pattern)</string>
+    <string name="parser_make_account_type">Account type</string>
+    <string name="parser_make_bank">Bank name</string>
+    <string name="parser_make_senders">Sender IDs</string>
+    <string name="parser_make_senders_hint">Separated by commas, such as KOTAKB, KOTAK</string>
+    <string name="parser_make_need_amount">Mark the amount to make a rule.</string>
+    <string name="parser_make_check_title">Check</string>
+    <string name="parser_make_rule_id">Rule name: %1$s</string>
+    <string name="parser_make_this_sms">This SMS</string>
+    <string name="parser_make_check_intro">Your other recent SMS from these senders:</string>
+    <string name="parser_make_check_no_permission">To check the rule on your other SMS from this bank, turn on SMS import.</string>
+    <string name="parser_make_doesnt_read_own">The rule doesn\'t read the SMS it was made from. Check the marked parts.</string>
+    <string name="parser_make_save">Save rule</string>
+    <string name="parser_saved_title">Saved %1$s</string>
+    <string name="parser_saved_body">Khata now reads SMS like this one. Your rule is kept on this phone only; you can switch it off or delete it in Settings &gt; Parsers.</string>
+    <string name="parser_share_title">Share the rule</string>
+    <string name="parser_share_copy">Copy code</string>
+    <string name="parser_share_copied">Copied</string>
+    <string name="parser_share_note">Anyone can paste this code in Settings &gt; Parsers &gt; Add. To add it to Khata for everyone, file an issue or pull request on GitHub yourself, with the code and a sample SMS with names, account and card numbers and balances blanked out. Khata sends nothing.</string>
+    <string name="parser_make_done">Done</string>
 </resources>

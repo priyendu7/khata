@@ -1,9 +1,9 @@
 package com.openhand.khata.sms.parser
 
 /**
- * Checks that a pattern uses only regex features that behave the same in RE2 (the app, see
- * [SmsParser]) and JavaScript (the parser website), so a rule tested on the website works the same
- * on the phone.
+ * Checks that a pattern uses only a small, predictable subset of regex features, which run on RE2
+ * ([SmsParser]) and read the same in other common engines, so a shared rule means the same thing
+ * to anyone reading it.
  *
  * Not allowed: lookahead and lookbehind `(?=` `(?!` `(?<=` `(?<!` and backreferences `\1` `\k<…>`
  * (RE2 has none), atomic groups `(?>`, `(?P<name>`, inline flags `(?i)` (matching is always

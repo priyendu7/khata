@@ -53,6 +53,7 @@ import java.time.ZoneId
 fun ReviewScreen(
     onBack: () -> Unit,
     onAddByHand: (amountPaise: Long?, at: Long, unparsedId: Long) -> Unit,
+    onMakeParser: (unparsedId: Long) -> Unit,
     viewModel: ReviewViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -70,6 +71,7 @@ fun ReviewScreen(
         onSkip = viewModel::skip,
         unparsed = unparsed,
         onAddByHand = { onAddByHand(firstAmountPaise(it.body), it.receivedAt, it.id) },
+        onMakeParser = { onMakeParser(it.id) },
         onDismiss = viewModel::dismiss,
         onCopy = { context.copyText(it.body) },
         onOpenIssues = { context.openIssues() }
@@ -87,6 +89,7 @@ fun ReviewContent(
     onSkip: (ReviewItem) -> Unit,
     unparsed: List<UnparsedSms> = emptyList(),
     onAddByHand: (UnparsedSms) -> Unit = {},
+    onMakeParser: (UnparsedSms) -> Unit = {},
     onDismiss: (UnparsedSms) -> Unit = {},
     onCopy: (UnparsedSms) -> Unit = {},
     onOpenIssues: () -> Unit = {}
@@ -102,6 +105,7 @@ fun ReviewContent(
                     sms = sms,
                     left = unparsed.size,
                     onAddByHand = { onAddByHand(sms) },
+                    onMakeParser = { onMakeParser(sms) },
                     onDismiss = { onDismiss(sms) },
                     onCopy = {
                         onCopy(sms)

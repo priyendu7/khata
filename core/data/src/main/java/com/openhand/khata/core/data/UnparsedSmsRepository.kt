@@ -24,6 +24,10 @@ class UnparsedSmsRepository @Inject constructor(private val db: Lazy<KhataDataba
     suspend fun getAll(): List<UnparsedSms> =
         db.io { database -> database.unparsedSmsDao().getAll().map(UnparsedSmsEntity::toModel) }
 
+    /** Null if it's been dismissed or recorded since. */
+    suspend fun get(id: Long): UnparsedSms? =
+        db.io { database -> database.unparsedSmsDao().getById(id)?.toModel() }
+
     /**
      * Stores an SMS from a known bank that no rule read. The same text seen again within a day
      * (by both the receiver and the inbox import) is stored once. Returns false for a repeat.

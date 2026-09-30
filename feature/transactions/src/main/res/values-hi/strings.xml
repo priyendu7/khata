@@ -67,8 +67,9 @@
         <item quantity="other">%d लेन-देन देखना बाकी</item>
     </plurals>
     <string name="review_unparsed_title">एक बैंक SMS जिसे खाता पढ़ नहीं सका</string>
-    <string name="review_unparsed_body">इसमें रकम है, लेकिन इसका फ़ॉर्मेट खाता के लिए नया है। इसे हाथ से जोड़ें, या अगर यह लेन-देन नहीं है तो हटा दें।</string>
+    <string name="review_unparsed_body">इसमें रकम है, लेकिन इसका फ़ॉर्मेट खाता के लिए नया है। इसे हाथ से जोड़ें, पार्सर बनाएँ ताकि आगे से खाता ऐसे SMS पढ़ सके, या अगर यह लेन-देन नहीं है तो हटा दें।</string>
     <string name="review_add_by_hand">हाथ से जोड़ें</string>
+    <string name="review_make_parser">पार्सर बनाएँ</string>
     <string name="review_dismiss">हटाएँ</string>
     <string name="review_copy">बग रिपोर्ट के लिए कॉपी करें</string>
     <string name="review_copied_title">SMS कॉपी हो गया</string>

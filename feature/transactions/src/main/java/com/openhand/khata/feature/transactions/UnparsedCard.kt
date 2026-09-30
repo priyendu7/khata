@@ -35,6 +35,7 @@ internal fun UnparsedCard(
     sms: UnparsedSms,
     left: Int,
     onAddByHand: () -> Unit,
+    onMakeParser: () -> Unit,
     onDismiss: () -> Unit,
     onCopy: () -> Unit
 ) {
@@ -69,6 +70,9 @@ internal fun UnparsedCard(
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = onAddByHand) { Text(stringResource(R.string.review_add_by_hand)) }
+            OutlinedButton(onClick = onMakeParser) {
+                Text(stringResource(R.string.review_make_parser))
+            }
             OutlinedButton(onClick = onDismiss) { Text(stringResource(R.string.review_dismiss)) }
             TextButton(onClick = onCopy) { Text(stringResource(R.string.review_copy)) }
         }

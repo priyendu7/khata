@@ -46,6 +46,7 @@ class ParsersContentTest {
     )
     private val hdfcSms = "Rs.450.00 spent on HDFC Bank Card x4321 at CITY PHARMACY on 2026-09-20."
     private val saved = mutableListOf<CompiledRule>()
+    private var makes = 0
 
     private fun showAdd(
         canReadSms: Boolean = false,
@@ -56,6 +57,7 @@ class ParsersContentTest {
             var code by remember { mutableStateOf("") }
             AddParserContent(
                 onBack = {},
+                onMake = { makes++ },
                 code = code,
                 onCode = { code = it },
                 check = code.takeIf { it.isNotBlank() }?.let(CustomRules::check),
@@ -79,6 +81,16 @@ class ParsersContentTest {
 
         compose.onNodeWithText("Rule codes start with khata1:", substring = true).assertExists()
         compose.onNodeWithText("Save").assertDoesNotExist()
+    }
+
+    @Test
+    fun offersToMakeARuleFromAnSms() {
+        showAdd()
+
+        compose.onNodeWithText("Make one from an SMS").assertExists()
+        compose.onNodeWithText("Make a parser").performClick()
+
+        assertEquals(1, makes)
     }
 
     @Test

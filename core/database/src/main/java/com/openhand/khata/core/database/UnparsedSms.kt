@@ -39,6 +39,9 @@ interface UnparsedSmsDao {
     @Query("SELECT * FROM unparsed_sms ORDER BY received_at ASC, id ASC")
     suspend fun getAll(): List<UnparsedSmsEntity>
 
+    @Query("SELECT * FROM unparsed_sms WHERE id = :id")
+    suspend fun getById(id: Long): UnparsedSmsEntity?
+
     @Query("SELECT COUNT(*) FROM unparsed_sms")
     fun observeCount(): Flow<Int>
 

@@ -39,6 +39,11 @@ class SmsParser(
     fun isKnownSender(sender: String): Boolean =
         SenderId.parse(sender)?.let { it.header in knownHeaders && !it.promotional } == true
 
+    /** The bank the first rule for [sender] names, or null for a sender the rules don't know. */
+    fun bankOf(sender: String): String? = SenderId.parse(sender)?.let { id ->
+        rules.firstOrNull { id.header in it.headers }?.rule?.bank
+    }
+
     /**
      * @param receivedAt when the phone received the SMS, epoch millis. Used as the transaction
      *   time unless the SMS has a date on a different day.

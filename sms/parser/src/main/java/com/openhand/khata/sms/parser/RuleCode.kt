@@ -8,7 +8,7 @@ import kotlinx.serialization.json.intOrNull
 
 /**
  * The shareable form of a rule: `khata1:` followed by the rule's JSON in unpadded base64url, so it
- * survives being pasted through chat apps. The parser website makes these; Settings > Parsers
+ * survives being pasted through chat apps. The rule maker shows these to share; Settings > Parsers
  * reads them.
  */
 object RuleCode {
@@ -81,7 +81,7 @@ sealed interface RuleCodeResult {
     data class Error(val error: RuleCodeError) : RuleCodeResult
 }
 
-/** Stable codes: the app maps them to translated messages, and the website uses the same ones. */
+/** Stable codes: the app maps them to translated messages (docs/parser-rules.md lists them). */
 enum class RuleCodeError(val code: String) {
     BAD_PREFIX("bad_prefix"),
     BAD_BASE64("bad_base64"),
