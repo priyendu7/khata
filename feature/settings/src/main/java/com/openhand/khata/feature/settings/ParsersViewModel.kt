@@ -13,6 +13,7 @@ import com.openhand.khata.sms.parser.SenderId
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -69,8 +70,8 @@ sealed interface SaveStep {
 /** Settings > Parsers > Add: paste a code, test it on an SMS, save it. */
 @HiltViewModel
 class AddParserViewModel @Inject constructor(
-    private val parsers: CustomParserRepository,
-    private val ingestor: SmsIngestor,
+    parsers: CustomParserRepository,
+    ingestor: SmsIngestor,
     private val inbox: SmsInbox
 ) : ViewModel() {
     /** Rule ids already saved, to say when saving replaces one. */
@@ -83,8 +84,8 @@ class AddParserViewModel @Inject constructor(
     /** Recent SMS from the pasted rule's senders, newest first, to test it on. */
     val recent: StateFlow<List<SmsInbox.Message>> = _recent.asStateFlow()
 
-    private val _step = MutableStateFlow<SaveStep>(SaveStep.Editing)
-    val step: StateFlow<SaveStep> = _step.asStateFlow()
+    private val saving = RuleSaving(viewModelScope, parsers, ingestor)
+    val step: StateFlow<SaveStep> = saving.step
 
     /** Needs the SMS permission. Only SMS from [headers] are read. */
     fun loadRecent(headers: Set<String>, now: Long = System.currentTimeMillis()) {
@@ -95,20 +96,36 @@ class AddParserViewModel @Inject constructor(
         }
     }
 
-    fun save(rule: CompiledRule, now: Long = System.currentTimeMillis()) {
+    fun save(rule: CompiledRule, now: Long = System.currentTimeMillis()) = saving.save(rule, now)
+
+    /** Records the SMS waiting in To review that the rules can now read. */
+    fun readWaiting() = saving.readWaiting()
+
+    fun skipWaiting() = saving.skipWaiting()
+}
+
+/** Saves a checked rule, then offers to record the SMS in To review that it can now read. */
+internal class RuleSaving(
+    private val scope: CoroutineScope,
+    private val parsers: CustomParserRepository,
+    private val ingestor: SmsIngestor
+) {
+    private val _step = MutableStateFlow<SaveStep>(SaveStep.Editing)
+    val step: StateFlow<SaveStep> = _step.asStateFlow()
+
+    fun save(rule: CompiledRule, now: Long) {
         if (_step.value != SaveStep.Editing) return
         _step.value = SaveStep.Reading
-        viewModelScope.launch {
+        scope.launch {
             parsers.save(rule.rule.id, rule.rule.bank, RuleCode.encode(rule.rule), now)
             val readable = ingestor.unparsedReadableBy(rule)
             _step.value = if (readable > 0) SaveStep.Offer(readable) else SaveStep.Done
         }
     }
 
-    /** Records the SMS waiting in To review that the rules can now read. */
     fun readWaiting() {
         _step.value = SaveStep.Reading
-        viewModelScope.launch {
+        scope.launch {
             ingestor.retryUnparsed()
             _step.value = SaveStep.Done
         }
@@ -130,6 +147,6 @@ internal fun recentSms(inbox: SmsInbox, headers: Set<String>, now: Long): List<S
         emptyList()
     }
 
-private const val STOP_AFTER_MS = 5_000L
+internal const val STOP_AFTER_MS = 5_000L
 private const val RECENT_DAYS = 60L
 private const val RECENT_COUNT = 10

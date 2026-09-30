@@ -65,8 +65,9 @@
         <item quantity="other">%d transactions to review</item>
     </plurals>
     <string name="review_unparsed_title">A bank SMS Khata couldn\'t read</string>
-    <string name="review_unparsed_body">It has an amount, but its format is new to Khata. Add it by hand, or dismiss it if it isn\'t a transaction.</string>
+    <string name="review_unparsed_body">It has an amount, but its format is new to Khata. Add it by hand, make a parser so Khata reads SMS like it from now on, or dismiss it if it isn\'t a transaction.</string>
     <string name="review_add_by_hand">Add by hand</string>
+    <string name="review_make_parser">Make a parser</string>
     <string name="review_dismiss">Dismiss</string>
     <string name="review_copy">Copy for a bug report</string>
     <string name="review_copied_title">SMS copied</string>

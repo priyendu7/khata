@@ -123,7 +123,7 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 
 **Custom parsers**
 
-- [ ] Make a parser in the app from an SMS: mark the fields, check it against recent SMS from that sender, save, share as a rule code (#81)
+- [x] Make a parser in the app from an SMS: mark the fields, check it against recent SMS from that sender, save, share as a rule code (#81)
 - [x] In the app: Settings > Parsers > Add, paste the code, test it on a recent SMS, then save; list, disable and delete saved parsers
 - [x] Check every rule before saving: known version, valid pattern, required fields present; patterns run on RE2J, so a bad pattern can't freeze the app
 - [ ] Contributing guide for submitting a rule to the repo

@@ -114,7 +114,7 @@ sealed interface RuleCheck {
     data class Invalid(val errors: List<RuleError>) : RuleCheck
 }
 
-/** Stable codes: the app maps them to translated messages, and the website uses the same ones. */
+/** Stable codes: the app maps them to translated messages (docs/parser-rules.md lists them). */
 enum class RuleError(val code: String) {
     UNKNOWN_VERSION("unknown_version"),
     BAD_ID("bad_id"),
@@ -126,7 +126,7 @@ enum class RuleError(val code: String) {
     BAD_DATE_FORMAT("bad_date_format"),
     PATTERN_TOO_LONG("pattern_too_long"),
 
-    /** Uses a regex feature outside the RE2/JavaScript subset, or an unknown group name. */
+    /** Uses a regex feature outside the allowed subset, or an unknown group name. */
     UNSUPPORTED_PATTERN("unsupported_pattern"),
     BAD_PATTERN("bad_pattern"),
     MISSING_AMOUNT("missing_amount"),

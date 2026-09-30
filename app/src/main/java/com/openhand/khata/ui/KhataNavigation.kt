@@ -36,6 +36,9 @@ import com.openhand.khata.feature.insights.InsightsScreen
 import com.openhand.khata.feature.lock.LockSettingsSection
 import com.openhand.khata.feature.payees.PayeesScreen
 import com.openhand.khata.feature.settings.AddParserScreen
+import com.openhand.khata.feature.settings.MAKE_FROM_UNPARSED_ARG
+import com.openhand.khata.feature.settings.MakeParserScreen
+import com.openhand.khata.feature.settings.NO_UNPARSED
 import com.openhand.khata.feature.settings.ParsersScreen
 import com.openhand.khata.feature.settings.SettingsPage
 import com.openhand.khata.feature.settings.SettingsRoute
@@ -114,12 +117,34 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         composable(Route.PARSERS) {
             ParsersScreen(onBack = back, onAdd = { navController.navigate(Route.ADD_PARSER) })
         }
-        composable(Route.ADD_PARSER) { AddParserScreen(onDone = back) }
+        composable(Route.ADD_PARSER) {
+            AddParserScreen(
+                onDone = back,
+                // Instead of Add, so leaving the maker goes back to Settings > Parsers.
+                onMake = {
+                    navController.navigate(Route.makeParser()) {
+                        popUpTo(Route.ADD_PARSER) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable(
+            Route.MAKE_PARSER,
+            arguments = listOf(
+                navArgument(MAKE_FROM_UNPARSED_ARG) {
+                    type = NavType.LongType
+                    defaultValue = NO_UNPARSED
+                }
+            )
+        ) { MakeParserScreen(onDone = back) }
         composable(Route.REVIEW) {
             ReviewScreen(
                 onBack = back,
                 onAddByHand = { amount, at, unparsedId ->
                     navController.navigate(Route.addFromSms(amount, at, unparsedId))
+                },
+                onMakeParser = { unparsedId ->
+                    navController.navigate(Route.makeParser(unparsedId))
                 }
             )
         }
@@ -138,6 +163,12 @@ private object Route {
     const val PARSERS = "parsers"
     const val ADD_PARSER = "parsers/add"
     const val REVIEW = "review"
+
+    /** Make a parser, from an SMS in To review or one to pick or paste. */
+    const val MAKE_PARSER = "parsers/make?$MAKE_FROM_UNPARSED_ARG={$MAKE_FROM_UNPARSED_ARG}"
+
+    fun makeParser(unparsedId: Long = NO_UNPARSED) =
+        "parsers/make?$MAKE_FROM_UNPARSED_ARG=$unparsedId"
 
     /** Add (id 0) or edit a transaction. */
     const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}" +
