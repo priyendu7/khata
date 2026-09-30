@@ -3,9 +3,11 @@ package com.openhand.khata.feature.insights
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.Totals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,6 +38,41 @@ class HomeContentTest {
         compose.onNodeWithText("Food").assertIsDisplayed()
         compose.onNodeWithText("₹60,000").assertIsDisplayed()
         compose.onNodeWithText("No transactions yet").assertDoesNotExist()
+    }
+
+    @Test
+    fun backupReminderOpensExportAndHidesWhenNotDue() {
+        var opened = false
+        compose.setContent {
+            HomeContent("Khata", summary, backupDueDays = 30, onBackup = { opened = true })
+        }
+        compose.onNodeWithText("Time to back up").assertIsDisplayed()
+        compose.onNodeWithText("No export in 30 days", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Export now").performClick()
+        assertTrue(opened)
+    }
+
+    @Test
+    fun reviewCardOpensTheInboxAndHidesWhenNothingWaits() {
+        var opened = false
+        compose.setContent {
+            HomeContent("Khata", summary, reviewCount = 3, onReview = { opened = true })
+        }
+        compose.onNodeWithText("3 transactions to review").assertIsDisplayed()
+        compose.onNodeWithText("Review").performClick()
+        assertTrue(opened)
+    }
+
+    @Test
+    fun noReviewCardWhenNothingWaits() {
+        compose.setContent { HomeContent("Khata", summary, reviewCount = 0) }
+        compose.onNodeWithText("to review", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun noBackupReminderWhenNotDue() {
+        compose.setContent { HomeContent("Khata", summary, backupDueDays = null) }
+        compose.onNodeWithText("Time to back up").assertDoesNotExist()
     }
 
     @Test

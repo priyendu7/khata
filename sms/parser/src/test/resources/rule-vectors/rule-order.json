@@ -1,0 +1,95 @@
+{
+  "description": "Rules are tried in order and the first match wins; a rule only sees its own senders.",
+  "zone": "Asia/Kolkata",
+  "rules": [
+    {
+      "v": 1,
+      "id": "first",
+      "bank": "Test Bank",
+      "senders": [
+        "TESTBK"
+      ],
+      "pattern": "Paid (?<amount>Rs\\.\\d+) to (?<payee>\\w+)",
+      "direction": "debit",
+      "accountType": "bank"
+    },
+    {
+      "v": 1,
+      "id": "second",
+      "bank": "Test Bank",
+      "senders": [
+        "TESTBK"
+      ],
+      "pattern": "(?<amount>Rs\\.\\d+)",
+      "direction": "credit",
+      "accountType": "bank"
+    },
+    {
+      "v": 1,
+      "id": "other-bank",
+      "bank": "Other Bank",
+      "senders": [
+        "OTHRBK"
+      ],
+      "pattern": "Paid (?<amount>Rs\\.\\d+)",
+      "direction": "debit",
+      "accountType": "wallet"
+    }
+  ],
+  "cases": [
+    {
+      "name": "both match: the first wins",
+      "sender": "AX-TESTBK-S",
+      "body": "Paid Rs.40 to CAFE",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "first",
+        "bank": "Test Bank",
+        "amountPaise": 4000,
+        "direction": "debit",
+        "accountType": "bank",
+        "account": null,
+        "payee": "CAFE",
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "only the second matches",
+      "sender": "AX-TESTBK-S",
+      "body": "Got Rs.40",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "second",
+        "bank": "Test Bank",
+        "amountPaise": 4000,
+        "direction": "credit",
+        "accountType": "bank",
+        "account": null,
+        "payee": null,
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "another bank's sender uses only its own rule",
+      "sender": "AX-OTHRBK-S",
+      "body": "Paid Rs.40 to CAFE",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "other-bank",
+        "bank": "Other Bank",
+        "amountPaise": 4000,
+        "direction": "debit",
+        "accountType": "wallet",
+        "account": null,
+        "payee": null,
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    }
+  ]
+}

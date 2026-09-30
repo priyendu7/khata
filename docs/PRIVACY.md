@@ -12,7 +12,7 @@ Khata is free, open-source software published by priyendu7. It has no ads and is
 
 ## Data on your device
 
-Khata stores your transactions, accounts (name, bank, last 4 digits only), payees, categories, tags, notes, settings and — once SMS import is available and you turn it on — the text of bank transaction SMS it recorded. All of it lives in the app's private storage on your phone, in a database encrypted with SQLCipher. Its key is a random key generated on your phone, stored only in encrypted form, and that encryption uses a second key kept in the Android Keystore (your phone's secure key storage), which can't be copied off the device. No key ever leaves the phone.
+Khata stores your transactions, accounts (name, bank, last 4 digits only), payees, categories, tags, notes, settings and — if you turn on SMS import — the text of the bank transaction SMS it recorded, and of bank SMS it couldn't read until you add them by hand or dismiss them (dismissed ones are deleted). All of it lives in the app's private storage on your phone, in a database encrypted with SQLCipher. Its key is a random key generated on your phone, stored only in encrypted form, and that encryption uses a second key kept in the Android Keystore (your phone's secure key storage), which can't be copied off the device. No key ever leaves the phone.
 
 By default Khata locks itself: it opens behind your phone's fingerprint, face, PIN or pattern (or an app-only PIN if you choose one), locks again after a time you choose in the background, and hides its screen in the recent-apps view and blocks screenshots. You can turn the lock and the screenshot blocking off in Settings. An app PIN and its recovery code are stored only as one-way hashes.
 
@@ -27,8 +27,9 @@ The app only asks for permissions a feature needs, and only uses them for that f
 | Permission | Why it's needed | Leaves your device? |
 |---|---|---|
 | Use biometrics / use fingerprint | To unlock Khata with your fingerprint or face through Android's own unlock prompt (the app lock). Khata never sees your fingerprint or face; Android only tells it whether unlocking succeeded. No prompt is shown for this permission. | No |
-| Read SMS, receive SMS _(planned, milestone M3)_ | Only if you turn on SMS import: to read bank transaction messages and record them. OTPs, promotions and messages from non-bank senders are ignored. Manual entry works without it. | No — parsed on the phone only |
-| Notifications _(planned)_ | Only if you turn them on: the optional daily summary and the backup reminder, generated on the phone. | No |
+| Read SMS, receive SMS | Asked for only when you turn on SMS import (Settings > SMS import): to read bank transaction messages and record them. Messages from anyone but supported banks are skipped without their text being read; OTPs, offers and reminders from banks are ignored. You can turn it off at any time, and manual entry works without it. | No — parsed on the phone only |
+| Notifications | Asked for only when you turn on the backup reminder (and, later, the optional daily summary). The reminder says only that it's time to export a backup, never any amounts or transactions. If you refuse, the reminder shows inside the app instead. | No |
+| Run at startup, prevent phone from sleeping | So the once-a-day backup-reminder check can run briefly and is rescheduled after the phone restarts. No prompt is shown for these. | No |
 
 Khata never asks to send SMS, read your contacts, or use the internet.
 

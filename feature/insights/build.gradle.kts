@@ -21,6 +21,10 @@ dependencies {
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    // The ViewModel test runs on a real, in-memory database, like the repository tests.
+    testImplementation(project(":core:database"))
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
     // Adds the empty activity that Compose UI tests host their content in (debug builds only).
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

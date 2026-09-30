@@ -3,10 +3,15 @@ package com.openhand.khata.core.data
 import app.cash.turbine.test
 import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.AccountType
+import com.openhand.khata.core.model.CategoryBreakdown
 import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.MonthlyComparison
 import com.openhand.khata.core.model.Totals
 import com.openhand.khata.core.model.Transaction
 import com.openhand.khata.core.model.TransactionFilter
+import com.openhand.khata.core.model.spendingByDay
+import java.time.YearMonth
+import java.time.ZoneId
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -113,6 +118,95 @@ class TransactionTotalsTest : RepositoryTest() {
     }
 
     @Test
+    fun categorySpendingFollowsTheHomeRules() = runTest {
+        add(Direction.DEBIT, 1_000_00, category = "shopping")
+        add(Direction.REFUND, 600_00, category = "shopping")
+        add(Direction.DEBIT, 500_00, category = "food")
+        add(Direction.DEBIT, 200_00, category = "health")
+        add(Direction.REFUND, 200_00, category = "health")
+        add(Direction.TRANSFER, 50_000_00, category = "bills_utilities")
+        add(Direction.CREDIT, 50_000_00, category = "work")
+        add(Direction.DEBIT, 99_00, category = "travel", at = MONTH_END)
+
+        val spending = transactions.observeCategorySpending(MONTH_START, MONTH_END).first()
+        // Health nets to zero, and transfers, income and next month don't count.
+        assertEquals(
+            listOf("food" to 500_00L, "shopping" to 400_00L),
+            spending.map { it.category.seedKey to it.spentPaise }
+        )
+        assertEquals(transactions.observeTopCategory(MONTH_START, MONTH_END).first(), spending[0])
+    }
+
+    @Test
+    fun slicesOtherAndRefundsAddUpToTheHomeTotal() = runTest {
+        val seeded = listOf(
+            "food",
+            "groceries",
+            "travel",
+            "rent",
+            "work",
+            "bills_utilities",
+            "shopping",
+            "health"
+        )
+        seeded.forEachIndexed { i, key -> add(Direction.DEBIT, (i + 1) * 100_00L, category = key) }
+        // More refunded than spent: a negative category the donut can't draw.
+        add(Direction.DEBIT, 300_00, category = "entertainment")
+        add(Direction.REFUND, 1_000_00, category = "entertainment")
+        add(Direction.TRANSFER, 5_000_00, category = "rent")
+
+        val breakdown = CategoryBreakdown.of(
+            transactions.observeCategorySpending(MONTH_START, MONTH_END).first()
+        )
+        assertEquals(5, breakdown.slices.size)
+        assertEquals(listOf("entertainment"), breakdown.refunded.map { it.category.seedKey })
+        assertEquals(-700_00L, breakdown.refunded.single().spentPaise)
+        val total = totals().spentPaise
+        assertEquals(total, breakdown.totalPaise)
+        assertEquals(
+            total,
+            breakdown.slices.sumOf { it.spentPaise } + breakdown.otherPaise +
+                breakdown.refunded.sumOf { it.spentPaise }
+        )
+    }
+
+    @Test
+    fun chartAmountsAddUpToTheHomeTotalsByDayAndMonth() = runTest {
+        val india = ZoneId.of("Asia/Kolkata")
+        add(Direction.DEBIT, 1_234_50, category = "food")
+        // 23:30 and 00:30 IST on either side of midnight: different local days.
+        add(Direction.DEBIT, 800_00, at = MONTH_START + DAY - HOUR / 2, category = "shopping")
+        add(Direction.REFUND, 300_00, at = MONTH_START + DAY + HOUR / 2, category = "shopping")
+        add(Direction.CREDIT, 60_000_00, at = MONTH_START + 2 * DAY, category = "work")
+        add(Direction.TRANSFER, 10_000_00, at = MONTH_START + 3 * DAY)
+        add(Direction.DEBIT, 99_00, at = MONTH_START - 1)
+        add(Direction.DEBIT, 45_00, at = MONTH_END)
+
+        val amounts = transactions.observeAmounts(MONTH_START - DAY, MONTH_END + DAY).first()
+        val september = YearMonth.of(2026, 9)
+        val days = spendingByDay(amounts, india).filterKeys { YearMonth.from(it) == september }
+        assertEquals(totals().spentPaise, days.values.sum())
+        assertEquals(1_234_50L + 800_00L, days[september.atDay(1)])
+        assertEquals(-300_00L, days[september.atDay(2)])
+
+        val months = listOf(september.minusMonths(1), september, september.plusMonths(1))
+        val comparison = MonthlyComparison.of(
+            amounts,
+            months,
+            india,
+            CategoryRepository(lazyDb).observeAll().first()
+        )
+        val thisMonth = comparison.bars[1]
+        assertEquals(totals(), Totals(thisMonth.spentPaise, thisMonth.incomePaise))
+        assertEquals(
+            totals(MONTH_START - DAY, MONTH_START).spentPaise,
+            comparison.bars[0].spentPaise
+        )
+        assertEquals(totals(MONTH_END, MONTH_END + DAY).spentPaise, comparison.bars[2].spentPaise)
+        comparison.bars.forEach { assertEquals(it.spentPaise, it.segments.sum()) }
+    }
+
+    @Test
     fun updatesAsTransactionsChange() = runTest {
         transactions.observeTotals(MONTH_START, MONTH_END).test {
             assertEquals(Totals.ZERO, awaitItem())
@@ -140,6 +234,7 @@ class TransactionTotalsTest : RepositoryTest() {
 
     private companion object {
         const val DAY = 86_400_000L
+        const val HOUR = 3_600_000L
 
         /** 1 Sep 2026 00:00 IST, and 1 Oct 2026 00:00 IST. */
         const val MONTH_START = 1_788_201_000_000L

@@ -58,6 +58,41 @@ data class CategorySpendRow(
     @ColumnInfo(name = "spent_paise") val spentPaise: Long
 )
 
+/** An expense, refund or income, with just what the charts need. */
+data class AmountRow(
+    val timestamp: Long,
+    val direction: Direction,
+    @ColumnInfo(name = "amount_paise") val amountPaise: Long,
+    @ColumnInfo(name = "category_id") val categoryId: Long
+)
+
+/** One transaction with everything a CSV row needs, oldest first (`docs/csv-format.md`). */
+data class ExportRow(
+    val timestamp: Long,
+    @ColumnInfo(name = "amount_paise") val amountPaise: Long,
+    val direction: Direction,
+    @ColumnInfo(name = "account_name") val accountName: String?,
+    @ColumnInfo(name = "payee_identifier") val payeeIdentifier: String?,
+    @ColumnInfo(name = "payee_name") val payeeName: String?,
+    @Embedded(prefix = "category_") val category: CategoryEntity,
+    /** Tag names joined with [TransactionRow.TAG_SEPARATOR], or null when there are none. */
+    val tags: String?,
+    val note: String?,
+    @ColumnInfo(name = "reference_no") val referenceNo: String?
+)
+
+/**
+ * What import compares a new row with to spot a duplicate: the reference number, or else the
+ * date, direction, amount and [party] (the payee's name, or the note when there's no payee).
+ */
+data class DuplicateKeyRow(
+    val timestamp: Long,
+    val direction: Direction,
+    @ColumnInfo(name = "amount_paise") val amountPaise: Long,
+    @ColumnInfo(name = "reference_no") val referenceNo: String?,
+    val party: String?
+)
+
 /** A payee with its default tag names and how many transactions it has. */
 data class PayeeRow(
     val id: Long,
@@ -82,6 +117,13 @@ interface AccountDao {
 
     @Query("SELECT * FROM accounts ORDER BY name")
     fun observeAll(): Flow<List<AccountEntity>>
+
+    @Query("SELECT * FROM accounts WHERE name = :name COLLATE NOCASE ORDER BY id LIMIT 1")
+    suspend fun getByName(name: String): AccountEntity?
+
+    /** Accounts with these last 4 digits (or with none, for null), oldest first. For SMS import. */
+    @Query("SELECT * FROM accounts WHERE last4 IS :last4 ORDER BY id")
+    suspend fun getByLast4(last4: String?): List<AccountEntity>
 
     @Query("SELECT COUNT(*) FROM transactions WHERE account_id = :accountId")
     suspend fun transactionCount(accountId: Long): Int
@@ -121,6 +163,9 @@ interface CategoryDao {
     /** Every category, archived ones included, in creation order. */
     @Query("SELECT * FROM categories ORDER BY id")
     fun observeAll(): Flow<List<CategoryEntity>>
+
+    @Query("SELECT * FROM categories ORDER BY id")
+    suspend fun getAll(): List<CategoryEntity>
 }
 
 @Dao
@@ -349,6 +394,34 @@ interface TransactionDao {
     fun observeTopCategory(from: Long, until: Long): Flow<CategorySpendRow?>
 
     /**
+     * Every category's spending (expenses minus refunds) for timestamps in [from, until), biggest
+     * first, with the same rules as [observeTopCategory]. A category with more refunds than
+     * spending comes last with a negative total; categories that net to zero are left out.
+     */
+    @Query(
+        "SELECT c.id AS category_id, c.name AS category_name, " +
+            "c.seed_key AS category_seed_key, c.color AS category_color, " +
+            "c.icon AS category_icon, c.archived AS category_archived, " +
+            "SUM(CASE t.direction WHEN 'debit' THEN t.amount_paise ELSE -t.amount_paise END) " +
+            "AS spent_paise " +
+            "FROM transactions t JOIN categories c ON c.id = t.category_id " +
+            "WHERE t.direction IN ('debit', 'refund') " +
+            "AND t.timestamp >= :from AND t.timestamp < :until " +
+            "GROUP BY c.id HAVING spent_paise != 0 ORDER BY spent_paise DESC, c.id"
+    )
+    fun observeCategorySpending(from: Long, until: Long): Flow<List<CategorySpendRow>>
+
+    /**
+     * Every expense, refund and income for timestamps in [from, until), for charts that group by
+     * local day or month in Kotlin (SQLite only knows UTC days). Transfers never count.
+     */
+    @Query(
+        "SELECT timestamp, direction, amount_paise, category_id FROM transactions " +
+            "WHERE direction != 'transfer' AND timestamp >= :from AND timestamp < :until"
+    )
+    fun observeAmounts(from: Long, until: Long): Flow<List<AmountRow>>
+
+    /**
      * The transactions list, newest first. Each null argument means "any"; the rest combine.
      * [query] matches the payee name or note and must have `%`, `_` and `\` escaped with `\`.
      */
@@ -384,4 +457,118 @@ interface TransactionDao {
         from: Long?,
         until: Long?
     ): Flow<List<TransactionRow>>
+}
+
+/** The queries CSV export and import need (`docs/csv-format.md`). */
+@Dao
+interface BackupDao {
+    /** Transactions in [from, until) for CSV export, oldest first; null bounds mean no limit. */
+    @Query(
+        "SELECT t.timestamp, t.amount_paise, t.direction, a.name AS account_name, " +
+            "p.identifier AS payee_identifier, p.display_name AS payee_name, " +
+            "c.id AS category_id, c.name AS category_name, c.seed_key AS category_seed_key, " +
+            "c.color AS category_color, c.icon AS category_icon, " +
+            "c.archived AS category_archived, " +
+            "(SELECT GROUP_CONCAT(g.name, char(31)) FROM transaction_tags tt " +
+            "JOIN tags g ON g.id = tt.tag_id WHERE tt.transaction_id = t.id) AS tags, " +
+            "t.note, t.reference_no " +
+            "FROM transactions t " +
+            "JOIN categories c ON c.id = t.category_id " +
+            "LEFT JOIN payees p ON p.id = t.payee_id " +
+            "LEFT JOIN accounts a ON a.id = t.account_id " +
+            "WHERE (:from IS NULL OR t.timestamp >= :from) " +
+            "AND (:until IS NULL OR t.timestamp < :until) " +
+            "ORDER BY t.timestamp, t.id"
+    )
+    suspend fun exportRows(from: Long?, until: Long?): List<ExportRow>
+
+    /** Every transaction's duplicate-check fields, for CSV import. */
+    @Query(
+        "SELECT t.timestamp, t.direction, t.amount_paise, t.reference_no, " +
+            "COALESCE(p.display_name, t.note) AS party " +
+            "FROM transactions t LEFT JOIN payees p ON p.id = t.payee_id"
+    )
+    suspend fun duplicateKeys(): List<DuplicateKeyRow>
+}
+
+/** The duplicate checks SMS import runs before saving (sms/ingest via SmsImporter). */
+@Dao
+interface SmsImportDao {
+    /** A transaction saved from exactly this SMS text within [from, until]. */
+    @Query(
+        "SELECT id FROM transactions WHERE raw_sms = :rawSms " +
+            "AND timestamp BETWEEN :from AND :until LIMIT 1"
+    )
+    suspend fun findSameSms(rawSms: String, from: Long, until: Long): Long?
+
+    /**
+     * The transaction nearest [at] within [from, until] with this amount and direction, on this
+     * account or on none (manual and CSV entries often have no account), whose reference number
+     * doesn't contradict [referenceNo].
+     */
+    @Query(
+        "SELECT id FROM transactions WHERE amount_paise = :amountPaise " +
+            "AND direction = :direction " +
+            "AND (account_id IS :accountId OR account_id IS NULL) " +
+            "AND timestamp BETWEEN :from AND :until " +
+            "AND (reference_no IS NULL OR :referenceNo IS NULL) " +
+            "ORDER BY ABS(timestamp - :at), id LIMIT 1"
+    )
+    // Room binds query arguments only from parameters, so each one needs its own.
+    @Suppress("LongParameterList")
+    suspend fun findNear(
+        amountPaise: Long,
+        direction: Direction,
+        accountId: Long?,
+        referenceNo: String?,
+        at: Long,
+        from: Long,
+        until: Long
+    ): Long?
+}
+
+/** A waiting transaction with what its review card shows, joined in. */
+data class ReviewRow(
+    val id: Long,
+    @ColumnInfo(name = "amount_paise") val amountPaise: Long,
+    val direction: Direction,
+    val timestamp: Long,
+    @ColumnInfo(name = "raw_sms") val rawSms: String?,
+    @ColumnInfo(name = "account_name") val accountName: String?,
+    @ColumnInfo(name = "payee_id") val payeeId: Long?,
+    @ColumnInfo(name = "payee_identifier") val payeeIdentifier: String?,
+    @ColumnInfo(name = "payee_name") val payeeName: String?,
+    @ColumnInfo(name = "payee_pending") val payeePending: Int
+)
+
+/** The To review inbox (PRD feature 4): transactions with `needs_review` set. */
+@Dao
+interface ReviewDao {
+    @Query("SELECT COUNT(*) FROM transactions WHERE needs_review = 1")
+    fun observeCount(): Flow<Int>
+
+    /** Waiting transactions, newest first. */
+    @Query(
+        "SELECT t.id, t.amount_paise, t.direction, t.timestamp, t.raw_sms, " +
+            "a.name AS account_name, p.id AS payee_id, p.identifier AS payee_identifier, " +
+            "p.display_name AS payee_name, " +
+            "(SELECT COUNT(*) FROM transactions o WHERE o.needs_review = 1 " +
+            "AND o.payee_id = t.payee_id) AS payee_pending " +
+            "FROM transactions t " +
+            "LEFT JOIN accounts a ON a.id = t.account_id " +
+            "LEFT JOIN payees p ON p.id = t.payee_id " +
+            "WHERE t.needs_review = 1 ORDER BY t.timestamp DESC, t.id DESC"
+    )
+    fun observeQueue(): Flow<List<ReviewRow>>
+
+    @Query("SELECT id FROM transactions WHERE needs_review = 1 AND payee_id = :payeeId")
+    suspend fun pendingIds(payeeId: Long): List<Long>
+
+    /** Files [ids] under [categoryId] and takes them out of the inbox. */
+    @Query("UPDATE transactions SET category_id = :categoryId, needs_review = 0 WHERE id IN (:ids)")
+    suspend fun markReviewed(ids: List<Long>, categoryId: Long)
+
+    /** Takes [id] out of the inbox as it is (Uncategorized, for an unknown payee). */
+    @Query("UPDATE transactions SET needs_review = 0 WHERE id = :id")
+    suspend fun skip(id: Long)
 }

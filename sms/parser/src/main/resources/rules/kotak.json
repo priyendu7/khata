@@ -1,0 +1,38 @@
+[
+  {
+    "v": 1,
+    "id": "kotak-upi-sent",
+    "bank": "Kotak",
+    "senders": [
+      "KOTAKB"
+    ],
+    "pattern": "Sent (?<amount>(?:Rs\\.?|INR)\\s?[\\d,]+(?:\\.\\d{1,2})?) from Kotak Bank A/c X*(?<account>\\d{4}) to (?<payee>.+?) on (?<date>\\d{2}-\\d{2}-\\d{2})\\. ?UPI Ref:? ?(?<ref>\\d+)",
+    "direction": "debit",
+    "accountType": "bank",
+    "dateFormat": "dd-MM-yy"
+  },
+  {
+    "v": 1,
+    "id": "kotak-upi-received",
+    "bank": "Kotak",
+    "senders": [
+      "KOTAKB"
+    ],
+    "pattern": "Received (?<amount>(?:Rs\\.?|INR)\\s?[\\d,]+(?:\\.\\d{1,2})?) in your Kotak Bank AC X*(?<account>\\d{4}) from (?<payee>.+?) on (?<date>\\d{2}-\\d{2}-\\d{2})\\. ?UPI Ref:? ?(?<ref>\\d+)",
+    "direction": "credit",
+    "accountType": "bank",
+    "dateFormat": "dd-MM-yy"
+  },
+  {
+    "v": 1,
+    "id": "kotak-account-credit",
+    "bank": "Kotak",
+    "senders": [
+      "KOTAKB"
+    ],
+    "pattern": "(?<amount>(?:Rs\\.?|INR)\\s?[\\d,]+(?:\\.\\d{1,2})?) is credited to your Account\\s+X*(?<account>\\d{4}) on (?<date>\\d{2}/\\d{2}/\\d{4}) towards (?<payee>.+?)(?: Kotak Bank)?$",
+    "direction": "credit",
+    "accountType": "bank",
+    "dateFormat": "dd/MM/yyyy"
+  }
+]

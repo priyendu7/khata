@@ -7,9 +7,50 @@
     <string name="home_top_category">Top category this month</string>
     <string name="home_empty_title">No transactions yet</string>
     <string name="home_empty_body">Tap + to add income or an expense. Everything you add stays on this phone.</string>
+    <string name="insights_period_week">Week</string>
+    <string name="insights_period_month">Month</string>
+    <string name="insights_period_year">Year</string>
+    <string name="insights_period_custom">Custom</string>
+    <string name="insights_by_category">Spending by category</string>
+    <string name="insights_spent">Spent</string>
+    <string name="insights_other">Other</string>
+    <string name="insights_share">%1$d%%</string>
+    <string name="insights_slice_description">%1$s, %2$s, %3$d%% of spending</string>
+    <string name="insights_refunded_title">More refunded than spent</string>
+    <string name="insights_refunded_body">Not in the chart, but counted in the total.</string>
+    <string name="insights_nothing_spent_title">Nothing spent in this period</string>
+    <string name="insights_nothing_spent_body">Pick another period, or add expenses from Home or Transactions.</string>
+    <string name="insights_income">Income</string>
     <string name="insights_heatmap_title">Spending by day</string>
     <string name="insights_less">Less</string>
     <string name="insights_more">More</string>
-    <string name="insights_empty_title">Charts fill in as you go</string>
-    <string name="insights_empty_body">Once you add transactions, you\'ll see spending by category, a calendar of your spending and a month-by-month comparison.</string>
+    <string name="insights_day_spent">%1$s: %2$s spent</string>
+    <string name="insights_day_nothing">%1$s: nothing spent</string>
+    <string name="insights_monthly_title">Month by month</string>
+    <string name="insights_stack_by_category">By category</string>
+    <string name="insights_month_description">%1$s: spent %2$s, income %3$s</string>
+    <string name="insights_no_months_title">Nothing in these months</string>
+    <string name="insights_no_months_body">Spending and income show here, month by month, as you add them.</string>
+    <string name="insights_change_title">%1$s vs %2$s</string>
+    <string name="insights_change_all">All spending</string>
+    <string name="insights_change_up">+%1$s%%</string>
+    <string name="insights_change_down">−%1$s%%</string>
+    <string name="insights_change_new">New</string>
+    <plurals name="insights_months">
+        <item quantity="one">%d month</item>
+        <item quantity="other">%d months</item>
+    </plurals>
+    <!-- Backup reminder banner (PRD feature 6). -->
+    <string name="home_backup_title">Time to back up</string>
+    <plurals name="home_backup_body">
+        <item quantity="one">No export in %d day. Android backup is off for Khata, so a CSV export is the only copy of your data if this phone is lost.</item>
+        <item quantity="other">No export in %d days. Android backup is off for Khata, so a CSV export is the only copy of your data if this phone is lost.</item>
+    </plurals>
+    <string name="home_backup_action">Export now</string>
+    <plurals name="home_review_title">
+        <item quantity="one">%d transaction to review</item>
+        <item quantity="other">%d transactions to review</item>
+    </plurals>
+    <string name="home_review_body">From payees you haven\'t named yet. Name each one once, and later payments are filled in for you.</string>
+    <string name="home_review_action">Review</string>
 </resources>

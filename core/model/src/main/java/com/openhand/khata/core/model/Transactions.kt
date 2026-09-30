@@ -80,3 +80,40 @@ data class Totals(val spentPaise: Long, val incomePaise: Long) {
 
 /** How much went to [category] over a period: its expenses minus its refunds. */
 data class CategorySpend(val category: Category, val spentPaise: Long)
+
+/**
+ * Spending by category, ready for a donut chart: the biggest categories as [slices], the rest
+ * added up as [otherPaise], and the categories with more refunds than spending in [refunded],
+ * which a donut can't draw. All three add up to [totalPaise], the same figure Home shows.
+ */
+data class CategoryBreakdown(
+    val slices: List<CategorySpend>,
+    val otherPaise: Long,
+    val refunded: List<CategorySpend>
+) {
+    /** What the donut draws: the slices and "Other". */
+    val chartedPaise: Long get() = slices.sumOf { it.spentPaise } + otherPaise
+
+    val totalPaise: Long get() = chartedPaise + refunded.sumOf { it.spentPaise }
+
+    val isEmpty: Boolean get() = slices.isEmpty() && refunded.isEmpty()
+
+    companion object {
+        /** Slices including "Other", so the donut stays readable (PRD: top 5–6 plus "Other"). */
+        const val MAX_SLICES = 6
+
+        private val BIGGEST_FIRST =
+            compareByDescending<CategorySpend> { it.spentPaise }.thenBy { it.category.id }
+
+        fun of(spending: List<CategorySpend>, maxSlices: Int = MAX_SLICES): CategoryBreakdown {
+            val spent = spending.filter { it.spentPaise > 0 }.sortedWith(BIGGEST_FIRST)
+            // Six categories fit as they are; with more, the fifth onwards become "Other".
+            val shown = if (spent.size <= maxSlices) spent else spent.take(maxSlices - 1)
+            return CategoryBreakdown(
+                slices = shown,
+                otherPaise = spent.drop(shown.size).sumOf { it.spentPaise },
+                refunded = spending.filter { it.spentPaise < 0 }.sortedBy { it.spentPaise }
+            )
+        }
+    }
+}

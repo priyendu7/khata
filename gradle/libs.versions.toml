@@ -21,12 +21,19 @@ androidx-test-core = "1.7.0"
 robolectric = "4.17"
 turbine = "1.2.1"
 kotlinx-coroutines = "1.11.0"
+# Parser rules are JSON (docs/parser-rules.md); the compiler plugin generates the code, no reflection.
+kotlinx-serialization = "1.11.0"
+# SMS rule patterns run on RE2J: matching time grows only with the SMS length, never exponentially,
+# so a bad custom parser pattern can't freeze the app (Android's own regex engine has no timeout).
+re2j = "1.8"
 biometric = "1.1.0"
 fragment = "1.9.1"
 # Per-app language (Settings → Language) on Android 8–12; Android 13+ has it built in.
 appcompat = "1.8.0"
 lifecycle = "2.11.0"
 navigation = "2.10.2"
+# Daily backup-reminder check (PRD feature 6).
+work = "2.12.0"
 junit = "4.13.2"
 # compileSdk is the SDK we build against; targetSdk opts in to that release's runtime behaviour
 # and follows Play's minimum target requirement.
@@ -53,11 +60,15 @@ robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectr
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+re2j = { module = "com.google.re2j:re2j", version.ref = "re2j" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "work" }
+androidx-work-testing = { module = "androidx.work:work-testing", version.ref = "work" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "androidx-sqlite" }
 sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
@@ -76,6 +87,7 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 play-publisher = { id = "com.github.triplet.play", version.ref = "play-publisher" }

@@ -18,6 +18,8 @@ There are two ways to get a PR build to testers:
 | Availability | Any PR, on request | Trusted contributors, granted by a maintainer |
 | Expires | Link expires after 60 days | Stays until the next upload to the track |
 
+**Until Play approves the SMS permissions declaration, use internal app sharing links only.** The app declares `READ_SMS` and `RECEIVE_SMS`, and a closed track is a Play track: uploading there without an approved declaration blocks the Khata QA app. Internal app sharing needs no declaration. See [RELEASING.md](RELEASING.md#sms-permissions-no-release-until-the-declaration-is-approved).
+
 ## For contributors
 
 1. Open your PR and make sure CI is green.

@@ -87,30 +87,32 @@ By the end of this phase you can track a full month of income and spending by ha
 
 By the end of this phase you can import your existing spreadsheet and see all three charts.
 
-- [ ] Add the Vico chart library and a shared chart theme for light and dark mode
-- [ ] Category donut: top 5–6 categories plus "Other"; tap a slice to open its transactions; switch between week, month, year and a custom range
-- [ ] Calendar heatmap (custom Compose Canvas): the last 12 months, with 5 color levels based on the user's own spending; tap a day to open its list; scrolls sideways on small screens
-- [ ] Monthly comparison: bars for 6 or 12 months, optionally stacked by category, with the change against last month ("Food +18%")
-- [ ] Show income against spending on the monthly chart
-- [ ] Write down the CSV format in `docs/csv-format.md`
-- [ ] CSV export: all data or a date range, saved through the system file picker
-- [ ] CSV import: Khata's own format, plus a column-matching step for any other CSV; show a preview and skip duplicates
-- [ ] Backup reminder after 30 days without an export (interval can be changed), using WorkManager
+- [x] A shared chart theme for light and dark mode, drawn with Compose Canvas (no chart library)
+- [x] Category donut: top 5–6 categories plus "Other"; tap a slice to open its transactions; switch between week, month, year and a custom range
+- [x] Calendar heatmap (custom Compose Canvas): the last 12 months, with 5 color levels based on the user's own spending; tap a day to open its list; scrolls sideways on small screens
+- [x] Monthly comparison: bars for 6 or 12 months, optionally stacked by category, with the change against last month ("Food +18%")
+- [x] Show income against spending on the monthly chart
+- [x] Write down the CSV format in `docs/csv-format.md`
+- [x] CSV export: all data or a date range, saved through the system file picker
+- [x] CSV import: Khata's own format, plus a column-matching step for any other CSV; show a preview and skip duplicates
+- [x] Backup reminder after 30 days without an export (interval can be changed), using WorkManager
 - [ ] Tests: CSV export then import gives back the same data, and chart totals match the database totals
 
 ## Phase 3: SMS reading and custom parsers
 
 By the end of this phase your bank SMS are recorded automatically, and anyone can add a bank using the parser website. This is the longest phase, because parsing needs real SMS samples to get right.
 
-**Parsers for the built-in banks**
+**Built-in banks: Kotak now, others through custom parsers.** Kotak ships built in. Other banks (HDFC, ICICI, Federal, Axis) and more Kotak formats are added with custom parsers from the parser website, which work at once with no app update. A custom rule becomes a built-in one by adding it to the repo with real samples, so those follow after launch as needed (milestone "After launch": #53, #63, #66).
 
-- [ ] Collect 5–10 real SMS samples for each bank (HDFC, ICICI, Federal, Axis, Kotak) with personal details blanked out, stored in `sms/parser/src/test/resources`
-- [ ] Design the parser rule format: sender pattern, message pattern with named groups (amount, payee, account, reference, date), direction and a version number
-- [ ] Rule engine that turns a rule and an SMS into a transaction, or nothing
-- [ ] Write the built-in bank parsers as rules in the same format, so built-in and custom parsers work the same way
-- [ ] Filter out OTP, promotional and balance-only messages
+**Parsers**
+
+- [x] Collect real Kotak SMS samples with personal details blanked out, stored in `sms/parser/src/test/resources/samples/`
+- [x] Design the parser rule format: sender pattern, message pattern with named groups (amount, payee, account, reference, date), direction and a version number
+- [x] Rule engine that turns a rule and an SMS into a transaction, or nothing
+- [x] Write the built-in Kotak parsers as rules in the same format, so built-in and custom parsers work the same way
+- [x] Filter out OTP, promotional and balance-only messages
 - [ ] Detect transfers: credit card bill payments (including CRED) and moving money between your own accounts
-- [ ] Match duplicates by reference number, or by amount, time and account when there is no reference
+- [x] Match duplicates by reference number, or by amount, time and account when there is no reference
 
 **Reading SMS on the phone**
 
@@ -124,10 +126,10 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 
 - [ ] Parser website in `parser-web/`: paste an SMS, highlight the fields, generate a rule code; runs fully in the browser; published on GitHub Pages
 - [ ] In the app: Settings > Parsers > Add, paste the code, test it on a recent SMS, then save; list, disable and delete saved parsers
-- [ ] Check every rule before saving: known version, valid pattern, required fields present, and a time limit so a bad pattern can't freeze the app
+- [x] Check every rule before saving: known version, valid pattern, required fields present; patterns run on RE2J, so a bad pattern can't freeze the app
 - [ ] Contributing guide for submitting a rule to the repo
 
-**Target:** at least 95% of the sample SMS parse correctly in the test suite before the phase is done.
+**Target:** at least 95% of each built-in bank's sample SMS parse correctly in the test suite before the phase is done.
 
 ## Phase 4: Release
 

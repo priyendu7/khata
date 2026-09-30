@@ -1,0 +1,201 @@
+{
+  "bank": "Kotak",
+  "zone": "Asia/Kolkata",
+  "note": "Real Kotak SMS with personal details replaced: account number, people's and local shops' names, UPI references. Layout, amounts and dates are unchanged.",
+  "samples": [
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Sent Rs.366.00 from Kotak Bank A/c X7391 to SAMPLE INTERNATIONAL on 23-09-26. UPI Ref 408756022625. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud",
+      "receivedAt": "2026-09-23T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 36600,
+        "direction": "debit",
+        "account": "7391",
+        "payee": "SAMPLE INTERNATIONAL",
+        "ref": "408756022625",
+        "timestamp": "2026-09-23T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Sent Rs.60.90 from Kotak Bank A/c X7391 to MCDONALDS on 20-09-26. UPI Ref 700867031227. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud",
+      "receivedAt": "2026-09-20T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 6090,
+        "direction": "debit",
+        "account": "7391",
+        "payee": "MCDONALDS",
+        "ref": "700867031227",
+        "timestamp": "2026-09-20T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Dear Customer, Biometric authentication is enabled on the Samsung Pay App linked to your Kotak Bank A/c XXXXXXXXXXX7391 . If not done by you, call us on 18602662666. T&C",
+      "receivedAt": "2026-09-20T10:35:00+05:30",
+      "expect": "not_transaction"
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Request received for registering Kotak Bank a/c with Samsung Pay on 20-09-26 10:33. Not you? Call on 18602662666. Never share card details/OTP/Expiry.",
+      "receivedAt": "2026-09-20T10:33:00+05:30",
+      "expect": "not_transaction"
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Sent Rs.55.00 from Kotak Bank A/c X7391 to GENERAL STORE on 15-09-26. UPI Ref 347761096196. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud",
+      "receivedAt": "2026-09-15T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 5500,
+        "direction": "debit",
+        "account": "7391",
+        "payee": "GENERAL STORE",
+        "ref": "347761096196",
+        "timestamp": "2026-09-15T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Sent Rs.4020.00 from Kotak Bank A/c X7391 to Gullak Money on 14-09-26. UPI Ref 582268824152. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud",
+      "receivedAt": "2026-09-14T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 402000,
+        "direction": "debit",
+        "account": "7391",
+        "payee": "Gullak Money",
+        "ref": "582268824152",
+        "timestamp": "2026-09-14T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Sent Rs.38.00 from Kotak Bank A/c X7391 to GENERAL STORE on 11-09-26. UPI Ref 696903038772. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud",
+      "receivedAt": "2026-09-11T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 3800,
+        "direction": "debit",
+        "account": "7391",
+        "payee": "GENERAL STORE",
+        "ref": "696903038772",
+        "timestamp": "2026-09-11T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Sent Rs.39664.90 from Kotak Bank A/c X7391 to CRED on 06-09-26. UPI Ref 212129343896. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud",
+      "receivedAt": "2026-09-06T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 3966490,
+        "direction": "debit",
+        "account": "7391",
+        "payee": "CRED",
+        "ref": "212129343896",
+        "timestamp": "2026-09-06T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Sent Rs.30.00 from Kotak Bank A/c X7391 to CityParking Booth N0 on 20-09-26. UPI Ref 182328397923. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud",
+      "receivedAt": "2026-09-20T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 3000,
+        "direction": "debit",
+        "account": "7391",
+        "payee": "CityParking Booth N0",
+        "ref": "182328397923",
+        "timestamp": "2026-09-20T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Sent Rs.25.00 from Kotak Bank A/c X7391 to RAVI KUMAR on 16-09-26. UPI Ref 868312090541. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud",
+      "receivedAt": "2026-09-16T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 2500,
+        "direction": "debit",
+        "account": "7391",
+        "payee": "RAVI KUMAR",
+        "ref": "868312090541",
+        "timestamp": "2026-09-16T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Sent Rs.70.00 from Kotak Bank A/c X7391 to SHRI GANESH VEG FOODS on 22-09-26. UPI Ref 602821968024. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud",
+      "receivedAt": "2026-09-22T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 7000,
+        "direction": "debit",
+        "account": "7391",
+        "payee": "SHRI GANESH VEG FOODS",
+        "ref": "602821968024",
+        "timestamp": "2026-09-22T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Received Rs.1.50 in your Kotak Bank AC 7391 from ANITA SHARMA on 10-09-26.UPI Ref:702822213535",
+      "receivedAt": "2026-09-10T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 150,
+        "direction": "credit",
+        "account": "7391",
+        "payee": "ANITA SHARMA",
+        "ref": "702822213535",
+        "timestamp": "2026-09-10T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Sent Rs.1649.00 from Kotak Bank A/c X7391 to RELIANCE RETAIL LIMI on 22-09-26. UPI Ref 432140133855. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud",
+      "receivedAt": "2026-09-22T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 164900,
+        "direction": "debit",
+        "account": "7391",
+        "payee": "RELIANCE RETAIL LIMI",
+        "ref": "432140133855",
+        "timestamp": "2026-09-22T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "INR 18.00 is credited to your Account  XXXXXX7391 on 21/09/2026 towards NACH-ECS-SAMPLE INDUSTRIES LTD Kotak Bank",
+      "receivedAt": "2026-09-21T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 1800,
+        "direction": "credit",
+        "account": "7391",
+        "payee": "NACH-ECS-SAMPLE INDUSTRIES LTD",
+        "ref": null,
+        "timestamp": "2026-09-21T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Sent Rs.679.00 from Kotak Bank A/c X7391 to SURESH PATIL on 17-09-26. UPI Ref 554026417305. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud",
+      "receivedAt": "2026-09-17T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 67900,
+        "direction": "debit",
+        "account": "7391",
+        "payee": "SURESH PATIL",
+        "ref": "554026417305",
+        "timestamp": "2026-09-17T12:30:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-KOTAKB-S",
+      "body": "Sent Rs.40.00 from Kotak Bank A/c X7391 to Corner Cafe on 26-08-26. UPI Ref 244568709974. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud",
+      "receivedAt": "2026-08-26T12:30:00+05:30",
+      "expect": {
+        "amountPaise": 4000,
+        "direction": "debit",
+        "account": "7391",
+        "payee": "Corner Cafe",
+        "ref": "244568709974",
+        "timestamp": "2026-08-26T12:30:00+05:30"
+      }
+    }
+  ]
+}

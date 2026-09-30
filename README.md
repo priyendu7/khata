@@ -22,7 +22,7 @@ Popular Indian expense apps need an account, show ads, and upload your SMS and s
 4. **Review inbox** — new payees wait in a "To review" inbox, handled one card at a time.
 5. **Charts** — category donut, 12-month calendar heatmap, month-by-month comparison, and a home summary.
 6. **CSV export and import** — your backup, and a way in from existing spreadsheets.
-7. **SMS reading** — on-device parsers for HDFC, ICICI, Federal, Axis and Kotak (milestone M3).
+7. **SMS reading** — on-device parsing, with Kotak built in and other banks added through custom parsers (milestone M3).
 8. **Custom parsers** — add a bank yourself with a declarative rule built on the in-browser parser website (M3).
 
 Everything is protected by an app lock and an encrypted database, in English and Hindi. **Out of scope for v1:** iOS, cloud sync or accounts, bill reminders, investments, reading PDF statements or email, any analytics/crash-reporting/ads SDK, and F-Droid.
@@ -35,7 +35,7 @@ Everything is protected by an app lock and an encrypted database, in English and
 | Design | Material 3 with dynamic color; English and Hindi strings |
 | Architecture | MVVM in Gradle modules (`core/*`, `feature/*`, `sms/*`), Hilt for dependency injection |
 | Storage | Room on SQLCipher; key generated on-device and kept in the Android Keystore |
-| Charts | Vico (donut, bars); custom Compose Canvas for the calendar heatmap |
+| Charts | Compose Canvas (donut, bars and calendar heatmap); no chart library |
 | Security | `androidx.biometric` app lock, `FLAG_SECURE`, Android backup disabled |
 | Background work | WorkManager (daily summary, backup reminder) |
 | SMS | `BroadcastReceiver` + one-time inbox scan; parsers are pure Kotlin |

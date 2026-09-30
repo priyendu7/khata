@@ -4,6 +4,13 @@ Every build is **built once** from a git tag, uploaded to Google Play's **intern
 
 This covers the **production app** (`com.openhand.khata`). Testing unmerged PRs happens in the separate **Khata QA** app — see [TESTING_ON_PLAY.md](TESTING_ON_PLAY.md).
 
+## SMS permissions: no release until the declaration is approved
+
+The app declares `READ_SMS` and `RECEIVE_SMS` (SMS import, PRD feature 7). Google Play blocks every change to an app that has a release on **any** track (internal, closed, open or production) declaring them without an approved SMS permissions declaration, even store listing edits. So:
+
+- **Don't push a release tag** until SMS import is complete and Play has approved the declaration (Phase 4). `release.yml` uploads to the internal testing track, which counts.
+- The declaration needs a short demo video of SMS import; record it on a `/play-test` build. Internal app sharing needs no declaration.
+
 ## Branch model
 
 - `main` holds **production-ready code only**. Everything lands via reviewed PRs with green CI, after any needed Play testing of the PR itself.

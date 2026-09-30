@@ -1,0 +1,147 @@
+{
+  "description": "Bank SMS that no rule read: dropped if clearly not a transaction (OTP, collect request, reminder, balance, mandate, offer, failed payment, no amount), otherwise kept for review. The filter only runs after the rules, so it never drops a matched SMS.",
+  "zone": "Asia/Kolkata",
+  "rules": [
+    {
+      "v": 1,
+      "id": "test-sent",
+      "bank": "Test Bank",
+      "senders": [
+        "TESTBK"
+      ],
+      "pattern": "Sent (?<amount>Rs\\.[\\d,]+(?:\\.\\d{1,2})?) to (?<payee>.+?) on",
+      "direction": "debit",
+      "accountType": "bank"
+    }
+  ],
+  "cases": [
+    {
+      "name": "a rule match wins even when the SMS mentions OTP",
+      "sender": "AX-TESTBK-S",
+      "body": "Sent Rs.250.00 to GENERAL STORE on 21-09-26. Never share card details/OTP.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-sent",
+        "bank": "Test Bank",
+        "amountPaise": 25000,
+        "direction": "debit",
+        "accountType": "bank",
+        "account": null,
+        "payee": "GENERAL STORE",
+        "ref": null,
+        "timestamp": "2026-09-21T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "OTP",
+      "sender": "AX-TESTBK-S",
+      "body": "123456 is the OTP for your transaction of Rs.1,499.00 at AMAZON. Valid for 5 mins. Do not share.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "not_transaction"
+      }
+    },
+    {
+      "name": "one-time password",
+      "sender": "AX-TESTBK-S",
+      "body": "Your one time password for Rs.500 payment is 4821.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "not_transaction"
+      }
+    },
+    {
+      "name": "UPI collect request",
+      "sender": "AX-TESTBK-S",
+      "body": "SHOPNAME has requested money of Rs.300 from you on UPI. Ignore if not initiated by you.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "not_transaction"
+      }
+    },
+    {
+      "name": "card bill reminder",
+      "sender": "AX-TESTBK-S",
+      "body": "Your credit card bill of Rs.12,400 is due on 05-10-26. Minimum amount due Rs.620.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "not_transaction"
+      }
+    },
+    {
+      "name": "balance only",
+      "sender": "AX-TESTBK-S",
+      "body": "Your Avl Bal in A/c XX1234 as on 21-09-26 is Rs.5,430.25.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "not_transaction"
+      }
+    },
+    {
+      "name": "e-mandate",
+      "sender": "AX-TESTBK-S",
+      "body": "E-mandate for Rs.999 towards STREAMING SERVICE has been registered on your A/c XX1234.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "not_transaction"
+      }
+    },
+    {
+      "name": "offer",
+      "sender": "AX-TESTBK-S",
+      "body": "You are pre-approved for a personal loan of up to Rs.5,00,000. Apply now.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "not_transaction"
+      }
+    },
+    {
+      "name": "failed payment",
+      "sender": "AX-TESTBK-S",
+      "body": "Payment of Rs.450 to FOOD APP failed. Any amount debited will be refunded",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "not_transaction"
+      }
+    },
+    {
+      "name": "declined card",
+      "sender": "AX-TESTBK-S",
+      "body": "Transaction of Rs.2,000 on card XX5678 was declined.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "not_transaction"
+      }
+    },
+    {
+      "name": "refund for a failed payment is kept for review",
+      "sender": "AX-TESTBK-S",
+      "body": "Rs.450 credited back to A/c XX1234 for failed transaction.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "unparsed",
+        "bank": "Test Bank"
+      }
+    },
+    {
+      "name": "notice with no amount",
+      "sender": "AX-TESTBK-S",
+      "body": "Biometric authentication is enabled on your Test Bank app.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "not_transaction"
+      }
+    },
+    {
+      "name": "an unknown format with an amount goes to review",
+      "sender": "AX-TESTBK-S",
+      "body": "Rs.1,200 withdrawn from ATM using card XX5678.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "unparsed",
+        "bank": "Test Bank"
+      }
+    }
+  ]
+}

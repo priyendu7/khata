@@ -113,7 +113,7 @@ flowchart LR
     E -- no --> G[Review inbox]
 ```
 
-Parsing happens entirely on the device, with a rule set for each sender (HDFC, ICICI, Federal, Axis, Kotak first). With permission, the inbox can also be imported from a chosen start date. SMS that can't be parsed go to the review inbox with their raw text, and the user can report the format by filing a GitHub issue themselves; the app never sends anything.
+Parsing happens entirely on the device, with a rule set for each sender. Kotak is built in for v1; other banks (HDFC, ICICI, Federal, Axis first) are added through custom parsers (feature 8) and become built in after launch as real samples come in. With permission, the inbox can also be imported from a chosen start date. SMS that can't be parsed go to the review inbox with their raw text, and the user can report the format by filing a GitHub issue themselves; the app never sends anything.
 
 ### 8. Custom parsers (later milestone)
 
@@ -162,14 +162,14 @@ The app is a native Android app written in Kotlin with Jetpack Compose. It suppo
 | Language / UI | Kotlin, Jetpack Compose, Material 3, with English and Hindi strings | Modern and well supported; Material 3 matches the phone's own colors (dynamic color) |
 | Architecture | MVVM, one module per feature, Hilt for wiring | Easy to test, and easy for outside contributors to work in |
 | Storage | Room + SQLCipher, Android Keystore for the key | Encrypted, and fully offline |
-| Charts | Vico for the pie and bar charts; a custom Compose Canvas for the calendar heatmap | Vico is open source and built for Compose; no library offers a GitHub-style heatmap |
+| Charts | Compose Canvas for all three charts (donut, bars and calendar heatmap), with one shared chart theme | No chart library is on the release dependency allowlist, and no library offers a GitHub-style heatmap, which needs Canvas anyway |
 | Security | androidx.biometric, FLAG_SECURE | App lock and hiding the screen in recent apps |
 | Background work | WorkManager | Daily summary and backup reminders |
 | SMS | BroadcastReceiver for new SMS, plus a one-time inbox scan | Parsers are pure Kotlin with unit tests |
 | CSV | Storage Access Framework (the system file picker) and a small CSV library | The user picks where files go, without broad storage permissions |
 | Build / CI | Gradle, GitHub Actions: lint, unit tests, a check that fails if the INTERNET permission appears, reproducible release builds | Enforces the privacy promise automatically |
 
-**SMS parser design.** Each bank has its own parser class that takes the sender ID and message body and returns a transaction or nothing. The sender ID is matched by its suffix, for example `*-HDFCBK`. Each parser is tested against real SMS samples with personal details blanked out, kept in the repo. Adding a new bank means adding a parser class and its sample SMS, which is a simple first contribution for newcomers.
+**SMS parser design.** Each bank has its own rules, in the same declarative format as custom parsers ([`docs/parser-rules.md`](parser-rules.md)): the engine takes the sender ID and message body and returns a transaction or nothing. The sender ID is matched by its header, for example `KOTAKB` in `JM-KOTAKB-S`. Each bank's rules are tested against real SMS samples with personal details blanked out, kept in the repo. Adding a new bank means adding its rule file (made on the parser website) and its sample SMS, which is a simple first contribution for newcomers.
 
 ## Distribution
 
@@ -195,7 +195,7 @@ We build in five milestones. The app is useful from M2 on, before any SMS parsin
 | M0 Foundation | Repo, GPLv3, CI including the check that fails if the INTERNET permission appears, encrypted Room database, app lock | The app opens behind a PIN or fingerprint, and CI is green |
 | M1 Manual tracking | Add, edit and delete transactions; categories, tags, accounts, payee memory, income, English and Hindi interface | You can track a month of spending by hand |
 | M2 Charts and CSV | Category pie, calendar heatmap, monthly comparison, CSV export and import, backup reminder | You can import an existing spreadsheet and see all three charts |
-| M3 SMS reading | Parsers for HDFC, ICICI, Federal, Axis and Kotak; inbox scan; review inbox; transfer detection; custom parser website and import | A week of real SMS is recorded correctly with no double counting |
+| M3 SMS reading | Built-in Kotak parsers, other banks through custom parsers; inbox scan; review inbox; transfer detection; custom parser website and import | A week of real SMS is recorded correctly with no double counting |
 | M4 Release | Closed test with 12 testers, Play forms and video, GitHub release APK, store listing | Live on the Play Store |
 
 ## Success metrics and risks

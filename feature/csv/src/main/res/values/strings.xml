@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Export -->
+    <string name="export_title">Export to CSV</string>
+    <string name="export_unencrypted">The CSV file is not encrypted, unlike Khata\'s own data. Anyone who can open the file can read your transactions, so keep it somewhere safe.</string>
+    <string name="export_what">What to export</string>
+    <string name="export_all">All data</string>
+    <string name="export_range">A date range</string>
+    <string name="export_range_value">%1$s – %2$s</string>
+    <string name="export_last">Last export: %1$s</string>
+    <string name="export_never">Not exported yet</string>
+    <string name="export_button">Export</string>
+    <string name="export_working">Exporting…</string>
+    <plurals name="export_done">
+        <item quantity="one">Saved %d transaction.</item>
+        <item quantity="other">Saved %d transactions.</item>
+    </plurals>
+    <string name="export_failed">Couldn\'t save the file. Try again, or pick another place.</string>
+
+    <!-- Import -->
+    <string name="import_title">Import from CSV</string>
+    <string name="import_intro">Add transactions from a CSV file: a Khata export, or any spreadsheet or bank statement after you match its columns. You\'ll see a preview first, and transactions that are already saved are skipped.</string>
+    <string name="import_choose_file">Choose a CSV file</string>
+    <string name="import_choose_another">Choose another file</string>
+    <string name="import_done">Done</string>
+    <string name="import_another">Import another file</string>
+    <string name="import_failed_unreadable">Couldn\'t read that file. Check that it\'s a CSV file and try again.</string>
+    <string name="import_failed_empty">That file has no rows to import. It needs a header row and at least one transaction.</string>
+    <string name="import_failed_save">Couldn\'t save the transactions. Nothing was imported.</string>
+    <plurals name="import_added">
+        <item quantity="one">Added %d transaction.</item>
+        <item quantity="other">Added %d transactions.</item>
+    </plurals>
+    <plurals name="import_skipped">
+        <item quantity="one">Skipped %d that was already saved.</item>
+        <item quantity="other">Skipped %d that were already saved.</item>
+    </plurals>
+    <plurals name="import_invalid_count">
+        <item quantity="one">%d row can\'t be read.</item>
+        <item quantity="other">%d rows can\'t be read.</item>
+    </plurals>
+
+    <!-- Column matching -->
+    <string name="matching_title">Match the columns</string>
+    <string name="matching_intro">This file isn\'t a Khata export. Tell Khata which column holds what; the first row is read as the column names.</string>
+    <string name="matching_amount_style">Spending and income</string>
+    <string name="matching_date_format">Date format</string>
+    <string name="matching_continue">Continue</string>
+    <string name="amount_style_signed">One amount column: negative is spending</string>
+    <string name="amount_style_all_spending">One amount column: every row is spending</string>
+    <string name="amount_style_separate">Separate spending and income columns</string>
+    <string name="column_date">Date column</string>
+    <string name="column_amount">Amount column</string>
+    <string name="column_debit">Spending (debit) column</string>
+    <string name="column_credit">Income (credit) column</string>
+    <string name="column_description">Description column (becomes the note)</string>
+    <string name="column_category">Category column</string>
+    <string name="column_none">Not in this file</string>
+    <string name="column_with_sample">%1$s (e.g. %2$s)</string>
+
+    <!-- Preview -->
+    <plurals name="preview_new">
+        <item quantity="one">%d new transaction</item>
+        <item quantity="other">%d new transactions</item>
+    </plurals>
+    <plurals name="preview_duplicates">
+        <item quantity="one">%d already saved, will be skipped</item>
+        <item quantity="other">%d already saved, will be skipped</item>
+    </plurals>
+    <plurals name="preview_import">
+        <item quantity="one">Import %d transaction</item>
+        <item quantity="other">Import %d transactions</item>
+    </plurals>
+    <string name="preview_change_columns">Change columns</string>
+    <string name="preview_first_rows">First rows</string>
+    <string name="preview_duplicate">Already saved</string>
+    <string name="preview_problems">Rows that can\'t be read</string>
+    <string name="preview_problem_row">Row %1$d: %2$s</string>
+    <plurals name="preview_more_problems">
+        <item quantity="one">…and %d more.</item>
+        <item quantity="other">…and %d more.</item>
+    </plurals>
+    <string name="problem_columns">too few columns</string>
+    <string name="problem_date">the date isn\'t understood</string>
+    <string name="problem_time">the time isn\'t understood</string>
+    <string name="problem_amount">the amount isn\'t understood</string>
+    <string name="problem_direction">the direction must be debit, credit, refund or transfer</string>
+    <string name="direction_debit">Spent</string>
+    <string name="direction_credit">Received</string>
+    <string name="direction_refund">Refund</string>
+    <string name="direction_transfer">Transfer</string>
+    <!-- Backup reminder notification: never amounts or transaction details. -->
+    <string name="reminder_channel">Backup reminder</string>
+    <string name="reminder_title">Time to back up Khata</string>
+    <plurals name="reminder_text">
+        <item quantity="one">You haven\'t exported a backup in %d day. Tap to save a CSV file: if this phone is lost, your data can\'t be recovered without one.</item>
+        <item quantity="other">You haven\'t exported a backup in %d days. Tap to save a CSV file: if this phone is lost, your data can\'t be recovered without one.</item>
+    </plurals>
+</resources>

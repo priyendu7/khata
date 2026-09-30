@@ -1,0 +1,226 @@
+package com.openhand.khata.feature.insights
+
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
+import com.openhand.khata.core.model.Category
+import com.openhand.khata.core.model.CategoryBreakdown
+import com.openhand.khata.core.model.CategoryChange
+import com.openhand.khata.core.model.CategorySpend
+import com.openhand.khata.core.model.Change
+import com.openhand.khata.core.model.HeatLevels
+import com.openhand.khata.core.model.MonthBar
+import com.openhand.khata.core.model.MonthlyComparison
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.YearMonth
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
+class InsightsContentTest {
+    @get:Rule val compose = createComposeRule()
+
+    private fun category(id: Long, seedKey: String) = Category(
+        id = id,
+        name = null,
+        seedKey = seedKey,
+        color = 0xFFE65100.toInt(),
+        icon = seedKey
+    )
+
+    private val food = category(1, "food")
+    private val rent = category(4, "rent")
+    private val shopping = category(7, "shopping")
+    private val september = DateSpan(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))
+
+    private fun state(breakdown: CategoryBreakdown, period: ChartPeriod = ChartPeriod.MONTH) =
+        DonutState(period, september, from = 0, until = 1, breakdown = breakdown)
+
+    private val breakdown = CategoryBreakdown(
+        slices = listOf(CategorySpend(rent, 15_000_00), CategorySpend(food, 4_000_00)),
+        otherPaise = 1_000_00,
+        refunded = listOf(CategorySpend(shopping, -500_00))
+    )
+
+    private var opened = mutableListOf<Long?>()
+    private var selected = mutableListOf<ChartPeriod>()
+
+    private val days = mutableListOf<LocalDate>()
+    private val months = mutableListOf<YearMonth>()
+    private val monthCounts = mutableListOf<Int>()
+
+    private fun show(
+        state: DonutState?,
+        heatmap: HeatmapState? = null,
+        monthly: MonthlyState? = null
+    ) = compose.setContent {
+        InsightsContent(
+            donut = state,
+            heatmap = heatmap,
+            monthly = monthly,
+            onSelectPeriod = { selected += it },
+            onOpenCategory = { opened += it },
+            onOpenDay = { days += it },
+            onSelectMonths = { monthCounts += it },
+            onOpenMonth = { months += it }
+        )
+    }
+
+    private val today = LocalDate.of(2026, 9, 27)
+
+    private fun heatmap(spending: Map<LocalDate, Long>) = HeatmapState(
+        first = InsightsViewModel.heatmapStart(today),
+        today = today,
+        firstDayOfWeek = DayOfWeek.MONDAY,
+        days = spending,
+        levels = HeatLevels.of(spending.values)
+    )
+
+    private fun monthly(): MonthlyState {
+        val sep = YearMonth.of(2026, 9)
+        val aug = sep.minusMonths(1)
+        val bars = listOf(
+            MonthBar(
+                aug,
+                spentPaise = 1_000_00,
+                incomePaise = 50_000_00,
+                segments = listOf(1_000_00, 0)
+            ),
+            MonthBar(sep, spentPaise = 1_180_00, incomePaise = 0, segments = listOf(1_180_00, 0))
+        )
+        return MonthlyState(
+            months = 6,
+            comparison = MonthlyComparison(
+                bars = bars,
+                stacked = listOf(food),
+                change = Change.Percent(18),
+                categoryChanges = listOf(CategoryChange(food, Change.Percent(18)))
+            )
+        )
+    }
+
+    @Test
+    fun talkBackReadsEachDayAndTappingOpensIt() {
+        show(null, heatmap = heatmap(mapOf(today to 1_250_00L)))
+
+        compose.onNodeWithText("Spending by day").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Sun, 27 Sep 2026: ₹1,250 spent")
+            .performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNodeWithContentDescription("Sat, 26 Sep 2026: nothing spent").assertExists()
+        // A year back from today, today included; not a day more.
+        compose.onNodeWithContentDescription("Sun, 28 Sep 2025: nothing spent").assertExists()
+        compose.onNodeWithContentDescription("Sat, 27 Sep 2025: nothing spent").assertDoesNotExist()
+        assertEquals(listOf(today), days)
+    }
+
+    @Test
+    fun monthlyShowsTheChangeAndOpensAMonth() {
+        show(null, monthly = monthly())
+
+        compose.onNodeWithText("Month by month").assertIsDisplayed()
+        compose.onNodeWithText("September vs August").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("All spending").performScrollTo().assertIsDisplayed()
+        // All spending and Food.
+        compose.onAllNodesWithText("+18%").assertCountEquals(2)
+        val chart = compose.onNodeWithContentDescription(
+            "September 2026: spent ₹1,180, income ₹0",
+            substring = true
+        ).fetchSemanticsNode()
+        compose.runOnIdle {
+            chart.config[SemanticsActions.CustomActions]
+                .first { it.label.startsWith("September") }
+                .action()
+        }
+        compose.onNodeWithText("12 months").performClick()
+        assertEquals(listOf(YearMonth.of(2026, 9)), months)
+        assertEquals(listOf(12), monthCounts)
+    }
+
+    @Test
+    fun changeLabels() {
+        val labels = mutableListOf<String>()
+        compose.setContent {
+            labels += changeLabel(Change.Percent(1_250))
+            labels += changeLabel(Change.Percent(-5))
+            labels += changeLabel(Change.Percent(0))
+            labels += changeLabel(Change.New)
+        }
+        compose.waitForIdle()
+        assertEquals(listOf("+1,250%", "−5%", "+0%", "New"), labels.take(4))
+    }
+
+    @Test
+    fun showsTheTotalAndALegendWithAmountsAndShares() {
+        show(state(breakdown))
+
+        // The Home figure: slices, "Other" and the refund together.
+        compose.onNodeWithText("₹19,500").assertIsDisplayed()
+        compose.onNodeWithText("1 Sep 2026 – 30 Sep 2026").assertIsDisplayed()
+        compose.onNodeWithText("Rent").assertIsDisplayed()
+        compose.onNodeWithText("₹15,000").assertIsDisplayed()
+        compose.onNodeWithText("75%").assertIsDisplayed()
+        compose.onNodeWithText("Other").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("More refunded than spent").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("-₹500").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun talkBackReadsEachSlice() {
+        show(state(breakdown))
+
+        compose.onNodeWithContentDescription("Rent, ₹15,000, 75% of spending", substring = true)
+            .assertIsDisplayed()
+        compose.onNodeWithContentDescription("Other, ₹1,000, 5% of spending", substring = true)
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun tappingTheLegendOpensThatCategory() {
+        show(state(breakdown))
+
+        compose.onNodeWithText("Food").performScrollTo().performClick()
+        compose.onNodeWithText("Other").performScrollTo().performClick()
+        compose.onNodeWithText("Shopping").performScrollTo().performClick()
+        assertEquals(listOf(food.id, null, shopping.id), opened)
+    }
+
+    @Test
+    fun switchesPeriods() {
+        show(state(breakdown))
+
+        compose.onNodeWithText("Week").performClick()
+        compose.onNodeWithText("Custom").performClick()
+        assertEquals(listOf(ChartPeriod.WEEK, ChartPeriod.CUSTOM), selected)
+    }
+
+    @Test
+    fun emptyPeriodSaysSo() {
+        show(state(CategoryBreakdown.of(emptyList())))
+
+        compose.onNodeWithText("Nothing spent in this period").assertIsDisplayed()
+        compose.onNodeWithText("Other").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "hi")
+    fun showsHindi() {
+        show(state(breakdown))
+
+        compose.onNodeWithText("श्रेणी के हिसाब से खर्च").assertIsDisplayed()
+        compose.onNodeWithText("महीना").assertIsDisplayed()
+        compose.onNodeWithText("अन्य").performScrollTo().assertIsDisplayed()
+    }
+}

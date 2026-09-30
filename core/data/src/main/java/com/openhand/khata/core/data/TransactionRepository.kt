@@ -4,6 +4,7 @@ import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.database.dao.TransactionRow
 import com.openhand.khata.core.database.entity.PayeeEntity
 import com.openhand.khata.core.database.entity.TransactionEntity
+import com.openhand.khata.core.model.AmountEntry
 import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.DefaultCategory
 import com.openhand.khata.core.model.Totals
@@ -49,6 +50,20 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
     fun observeTopCategory(from: Long, until: Long): Flow<CategorySpend?> =
         db.observe { it.transactionDao().observeTopCategory(from, until) }
             .map { row -> row?.let { CategorySpend(it.category.toModel(), it.spentPaise) } }
+
+    /**
+     * Every category's spending in [from, until), biggest first, with the same rules as
+     * [observeTotals]: added up, they give its spent figure. Refunds beyond spending are negative.
+     */
+    fun observeCategorySpending(from: Long, until: Long): Flow<List<CategorySpend>> =
+        db.observe { it.transactionDao().observeCategorySpending(from, until) }
+            .map { rows -> rows.map { CategorySpend(it.category.toModel(), it.spentPaise) } }
+
+    /** Every expense, refund and income in [from, until), for the Insights charts. */
+    fun observeAmounts(from: Long, until: Long): Flow<List<AmountEntry>> =
+        db.observe { it.transactionDao().observeAmounts(from, until) }.map { rows ->
+            rows.map { AmountEntry(it.timestamp, it.direction, it.amountPaise, it.categoryId) }
+        }
 
     /** The transaction with [id] as the edit screen shows it, or null if it's gone. */
     suspend fun get(id: Long): Transaction? = db.io { database ->
