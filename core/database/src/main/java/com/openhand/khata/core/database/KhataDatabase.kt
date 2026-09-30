@@ -34,9 +34,10 @@ import com.openhand.khata.core.database.entity.TransactionTagEntity
         PayeeDefaultTagEntity::class,
         TransactionEntity::class,
         TransactionTagEntity::class,
-        MetadataEntity::class
+        MetadataEntity::class,
+        UnparsedSmsEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(EnumConverters::class)
@@ -58,6 +59,8 @@ abstract class KhataDatabase : RoomDatabase() {
     abstract fun smsImportDao(): SmsImportDao
 
     abstract fun reviewDao(): ReviewDao
+
+    abstract fun unparsedSmsDao(): UnparsedSmsDao
 
     companion object {
         const val NAME = "khata.db"

@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.openhand.khata.core.data.CategoryRepository
 import com.openhand.khata.core.data.ReviewRepository
 import com.openhand.khata.core.data.TagRepository
+import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.ReviewItem
+import com.openhand.khata.core.model.UnparsedSms
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,12 +27,17 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class ReviewViewModel @Inject constructor(
     private val review: ReviewRepository,
+    private val unparsedSms: UnparsedSmsRepository,
     categories: CategoryRepository,
     private val tags: TagRepository
 ) : ViewModel() {
     /** Waiting transactions, newest first; null until loaded. */
     val queue: StateFlow<List<ReviewItem>?> = review.observeQueue()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+
+    /** Bank SMS no rule could read, newest first; shown after the transactions. */
+    val unparsed: StateFlow<List<UnparsedSms>> = unparsedSms.observeAll()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
 
     val categories: StateFlow<List<Category>> = categories.observeAll()
         .map { all -> all.filter { !it.archived } }
@@ -55,6 +62,11 @@ class ReviewViewModel @Inject constructor(
 
     fun skip(item: ReviewItem) {
         viewModelScope.launch { review.skip(item.transactionId) }
+    }
+
+    /** Deletes it; nothing is kept. */
+    fun dismiss(sms: UnparsedSms) {
+        viewModelScope.launch { unparsedSms.delete(sms.id) }
     }
 
     private companion object {

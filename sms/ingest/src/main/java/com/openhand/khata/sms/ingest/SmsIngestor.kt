@@ -2,6 +2,7 @@ package com.openhand.khata.sms.ingest
 
 import com.openhand.khata.core.data.SmsImportResult
 import com.openhand.khata.core.data.SmsImporter
+import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.model.SmsTransaction
 import com.openhand.khata.sms.parser.BuiltInRules
 import com.openhand.khata.sms.parser.ParseResult
@@ -15,7 +16,10 @@ import javax.inject.Singleton
  * with the rules, and save a transaction through [SmsImporter].
  */
 @Singleton
-class SmsIngestor @Inject constructor(private val importer: SmsImporter) {
+class SmsIngestor @Inject constructor(
+    private val importer: SmsImporter,
+    private val unparsed: UnparsedSmsRepository
+) {
     // Loaded on first use, in the time zone the phone is in then.
     private val parser by lazy { SmsParser(BuiltInRules.load()) }
 
@@ -25,8 +29,18 @@ class SmsIngestor @Inject constructor(private val importer: SmsImporter) {
     suspend fun ingest(sender: String, body: String, receivedAt: Long): IngestOutcome =
         when (val result = parser.parse(sender, body, receivedAt)) {
             is ParseResult.Parsed -> save(result.sms, body)
-            // Kept for the review inbox once it exists (#57); counted for now.
-            is ParseResult.Unparsed -> IngestOutcome.UNREADABLE
+            // Kept with its raw text for the review inbox, so a new format is noticed.
+            is ParseResult.Unparsed ->
+                if (unparsed.save(
+                        sender,
+                        body,
+                        receivedAt
+                    )
+                ) {
+                    IngestOutcome.UNREADABLE
+                } else {
+                    IngestOutcome.ALREADY_THERE
+                }
             ParseResult.NotTransaction, ParseResult.UnknownSender -> IngestOutcome.IGNORED
         }
 

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.performTextReplacement
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.ReviewItem
+import com.openhand.khata.core.model.UnparsedSms
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -41,9 +42,22 @@ class ReviewContentTest {
         rawSms = "Sent Rs.60.90 from Kotak Bank A/c X1234 to $payee"
     )
 
-    private fun show(queue: List<ReviewItem>?) {
+    private val unparsedActions = mutableListOf<String>()
+    private val sms = UnparsedSms(
+        id = 3,
+        sender = "JM-KOTAKB-S",
+        body = "Rs.2,000 withdrawn at ATM using card XX5678.",
+        receivedAt = 1_790_000_000_000
+    )
+
+    private fun show(queue: List<ReviewItem>?, unparsed: List<UnparsedSms> = emptyList()) {
         compose.setContent {
             ReviewContent(
+                unparsed = unparsed,
+                onAddByHand = { unparsedActions += "add ${it.id}" },
+                onDismiss = { unparsedActions += "dismiss ${it.id}" },
+                onCopy = { unparsedActions += "copy ${it.id}" },
+                onOpenIssues = { unparsedActions += "github" },
                 onBack = {},
                 queue = queue,
                 categories = categories,
@@ -99,5 +113,30 @@ class ReviewContentTest {
         show(emptyList())
 
         compose.onNodeWithText("All caught up").assertExists()
+    }
+
+    @Test
+    fun unreadableSmsComeAfterThePayeesAndCountInWhatsLeft() {
+        show(listOf(item(1)), listOf(sms))
+
+        compose.onNodeWithText("2 left").assertExists()
+        compose.onNodeWithText("In the SMS: MCDONALDS").assertExists()
+        compose.onNodeWithText(sms.body).assertDoesNotExist()
+    }
+
+    @Test
+    fun anUnreadableSmsCanBeAddedDismissedOrCopied() {
+        show(emptyList(), listOf(sms))
+
+        compose.onNodeWithText("A bank SMS Khata couldn't read").assertExists()
+        compose.onNodeWithText(sms.body).assertExists()
+        compose.onNodeWithText("Add by hand").performScrollTo().performClick()
+        compose.onNodeWithText("Dismiss").performScrollTo().performClick()
+        compose.onNodeWithText("Copy for a bug report").performScrollTo().performClick()
+        compose.onNodeWithText("remove names", substring = true).assertExists()
+        compose.onNodeWithText("Open GitHub").performClick()
+
+        assertEquals(listOf("add 3", "dismiss 3", "copy 3", "github"), unparsedActions)
+        compose.onNodeWithText("SMS copied").assertDoesNotExist()
     }
 }

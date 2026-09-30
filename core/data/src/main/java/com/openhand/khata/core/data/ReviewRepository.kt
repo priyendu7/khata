@@ -10,6 +10,7 @@ import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 /**
@@ -18,8 +19,11 @@ import kotlinx.coroutines.flow.map
  */
 @Singleton
 class ReviewRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
-    /** How many transactions are waiting, for the badges. */
-    fun observeCount(): Flow<Int> = db.observe { it.reviewDao().observeCount() }
+    /** How many items wait: transactions from new payees and bank SMS no rule could read. */
+    fun observeCount(): Flow<Int> = combine(
+        db.observe { it.reviewDao().observeCount() },
+        db.observe { it.unparsedSmsDao().observeCount() }
+    ) { transactions, unparsed -> transactions + unparsed }
 
     /** Waiting transactions, newest first. */
     fun observeQueue(): Flow<List<ReviewItem>> =

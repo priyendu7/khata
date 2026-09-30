@@ -22,6 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -31,6 +32,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.ReviewItem
+import com.openhand.khata.core.model.UnparsedSms
 import com.openhand.khata.core.ui.CategoryBadge
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
@@ -43,10 +45,19 @@ import com.openhand.khata.core.ui.categoryName
 import java.time.Instant
 import java.time.ZoneId
 
-/** To review (PRD feature 4): name each new payee once, one card at a time. */
+/**
+ * To review (PRD feature 4): name each new payee once, one card at a time; then the bank SMS no
+ * rule could read (PRD feature 7), to add by hand or dismiss.
+ */
 @Composable
-fun ReviewScreen(onBack: () -> Unit, viewModel: ReviewViewModel = hiltViewModel()) {
+fun ReviewScreen(
+    onBack: () -> Unit,
+    onAddByHand: (amountPaise: Long?, at: Long, unparsedId: Long) -> Unit,
+    viewModel: ReviewViewModel = hiltViewModel()
+) {
+    val context = LocalContext.current
     val queue by viewModel.queue.collectAsStateWithLifecycle()
+    val unparsed by viewModel.unparsed.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val tagSuggestions by viewModel.tagSuggestions.collectAsStateWithLifecycle()
     ReviewContent(
@@ -56,7 +67,12 @@ fun ReviewScreen(onBack: () -> Unit, viewModel: ReviewViewModel = hiltViewModel(
         tagSuggestions = tagSuggestions,
         onTagQueryChange = viewModel::onTagQueryChange,
         onSave = viewModel::save,
-        onSkip = viewModel::skip
+        onSkip = viewModel::skip,
+        unparsed = unparsed,
+        onAddByHand = { onAddByHand(firstAmountPaise(it.body), it.receivedAt, it.id) },
+        onDismiss = viewModel::dismiss,
+        onCopy = { context.copyText(it.body) },
+        onOpenIssues = { context.openIssues() }
     )
 }
 
@@ -68,13 +84,30 @@ fun ReviewContent(
     tagSuggestions: List<String>,
     onTagQueryChange: (String) -> Unit,
     onSave: (ReviewItem, name: String, categoryId: Long?, tags: List<String>) -> Unit,
-    onSkip: (ReviewItem) -> Unit
+    onSkip: (ReviewItem) -> Unit,
+    unparsed: List<UnparsedSms> = emptyList(),
+    onAddByHand: (UnparsedSms) -> Unit = {},
+    onDismiss: (UnparsedSms) -> Unit = {},
+    onCopy: (UnparsedSms) -> Unit = {},
+    onOpenIssues: () -> Unit = {}
 ) {
+    var copied by rememberSaveable { mutableStateOf(false) }
     SubScreen(title = stringResource(R.string.review_title), onBack = onBack) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             val item = queue?.firstOrNull()
+            val sms = unparsed.firstOrNull()
             when {
                 queue == null -> Unit
+                item == null && sms != null -> UnparsedCard(
+                    sms = sms,
+                    left = unparsed.size,
+                    onAddByHand = { onAddByHand(sms) },
+                    onDismiss = { onDismiss(sms) },
+                    onCopy = {
+                        onCopy(sms)
+                        copied = true
+                    }
+                )
                 item == null -> EmptyState(
                     icon = painterResource(UiR.drawable.ic_ledger),
                     title = stringResource(R.string.review_done_title),
@@ -82,7 +115,7 @@ fun ReviewContent(
                 )
                 else -> ReviewCard(
                     item = item,
-                    left = queue.size,
+                    left = queue.size + unparsed.size,
                     categories = categories,
                     tagSuggestions = tagSuggestions,
                     onTagQueryChange = onTagQueryChange,
@@ -92,6 +125,7 @@ fun ReviewContent(
             }
         }
     }
+    if (copied) CopiedDialog(onOpenIssues = onOpenIssues, onClose = { copied = false })
 }
 
 @Composable
