@@ -57,4 +57,39 @@ class MigrationsTest {
             }
         }
     }
+
+    @Test
+    fun version2To3AddsOwnAccountAndLetsBothSidesOfATransferShareAReference() {
+        helper.createDatabase(dbName, 2).use { db ->
+            db.execSQL(
+                "INSERT INTO categories (id, name, seed_key, color, icon, archived) " +
+                    "VALUES (1, NULL, 'uncategorized', 0, 'category', 0)"
+            )
+            db.execSQL(
+                "INSERT INTO payees (id, identifier, display_name, default_category_id) " +
+                    "VALUES (3, 'CRED', 'CRED', NULL)"
+            )
+            db.execSQL(
+                "INSERT INTO transactions (id, amount_paise, direction, timestamp, category_id, " +
+                    "payee_id, reference_no, source, needs_review) " +
+                    "VALUES (7, 36600, 'debit', 1790000000000, 1, 3, '4087', 'sms', 0)"
+            )
+        }
+
+        helper.runMigrationsAndValidate(dbName, 3, true, *KhataMigrations.ALL).use { db ->
+            db.query("SELECT own_account FROM payees WHERE id = 3").use {
+                it.moveToFirst()
+                assertEquals(0, it.getInt(0))
+            }
+            db.execSQL(
+                "INSERT INTO transactions (id, amount_paise, direction, timestamp, category_id, " +
+                    "reference_no, source, needs_review) " +
+                    "VALUES (8, 36600, 'credit', 1790000000000, 1, '4087', 'sms', 0)"
+            )
+            db.query("SELECT COUNT(*) FROM transactions WHERE reference_no = '4087'").use {
+                it.moveToFirst()
+                assertEquals(2, it.getInt(0))
+            }
+        }
+    }
 }

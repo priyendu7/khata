@@ -111,7 +111,7 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 - [x] Rule engine that turns a rule and an SMS into a transaction, or nothing
 - [x] Write the built-in Kotak parsers as rules in the same format, so built-in and custom parsers work the same way
 - [x] Filter out OTP, promotional and balance-only messages
-- [ ] Detect transfers: credit card bill payments (including CRED) and moving money between your own accounts
+- [x] Detect transfers: credit card bill payments (including CRED) and moving money between your own accounts
 - [x] Match duplicates by reference number, or by amount, time and account when there is no reference
 
 **Reading SMS on the phone**

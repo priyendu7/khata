@@ -145,10 +145,10 @@ There are six tables in one encrypted SQLite database. Amounts are stored as int
 | Table | Key fields | Notes |
 | --- | --- | --- |
 | Account | id, name, type (bank / credit card / debit card / wallet), bank, last4 | Filled in automatically from SMS, and editable |
-| Payee | id, identifier (UPI ID / merchant / account), display name, default category, default tags | This is the payee memory |
+| Payee | id, identifier (UPI ID / merchant / account), display name, default category, default tags, own account | This is the payee memory. Money to or from an own account is a transfer |
 | Category | id, name, color, icon, archived | One per transaction |
 | Tag | id, name | Linked to transactions through TransactionTag |
-| Transaction | id, amount_paise, direction, timestamp, account_id, payee_id, category_id, note, reference_no, source (sms / manual / csv), raw_sms, needs_review | reference_no is unique when present, which prevents duplicates |
+| Transaction | id, amount_paise, direction, timestamp, account_id, payee_id, category_id, note, reference_no, source (sms / manual / csv), raw_sms, needs_review | The same reference_no on the same account is a duplicate; on another account it is the other side of a transfer |
 | TransactionTag | transaction_id, tag_id | Links transactions to tags (many-to-many) |
 
 The CSV export has one row per transaction with these columns: date, time, amount, direction, account, payee, payee_name, category, tags (separated by "|"), note, reference_no.

@@ -82,14 +82,16 @@ data class ExportRow(
 )
 
 /**
- * What import compares a new row with to spot a duplicate: the reference number, or else the
- * date, direction, amount and [party] (the payee's name, or the note when there's no payee).
+ * What import compares a new row with to spot a duplicate: the reference number and account, or
+ * else the date, direction, amount and [party] (the payee's name, or the note when there's no
+ * payee).
  */
 data class DuplicateKeyRow(
     val timestamp: Long,
     val direction: Direction,
     @ColumnInfo(name = "amount_paise") val amountPaise: Long,
     @ColumnInfo(name = "reference_no") val referenceNo: String?,
+    @ColumnInfo(name = "account_name") val accountName: String?,
     val party: String?
 )
 
@@ -99,6 +101,7 @@ data class PayeeRow(
     val identifier: String,
     @ColumnInfo(name = "display_name") val displayName: String,
     @ColumnInfo(name = "default_category_id") val defaultCategoryId: Long?,
+    @ColumnInfo(name = "own_account") val ownAccount: Boolean,
     /** Default tag names joined with [TransactionRow.TAG_SEPARATOR], or null when there are none. */
     val tags: String?,
     val usage: Int
@@ -278,7 +281,7 @@ interface PayeeDao {
     suspend fun defaultTagNames(payeeId: Long): List<String>
 
     @Query(
-        "SELECT p.id, p.identifier, p.display_name, p.default_category_id, " +
+        "SELECT p.id, p.identifier, p.display_name, p.default_category_id, p.own_account, " +
             "(SELECT GROUP_CONCAT(g.name, char(31)) FROM payee_default_tags pt " +
             "JOIN tags g ON g.id = pt.tag_id WHERE pt.payee_id = p.id) AS tags, " +
             "(SELECT COUNT(*) FROM transactions t WHERE t.payee_id = p.id) AS usage " +
@@ -310,7 +313,6 @@ interface PayeeDao {
 
 @Dao
 interface TransactionDao {
-    /** @throws android.database.sqlite.SQLiteConstraintException if [TransactionEntity.referenceNo] is already used. */
     @Insert suspend fun insert(transaction: TransactionEntity): Long
 
     @Update suspend fun update(transaction: TransactionEntity)
@@ -320,8 +322,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: Long): TransactionEntity?
 
-    @Query("SELECT * FROM transactions WHERE reference_no = :referenceNo")
-    suspend fun getByReferenceNo(referenceNo: String): TransactionEntity?
+    /** Usually one; both sides of a transfer between the user's own accounts can share one. */
+    @Query("SELECT * FROM transactions WHERE reference_no = :referenceNo ORDER BY id")
+    suspend fun getByReferenceNo(referenceNo: String): List<TransactionEntity>
 
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC, id DESC")
     fun observeAll(): Flow<List<TransactionEntity>>
@@ -485,8 +488,9 @@ interface BackupDao {
     /** Every transaction's duplicate-check fields, for CSV import. */
     @Query(
         "SELECT t.timestamp, t.direction, t.amount_paise, t.reference_no, " +
-            "COALESCE(p.display_name, t.note) AS party " +
-            "FROM transactions t LEFT JOIN payees p ON p.id = t.payee_id"
+            "a.name AS account_name, COALESCE(p.display_name, t.note) AS party " +
+            "FROM transactions t LEFT JOIN payees p ON p.id = t.payee_id " +
+            "LEFT JOIN accounts a ON a.id = t.account_id"
     )
     suspend fun duplicateKeys(): List<DuplicateKeyRow>
 }
@@ -502,13 +506,13 @@ interface SmsImportDao {
     suspend fun findSameSms(rawSms: String, from: Long, until: Long): Long?
 
     /**
-     * The transaction nearest [at] within [from, until] with this amount and direction, on this
-     * account or on none (manual and CSV entries often have no account), whose reference number
-     * doesn't contradict [referenceNo].
+     * The transaction nearest [at] within [from, until] with this amount and direction (or saved
+     * as a transfer since), on this account or on none (manual and CSV entries often have no
+     * account), whose reference number doesn't contradict [referenceNo].
      */
     @Query(
         "SELECT id FROM transactions WHERE amount_paise = :amountPaise " +
-            "AND direction = :direction " +
+            "AND (direction = :direction OR direction = 'transfer') " +
             "AND (account_id IS :accountId OR account_id IS NULL) " +
             "AND timestamp BETWEEN :from AND :until " +
             "AND (reference_no IS NULL OR :referenceNo IS NULL) " +
@@ -525,6 +529,32 @@ interface SmsImportDao {
         from: Long,
         until: Long
     ): Long?
+
+    /**
+     * The other side of a move between the user's own accounts (#56): the transaction nearest
+     * [at] within [from, until] with this amount, going the [other] way, on a different account.
+     */
+    @Query(
+        "SELECT id FROM transactions WHERE amount_paise = :amountPaise " +
+            "AND direction = :other " +
+            "AND account_id IS NOT NULL AND account_id != :accountId " +
+            "AND timestamp BETWEEN :from AND :until " +
+            "ORDER BY ABS(timestamp - :at), id LIMIT 1"
+    )
+    // Room binds query arguments only from parameters, so each one needs its own.
+    @Suppress("LongParameterList")
+    suspend fun findTransferSide(
+        amountPaise: Long,
+        other: Direction,
+        accountId: Long,
+        at: Long,
+        from: Long,
+        until: Long
+    ): Long?
+
+    /** Marks [id] as a transfer; it no longer needs a category, so it leaves the review inbox. */
+    @Query("UPDATE transactions SET direction = 'transfer', needs_review = 0 WHERE id = :id")
+    suspend fun markTransfer(id: Long)
 }
 
 /** A waiting transaction with what its review card shows, joined in. */

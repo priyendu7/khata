@@ -2,16 +2,19 @@ package com.openhand.khata.feature.payees
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -20,8 +23,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -43,8 +48,8 @@ private val TagsSaver = Saver<List<String>, ArrayList<String>>(
 )
 
 /**
- * Full-screen editor for a payee's display name and defaults. The identifier is shown but can't
- * change: it's how the payee is recognised.
+ * Full-screen editor for a payee's display name, defaults and whether it's one of the user's own
+ * accounts. The identifier is shown but can't change: it's how the payee is recognised.
  */
 @Composable
 internal fun PayeeEditor(
@@ -58,6 +63,7 @@ internal fun PayeeEditor(
     var name by rememberSaveable { mutableStateOf(payee.displayName) }
     var categoryId by rememberSaveable { mutableStateOf(payee.defaultCategoryId) }
     var tags by rememberSaveable(stateSaver = TagsSaver) { mutableStateOf(payee.defaultTags) }
+    var ownAccount by rememberSaveable { mutableStateOf(payee.ownAccount) }
     var picking by rememberSaveable { mutableStateOf(false) }
     // Uncategorized isn't a default: with no default, transactions keep whatever they have.
     val choices = categories.filter {
@@ -80,7 +86,8 @@ internal fun PayeeEditor(
                             payee.copy(
                                 displayName = name,
                                 defaultCategoryId = categoryId,
-                                defaultTags = tags
+                                defaultTags = tags,
+                                ownAccount = ownAccount
                             )
                         )
                     }
@@ -136,6 +143,7 @@ internal fun PayeeEditor(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                OwnAccountSwitch(ownAccount) { ownAccount = it }
             }
         }
     }
@@ -159,5 +167,28 @@ internal fun PayeeEditor(
             },
             onDismiss = close
         )
+    }
+}
+
+/** "This is my own account": payments to or from it become transfers. */
+@Composable
+private fun OwnAccountSwitch(checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
+            .padding(vertical = 8.dp)
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(stringResource(R.string.payees_own_account))
+            Text(
+                stringResource(R.string.payees_own_account_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(checked = checked, onCheckedChange = null)
     }
 }

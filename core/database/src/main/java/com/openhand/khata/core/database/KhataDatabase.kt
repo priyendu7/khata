@@ -37,7 +37,7 @@ import com.openhand.khata.core.database.entity.TransactionTagEntity
         MetadataEntity::class,
         UnparsedSmsEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(EnumConverters::class)

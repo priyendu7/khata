@@ -157,6 +157,17 @@ class BackupRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun bothSidesOfATransferWithOneReferenceAreImported() = runTest {
+        val sides = listOf(
+            record { copy(direction = Direction.TRANSFER, account = "Kotak", referenceNo = "7") },
+            record { copy(direction = Direction.TRANSFER, account = "HDFC", referenceNo = "7") }
+        )
+
+        assertEquals(ImportResult(2, 0), backup.import(sides, zone))
+        assertEquals(List(2) { true }, backup.findDuplicates(sides, zone))
+    }
+
+    @Test
     fun exportsNamesOldestFirstWithinTheRange() = runTest {
         val cash = db.accountDao().insert(
             AccountEntity(

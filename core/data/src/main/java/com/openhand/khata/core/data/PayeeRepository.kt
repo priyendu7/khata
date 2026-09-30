@@ -32,14 +32,16 @@ class PayeeRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
                 identifier = entity.identifier,
                 displayName = entity.displayName,
                 defaultCategoryId = category?.takeUnless { it.archived }?.id,
-                defaultTags = dao.defaultTagNames(entity.id)
+                defaultTags = dao.defaultTagNames(entity.id),
+                ownAccount = entity.ownAccount
             )
         }
     }
 
     /**
-     * Changes a payee's display name, default category and default tags. The identifier stays, so
-     * the payee is still recognised by it. Tags are created as needed.
+     * Changes a payee's display name, default category, default tags and whether it's one of the
+     * user's own accounts (later SMS to or from it are then transfers; saved ones don't change).
+     * The identifier stays, so the payee is still recognised by it. Tags are created as needed.
      */
     suspend fun save(payee: Payee) {
         val name = payee.displayName.trim()
@@ -49,7 +51,11 @@ class PayeeRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
             val existing = requireNotNull(dao.getById(payee.id)) { "No payee ${payee.id}" }
             val tagIds = database.tagDao().getOrCreate(payee.defaultTags)
             dao.updateWithDefaultTags(
-                existing.copy(displayName = name, defaultCategoryId = payee.defaultCategoryId),
+                existing.copy(
+                    displayName = name,
+                    defaultCategoryId = payee.defaultCategoryId,
+                    ownAccount = payee.ownAccount
+                ),
                 tagIds
             )
         }
@@ -70,5 +76,6 @@ private fun PayeeRow.toModel() = Payee(
     displayName = displayName,
     defaultCategoryId = defaultCategoryId,
     defaultTags = tags?.split(TransactionRow.TAG_SEPARATOR)?.sortedBy { it.lowercase() }.orEmpty(),
+    ownAccount = ownAccount,
     transactionCount = usage
 )

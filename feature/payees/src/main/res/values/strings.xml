@@ -14,6 +14,9 @@
     <string name="payees_default_category">Default category</string>
     <string name="payees_default_tags">Default tags</string>
     <string name="payees_defaults_help">New transactions for this payee get this category and these tags. You can still change them on any one transaction.</string>
+    <string name="payees_own_account">This is my own account</string>
+    <string name="payees_own_account_help">Money sent to it or received from it is a transfer between your accounts, so it doesn\'t count as spending or income. Transactions already saved stay as they are.</string>
+    <string name="payees_own_account_label">Own account</string>
     <string name="payees_merge_into">Merge into another payee</string>
     <string name="payees_merge_title">Merge %1$s into…</string>
     <string name="payees_merge_confirm_title">Merge %1$s into %2$s?</string>

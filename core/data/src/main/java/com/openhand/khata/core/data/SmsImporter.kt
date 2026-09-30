@@ -6,6 +6,7 @@ import com.openhand.khata.core.database.entity.AccountEntity
 import com.openhand.khata.core.database.entity.PayeeEntity
 import com.openhand.khata.core.database.entity.TransactionEntity
 import com.openhand.khata.core.model.DefaultCategory
+import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.SmsTransaction
 import com.openhand.khata.core.model.TransactionSource
 import dagger.Lazy
@@ -17,6 +18,10 @@ import javax.inject.Singleton
  * Saves transactions read from bank SMS (PRD feature 7): finds or creates the account, applies
  * payee memory, and skips anything already saved, whether it came from an SMS, by hand or from a
  * CSV. Used by both the new-SMS receiver and the inbox scan, which can see the same SMS.
+ *
+ * Transfers (PRD feature 1) are saved as such: a credit card bill payment ([CardBillPayment]),
+ * money to or from a payee marked as the user's own account, and both sides of a move between
+ * two of the user's accounts, which is spotted when the second side arrives and updates the first.
  */
 @Singleton
 class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
@@ -41,7 +46,9 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
     ): SmsImportResult.Duplicate? {
         val dao = database.smsImportDao()
         val at = sms.timestamp
+        // The same reference on another account is the other side of a transfer, not this SMS.
         return sms.referenceNo?.let { database.transactionDao().getByReferenceNo(it) }
+            ?.firstOrNull { it.accountId == null || it.accountId == accountId }
             ?.let { SmsImportResult.Duplicate(it.id, DuplicateMatch.REFERENCE) }
             ?: dao.findSameSms(sms.rawSms, at - SAME_SMS_WINDOW, at + SAME_SMS_WINDOW)
                 ?.let { SmsImportResult.Duplicate(it, DuplicateMatch.SAME_SMS) }
@@ -92,9 +99,14 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
         val memory = payee?.let { memory(database, it) }
         val uncategorizedId =
             database.categoryDao().getBySeedKey(DefaultCategory.UNCATEGORIZED.key)!!.id
+        val otherSide = otherSideOfTransfer(database, sms, accountId)
+        otherSide?.let { database.smsImportDao().markTransfer(it) }
+        val transfer = otherSide != null ||
+            payee?.ownAccount == true ||
+            CardBillPayment.matches(sms)
         val entity = TransactionEntity(
             amountPaise = sms.amountPaise,
-            direction = sms.direction,
+            direction = if (transfer) Direction.TRANSFER else sms.direction,
             timestamp = sms.timestamp,
             accountId = accountId,
             payeeId = payee?.id,
@@ -103,10 +115,44 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
             referenceNo = sms.referenceNo,
             source = TransactionSource.SMS,
             rawSms = sms.rawSms,
-            needsReview = memory == null
+            // A transfer has no category to ask about.
+            needsReview = memory == null && !transfer
         )
         val id = database.transactionDao().saveWithTags(entity, memory?.tagIds.orEmpty())
         return SmsImportResult.Saved(id, needsReview = entity.needsReview)
+    }
+
+    /**
+     * The saved transaction on another account that this SMS is the other side of, if it is a
+     * debit or credit: one with the same reference number, or else the nearest one within
+     * [TRANSFER_WINDOW] with the same amount going the other way.
+     */
+    private suspend fun otherSideOfTransfer(
+        database: KhataDatabase,
+        sms: SmsTransaction,
+        accountId: Long
+    ): Long? {
+        val other = when (sms.direction) {
+            Direction.DEBIT -> Direction.CREDIT
+            Direction.CREDIT -> Direction.DEBIT
+            Direction.REFUND, Direction.TRANSFER -> return null
+        }
+        val byReference = sms.referenceNo
+            ?.let { database.transactionDao().getByReferenceNo(it) }
+            ?.firstOrNull {
+                it.accountId != null &&
+                    it.accountId != accountId &&
+                    (it.direction == other || it.direction == Direction.TRANSFER)
+            }
+        val at = sms.timestamp
+        return byReference?.id ?: database.smsImportDao().findTransferSide(
+            amountPaise = sms.amountPaise,
+            other = other,
+            accountId = accountId,
+            at = at,
+            from = at - TRANSFER_WINDOW,
+            until = at + TRANSFER_WINDOW
+        )
     }
 
     /** The saved payee this SMS names (by display name or identifier), or a new one. */
@@ -147,6 +193,9 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
 
         /** PRD: without a reference, same amount and account this close together is one payment. */
         val NEAR_WINDOW = TimeUnit.MINUTES.toMillis(2)
+
+        /** A debit and a credit of the same amount this close together are one own-account move. */
+        val TRANSFER_WINDOW = TimeUnit.MINUTES.toMillis(30)
         val WHITESPACE = Regex("""\s+""")
     }
 }

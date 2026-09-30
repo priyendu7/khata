@@ -24,5 +24,22 @@ object KhataMigrations {
         }
     }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2)
+    /**
+     * 2 → 3: transfers (#56). Payees can be marked as the user's own account, and a reference
+     * number is no longer unique, since both sides of a move between own accounts can share one.
+     */
+    val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE `payees` ADD COLUMN `own_account` INTEGER NOT NULL DEFAULT 0"
+            )
+            db.execSQL("DROP INDEX IF EXISTS `index_transactions_reference_no`")
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_transactions_reference_no` " +
+                    "ON `transactions` (`reference_no`)"
+            )
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
 }

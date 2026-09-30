@@ -49,6 +49,8 @@ data class Payee(
     /** Null means no default: the transaction keeps whatever category it has. */
     val defaultCategoryId: Long? = null,
     val defaultTags: List<String> = emptyList(),
+    /** One of the user's own accounts: money to or from it is a transfer, not spending (#56). */
+    val ownAccount: Boolean = false,
     val transactionCount: Int = 0
 ) {
     /** Whether there's anything to fill in; a payee without defaults is remembered on next use. */
