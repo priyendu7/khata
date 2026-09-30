@@ -35,7 +35,7 @@
     <string name="field_payee">किसे दिया या किससे मिला (वैकल्पिक)</string>
     <string name="field_payee_hint">जैसे Swiggy, रमेश, मकान-मालिक</string>
     <string name="payee_filled_in">श्रेणी और टैग %1$s से भरे गए। यहाँ किए बदलाव सिर्फ़ इसी लेन-देन पर लागू होंगे।</string>
-    <string name="payee_remember">अगली बार के लिए यह श्रेणी और टैग याद रखें</string>
+    <string name="payee_remember">यह श्रेणी और टैग याद रखें, और इसके बिना श्रेणी वाले पुराने लेन-देन भी इसी श्रेणी में डालें</string>
     <string name="field_category">श्रेणी</string>
     <string name="field_account">खाता</string>
     <string name="no_account">कोई खाता नहीं</string>

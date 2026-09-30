@@ -32,8 +32,9 @@ class ReviewRepository @Inject constructor(private val db: Lazy<KhataDatabase>) 
     /**
      * Names the payee of [transactionId] and saves its default category and tags (payee memory,
      * PRD feature 3), then files every waiting transaction from that payee the same way, so they
-     * all leave the inbox and later SMS from it are filled in automatically. No category means
-     * Uncategorized. Returns how many transactions were filed.
+     * all leave the inbox and later SMS from it are filled in automatically. Its older
+     * Uncategorized transactions take the category too. No category means Uncategorized. Returns
+     * how many transactions were filed.
      */
     suspend fun review(
         transactionId: Long,
@@ -69,7 +70,13 @@ class ReviewRepository @Inject constructor(private val db: Lazy<KhataDatabase>) 
             val ids = (others + transactionId).distinct()
             database.reviewDao().markReviewed(ids, category)
             ids.forEach { database.transactionDao().setTags(it, tagIds) }
-            ids.size
+            // Older ones already out of the inbox (skipped, manual, CSV) take the category too.
+            val older = if (payee != null && category != uncategorizedId) {
+                payeeDao.categorizeUncategorized(payee.id, category, uncategorizedId)
+            } else {
+                0
+            }
+            ids.size + older
         }
     }
 

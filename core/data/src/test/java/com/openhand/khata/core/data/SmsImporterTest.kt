@@ -90,6 +90,26 @@ class SmsImporterTest : RepositoryTest() {
     }
 
     @Test
+    fun anSmsAfterRememberingACategoryUsesItWithoutReview() = runTest {
+        val groceries = db.categoryDao().getBySeedKey("groceries")!!.id
+        transactions.save(
+            Transaction(
+                amountPaise = 5_000,
+                direction = Direction.DEBIT,
+                timestamp = 0,
+                payeeName = "SANTOSH GYANDEV MANM",
+                categoryId = groceries
+            ),
+            rememberPayeeDefaults = true
+        )
+
+        val result = saved(sms(payee = "SANTOSH GYANDEV MANM"))
+
+        assertFalse(result.needsReview)
+        assertEquals(groceries, db.transactionDao().getById(result.transactionId)!!.categoryId)
+    }
+
+    @Test
     fun aPayeeTheUserNamedCountsAsKnown() = runTest {
         db.payeeDao().insert(
             PayeeEntity(identifier = "CRED", displayName = "Card bill", defaultCategoryId = null)

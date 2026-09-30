@@ -33,7 +33,7 @@
     <string name="field_payee">Paid to or received from (optional)</string>
     <string name="field_payee_hint">e.g. Swiggy, Ramesh, landlord</string>
     <string name="payee_filled_in">Category and tags filled in from %1$s. Changes here apply to this transaction only.</string>
-    <string name="payee_remember">Remember this category and tags for next time</string>
+    <string name="payee_remember">Remember this category and tags, and file this payee\'s uncategorized transactions under it</string>
     <string name="field_category">Category</string>
     <string name="field_account">Account</string>
     <string name="no_account">No account</string>

@@ -7,6 +7,7 @@ import com.openhand.khata.core.model.Transaction
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -148,6 +149,48 @@ class PayeeRepositoryTest : RepositoryTest() {
         assertEquals(3, kept.transactionCount)
         assertEquals(categoryId("food"), kept.defaultCategoryId)
         assertEquals(listOf("online"), kept.defaultTags)
+    }
+
+    @Test
+    fun aDefaultCategoryFilesOnlyThatPayeesUncategorizedTransactions() = runTest {
+        val id = addPayee("SANTOSH GYANDEV MANM")
+        val uncategorized = spend("SANTOSH GYANDEV MANM")
+        val filedElsewhere = transactions.save(
+            Transaction(
+                amountPaise = 5_000,
+                direction = Direction.DEBIT,
+                timestamp = 0,
+                payeeName = "SANTOSH GYANDEV MANM",
+                categoryId = categoryId("travel")
+            )
+        )
+        db.transactionDao().update(
+            db.transactionDao().getById(uncategorized)!!.copy(needsReview = true)
+        )
+        val otherPayee = spend("Ramesh")
+
+        payees.save(
+            Payee(
+                id = id,
+                identifier = "SANTOSH GYANDEV MANM",
+                displayName = "Santosh (groceries)",
+                defaultCategoryId = categoryId("groceries"),
+                defaultTags = listOf("home")
+            )
+        )
+
+        val filed = db.transactionDao().getById(uncategorized)!!
+        assertEquals(categoryId("groceries"), filed.categoryId)
+        assertFalse(filed.needsReview)
+        assertEquals(emptyList<Long>(), db.transactionDao().tagIds(uncategorized))
+        assertEquals(
+            categoryId("travel"),
+            db.transactionDao().getById(filedElsewhere)!!.categoryId
+        )
+        assertEquals(
+            categoryId("uncategorized"),
+            db.transactionDao().getById(otherPayee)!!.categoryId
+        )
     }
 
     @Test

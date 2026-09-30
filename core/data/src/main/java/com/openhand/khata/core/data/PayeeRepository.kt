@@ -1,8 +1,10 @@
 package com.openhand.khata.core.data
 
+import androidx.room.withTransaction
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.database.dao.PayeeRow
 import com.openhand.khata.core.database.dao.TransactionRow
+import com.openhand.khata.core.model.DefaultCategory
 import com.openhand.khata.core.model.Payee
 import dagger.Lazy
 import javax.inject.Inject
@@ -39,19 +41,27 @@ class PayeeRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
 
     /**
      * Changes a payee's display name, default category and default tags. The identifier stays, so
-     * the payee is still recognised by it. Tags are created as needed.
+     * the payee is still recognised by it. Tags are created as needed. A default category also
+     * files the payee's Uncategorized transactions under it (default tags aren't applied).
      */
     suspend fun save(payee: Payee) {
         val name = payee.displayName.trim()
         require(name.isNotEmpty()) { "Payee name is empty" }
         db.io { database ->
-            val dao = database.payeeDao()
-            val existing = requireNotNull(dao.getById(payee.id)) { "No payee ${payee.id}" }
-            val tagIds = database.tagDao().getOrCreate(payee.defaultTags)
-            dao.updateWithDefaultTags(
-                existing.copy(displayName = name, defaultCategoryId = payee.defaultCategoryId),
-                tagIds
-            )
+            database.withTransaction {
+                val dao = database.payeeDao()
+                val existing = requireNotNull(dao.getById(payee.id)) { "No payee ${payee.id}" }
+                val tagIds = database.tagDao().getOrCreate(payee.defaultTags)
+                dao.updateWithDefaultTags(
+                    existing.copy(displayName = name, defaultCategoryId = payee.defaultCategoryId),
+                    tagIds
+                )
+                payee.defaultCategoryId?.let { categoryId ->
+                    val uncategorizedId = database.categoryDao()
+                        .getBySeedKey(DefaultCategory.UNCATEGORIZED.key)!!.id
+                    dao.categorizeUncategorized(payee.id, categoryId, uncategorizedId)
+                }
+            }
         }
     }
 
