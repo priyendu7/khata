@@ -57,7 +57,7 @@ Any other group name is an error.
 
 ## Pattern rules
 
-Patterns are matched **case-insensitively**, anywhere in the SMS. The same rule has to work in the app (RE2J) and on the parser website (JavaScript), so only the syntax both understand is allowed:
+Patterns are matched **case-insensitively**, anywhere in the SMS. Patterns run on RE2J, and only a small, predictable subset of regex syntax is allowed:
 
 - **Allowed:** literal text, `.`, character classes like `[\d,]` and `[^.]`, `\d \w \s \b` and their capitals, `* + ? {n,m}` and their lazy forms (`+?`), groups `( )`, non-capturing groups `(?: )`, named groups `(?<name> )`, alternation `|`, `^ $`.
 - **Not allowed:** lookahead and lookbehind `(?= ) (?! ) (?<= ) (?<! )`, backreferences `\1 \k<name>`, atomic groups `(?> )`, `(?P<name> )`, inline flags such as `(?i)`, possessive quantifiers such as `a*+`, the escapes `\A \Z \z \G \p \P \h \H \R \X \Q \E \C \c \u \x{…}`, and classes inside classes (`[a[b]]`, `[a&&b]`).
@@ -68,7 +68,7 @@ Remember to escape `.` in `Rs.` as `Rs\.`, and in JSON every backslash is writte
 
 ## Rule codes
 
-To share a rule, the parser website turns it into a **rule code**: `khata1:` followed by the rule's JSON in unpadded base64url. Line breaks and spaces added by chat apps are ignored when pasting. When a code can't be read, the app says why:
+To share a rule, the app turns it into a **rule code**: `khata1:` followed by the rule's JSON in unpadded base64url. Line breaks and spaces added by chat apps are ignored when pasting. When a code can't be read, the app says why:
 
 | Code | Meaning |
 |---|---|
@@ -79,7 +79,7 @@ To share a rule, the parser website turns it into a **rule code**: `khata1:` fol
 
 ## Checks before a rule is used
 
-Every rule, built-in or pasted, is checked first (`RuleValidator`). The error codes are shared with the website:
+Every rule, built-in, made in the app or pasted, is checked first (`RuleValidator`):
 
 | Code | Meaning |
 |---|---|
@@ -110,4 +110,4 @@ The not-a-transaction checks run only after every rule has failed, so they can n
 
 Every built-in bank has real SMS samples, with personal details replaced, in [`sms/parser/src/test/resources/samples/`](../sms/parser/src/test/resources/samples/). The test fails if fewer than 95% of a bank's samples parse correctly, or if a sample still contains something that looks like a real account, card or phone number.
 
-The shared test vectors in [`sms/parser/src/test/resources/rule-vectors/`](../sms/parser/src/test/resources/rule-vectors/) pin down this behaviour, and the parser website runs the same files.
+The shared test vectors in [`sms/parser/src/test/resources/rule-vectors/`](../sms/parser/src/test/resources/rule-vectors/) pin down this behaviour.

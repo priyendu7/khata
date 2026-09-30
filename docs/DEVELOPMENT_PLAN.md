@@ -11,7 +11,7 @@ The plan takes Khata from an empty repo to a Play Store release in seven phases.
 | 0 Foundation | The app opens behind the phone lock; CI is green and blocks the INTERNET permission |
 | 1 Manual tracking | Add income and expenses by hand, in English or Hindi, with payee memory |
 | 2 Charts and CSV | Pie, calendar heatmap and monthly chart; import your spreadsheet |
-| 3 SMS and custom parsers | Your bank SMS are recorded automatically; the parser website is live |
+| 3 SMS and custom parsers | Your bank SMS are recorded automatically; you can make a parser for any bank in the app |
 | 4 Enhancements and feedback | Using and testing the app turns into improvements: payee memory for old transactions, events, new categories from the editor |
 | 5 More banks and SMS extras | HDFC, ICICI, Axis and Federal built in, more Kotak formats, transfers detected, optional daily summary |
 | 6 Release | Closed test with 12 testers, then live on the Play Store |
@@ -20,7 +20,7 @@ Spending alerts come after the release, as the first update.
 
 ## Repository and architecture
 
-The project is one public GitHub repo (`khata`) under GPLv3 containing the Android app split into modules, plus the parser website as a static folder. The app follows the MVVM pattern: each screen has a ViewModel that talks to repositories, which read and write the database.
+The project is one public GitHub repo (`khata`) under GPLv3 containing the Android app split into modules. The app follows the MVVM pattern: each screen has a ViewModel that talks to repositories, which read and write the database.
 
 ```
 khata/
@@ -41,7 +41,6 @@ khata/
 ├── sms/
 │   ├── parser/           # Pure Kotlin: bank parsers + rule engine (no Android deps)
 │   └── ingest/           # SMS receiver, inbox scan, dedupe
-├── parser-web/           # Static site for GitHub Pages (custom parser builder)
 └── docs/                 # PRD, privacy policy, CSV format, contributing guide
 ```
 
@@ -50,7 +49,7 @@ khata/
 - Kotlin official style, checked by ktlint and detekt in CI.
 - Amounts are always stored as `Long` paise; formatting in Indian style (₹1,00,000) happens only in the UI.
 - All user-facing text lives in `strings.xml`, with `values/` for English and `values-hi/` for Hindi. A lint rule blocks hard-coded text.
-- `sms/parser` has no Android dependencies, so the same rule engine can be reused by the parser website later (through Kotlin/JS) or tested quickly on a computer.
+- `sms/parser` has no Android dependencies, so the rule engine can be tested quickly on a computer.
 
 ## Phase 0: Foundation
 
@@ -102,9 +101,9 @@ By the end of this phase you can import your existing spreadsheet and see all th
 
 ## Phase 3: SMS reading and custom parsers
 
-By the end of this phase your bank SMS are recorded automatically, and anyone can add a bank using the parser website. This is the longest phase, because parsing needs real SMS samples to get right.
+By the end of this phase your bank SMS are recorded automatically, and anyone can add a bank by making a parser in the app. This is the longest phase, because parsing needs real SMS samples to get right.
 
-**Built-in banks: Kotak now, others through custom parsers.** Kotak ships built in. Other banks (HDFC, ICICI, Federal, Axis) and more Kotak formats are added with custom parsers from the parser website, which work at once with no app update. A custom rule becomes a built-in one by adding it to the repo with real samples; that happens in Phase 5 (#53, #63, #66).
+**Built-in banks: Kotak now, others through custom parsers.** Kotak ships built in. Other banks (HDFC, ICICI, Federal, Axis) and more Kotak formats are added with custom parsers made in the app, which work at once with no app update. A custom rule becomes a built-in one by adding it to the repo with real samples; that happens in Phase 5 (#53, #63, #66).
 
 **Parsers**
 
@@ -124,7 +123,7 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 
 **Custom parsers**
 
-- [ ] Parser website in `parser-web/`: paste an SMS, highlight the fields, generate a rule code; runs fully in the browser; published on GitHub Pages
+- [ ] Make a parser in the app from an SMS: mark the fields, check it against recent SMS from that sender, save, share as a rule code (#81)
 - [ ] In the app: Settings > Parsers > Add, paste the code, test it on a recent SMS, then save; list, disable and delete saved parsers
 - [x] Check every rule before saving: known version, valid pattern, required fields present; patterns run on RE2J, so a bad pattern can't freeze the app
 - [ ] Contributing guide for submitting a rule to the repo
