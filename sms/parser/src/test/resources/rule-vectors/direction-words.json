@@ -123,6 +123,9 @@
       "sender": "AX-TESTBK-S",
       "body": "Rs.2,000 on hold on card XX5678.",
       "receivedAt": "2026-09-21T10:00:00+05:30",
+      "filters": {
+        "noTransactionWord": false
+      },
       "expect": {
         "result": "unparsed",
         "bank": "Test Bank"

@@ -10,6 +10,7 @@ import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.TransactionSource
+import com.openhand.khata.sms.parser.SmsFilters
 import dagger.Lazy
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -29,6 +30,7 @@ import org.robolectric.annotation.Config
 class InboxScannerTest {
     private lateinit var db: KhataDatabase
     private lateinit var scanner: InboxScanner
+    private lateinit var settings: SmsImportSettings
 
     private fun at(day: Int, hour: Int = 12) = LocalDateTime.of(
         2026,
@@ -72,17 +74,15 @@ class InboxScannerTest {
             FakeSmsInbox.Sms("JM-KOTAKB-S", "Rs.2,000 withdrawn at ATM using card XX5678.", at(14)),
             FakeSmsInbox.Sms("VM-KOTAKB-P", "Pre-approved loan of Rs.5,00,000!", at(15))
         )
+        settings = SmsImportSettings(context)
         scanner =
             InboxScanner(
                 SmsInbox(context),
                 SmsIngestor(
-                    SmsImporter(
-                        Lazy {
-                            db
-                        }
-                    ),
+                    SmsImporter(Lazy { db }),
                     UnparsedSmsRepository(Lazy { db }),
-                    CustomParserRepository(Lazy { db })
+                    CustomParserRepository(Lazy { db }),
+                    settings
                 )
             )
     }
@@ -101,7 +101,9 @@ class InboxScannerTest {
                 recorded = 2,
                 toReview = 2,
                 alreadyThere = 0,
-                unreadable = 1
+                unreadable = 1,
+                // The OTP. The promotional sender and the phone number are never read.
+                filtered = 1
             ),
             summary
         )
@@ -117,6 +119,32 @@ class InboxScannerTest {
                 it.body
             }
         )
+    }
+
+    @Test
+    fun aBusinessTheRulesDontKnowGoesToReview() = runTest {
+        val shop = "Rs.249 debited for your order at SHOPIN. Ref 123456789012."
+        FakeSmsInbox.messages += FakeSmsInbox.Sms("AX-SHOPIN-S", shop, at(16))
+        FakeSmsInbox.messages += FakeSmsInbox.Sms("AX-SHOPIN-S", "Your order is on its way", at(17))
+
+        val summary = scanner.scan(since = at(16))
+
+        assertEquals(1, summary.unreadable)
+        assertEquals(1, summary.filtered)
+        assertEquals(listOf(shop), db.unparsedSmsDao().observeAll().first().map { it.body })
+    }
+
+    @Test
+    fun theParserIsRebuiltWhenAFilterChanges() = runTest {
+        FakeSmsInbox.messages +=
+            FakeSmsInbox.Sms("VM-SHOPIN-T", "Rs.249 debited at SHOPIN.", at(16))
+
+        assertEquals(0, scanner.scan(since = at(16)).unreadable)
+        assertEquals(emptyList<String>(), FakeSmsInbox.bodiesRead)
+
+        settings.setFilters(SmsFilters(onlyService = false))
+
+        assertEquals(1, scanner.scan(since = at(16)).unreadable)
     }
 
     @Test

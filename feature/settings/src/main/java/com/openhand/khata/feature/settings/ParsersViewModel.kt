@@ -10,6 +10,7 @@ import com.openhand.khata.sms.parser.BuiltInRules
 import com.openhand.khata.sms.parser.CompiledRule
 import com.openhand.khata.sms.parser.RuleCode
 import com.openhand.khata.sms.parser.SenderId
+import com.openhand.khata.sms.parser.SmsParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -71,7 +72,7 @@ sealed interface SaveStep {
 @HiltViewModel
 class AddParserViewModel @Inject constructor(
     parsers: CustomParserRepository,
-    ingestor: SmsIngestor,
+    private val ingestor: SmsIngestor,
     private val inbox: SmsInbox
 ) : ViewModel() {
     /** Rule ids already saved, to say when saving replaces one. */
@@ -90,8 +91,9 @@ class AddParserViewModel @Inject constructor(
     /** Needs the SMS permission. Only SMS from [headers] are read. */
     fun loadRecent(headers: Set<String>, now: Long = System.currentTimeMillis()) {
         viewModelScope.launch {
+            val parser = ingestor.parser()
             _recent.value = withContext(Dispatchers.IO) {
-                recentSms(inbox, headers, now)
+                recentSms(inbox, parser, headers, now)
             }
         }
     }
@@ -136,16 +138,23 @@ internal class RuleSaving(
     }
 }
 
-/** The last [RECENT_COUNT] SMS from [headers] in the last [RECENT_DAYS] days, newest first. */
-internal fun recentSms(inbox: SmsInbox, headers: Set<String>, now: Long): List<SmsInbox.Message> =
-    try {
-        inbox.bankMessages(now - TimeUnit.DAYS.toMillis(RECENT_DAYS)) { sender ->
-            SenderId.parse(sender)?.let { !it.promotional && it.header in headers } == true
-        }.takeLast(RECENT_COUNT).reversed()
-    } catch (_: SecurityException) {
-        // The permission was taken away while the screen was open.
-        emptyList()
-    }
+/**
+ * The last [RECENT_COUNT] SMS from [headers] in the last [RECENT_DAYS] days that [parser]'s sender
+ * filters let through, newest first.
+ */
+internal fun recentSms(
+    inbox: SmsInbox,
+    parser: SmsParser,
+    headers: Set<String>,
+    now: Long
+): List<SmsInbox.Message> = try {
+    inbox.businessMessages(now - TimeUnit.DAYS.toMillis(RECENT_DAYS)) { sender ->
+        parser.accepts(sender) && SenderId.parse(sender)?.header in headers
+    }.takeLast(RECENT_COUNT).reversed()
+} catch (_: SecurityException) {
+    // The permission was taken away while the screen was open.
+    emptyList()
+}
 
 internal const val STOP_AFTER_MS = 5_000L
 private const val RECENT_DAYS = 60L

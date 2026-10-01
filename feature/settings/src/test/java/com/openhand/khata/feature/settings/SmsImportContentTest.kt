@@ -96,7 +96,8 @@ class SmsImportContentTest {
                 recorded = 42,
                 toReview = 7,
                 alreadyThere = 3,
-                unreadable = 2
+                unreadable = 2,
+                filtered = 212
             )
         )
 
@@ -104,7 +105,8 @@ class SmsImportContentTest {
         compose.onNodeWithText("Recorded: 42").assertExists()
         compose.onNodeWithText("New payees to review: 7").assertExists()
         compose.onNodeWithText("Already saved: 3").assertExists()
-        compose.onNodeWithText("Bank SMS that couldn't be read: 2").assertExists()
+        compose.onNodeWithText("SMS that couldn't be read: 2").assertExists()
+        compose.onNodeWithText("Filtered out: 212").assertExists()
     }
 
     @Test

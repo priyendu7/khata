@@ -6,6 +6,7 @@ import java.time.ZoneId
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -45,10 +46,11 @@ class RuleVectorsTest {
                     )
                 } as CompiledRule
             }
-            val parser = SmsParser(rules, ZoneId.of(vector.string("zone")))
+            val zone = ZoneId.of(vector.string("zone"))
             vector.getValue("cases").jsonArray.forEach { case ->
                 val c = case.jsonObject
                 val label = "${file.name}: ${c.string("name")}"
+                val parser = SmsParser(rules, zone, filters(c["filters"]?.jsonObject))
                 val result = parser.parse(
                     c.string("sender"),
                     c.string("body"),
@@ -108,9 +110,36 @@ class RuleVectorsTest {
                 "timestamp" to timestamp
             )
         }
-        ParseResult.NotTransaction -> mapOf("result" to "not_transaction")
+        is ParseResult.Filtered -> filtered(result.reason)
         is ParseResult.Unparsed -> mapOf("result" to "unparsed", "bank" to result.bank)
-        ParseResult.UnknownSender -> mapOf("result" to "unknown_sender")
+    }
+
+    private fun filtered(reason: FilterReason): Map<String, Any?> {
+        val name = when (reason) {
+            FilterReason.PhoneNumber -> "phone_number"
+            FilterReason.Promotional -> "promotional"
+            FilterReason.Government -> "government"
+            FilterReason.NotService -> "not_service"
+            FilterReason.NoAmount -> "no_amount"
+            FilterReason.NoTransactionWord -> "no_transaction_word"
+            is FilterReason.NotTransaction -> "not_transaction"
+        }
+        val group = (reason as? FilterReason.NotTransaction)?.group?.name?.lowercase()
+        return mapOf("result" to "filtered", "reason" to name) +
+            listOfNotNull(group?.let { "group" to it })
+    }
+
+    /** All filters on, except those a case turns off: `"filters": {"onlyService": false}`. */
+    private fun filters(off: JsonObject?): SmsFilters {
+        fun on(key: String) = off?.get(key)?.jsonPrimitive?.boolean ?: true
+        return SmsFilters(
+            dropPromotional = on("dropPromotional"),
+            dropGovernment = on("dropGovernment"),
+            onlyService = on("onlyService"),
+            noAmount = on("noAmount"),
+            noTransactionWord = on("noTransactionWord"),
+            notTransaction = on("notTransaction")
+        )
     }
 
     private fun RuleAccountType.serialName(): String =

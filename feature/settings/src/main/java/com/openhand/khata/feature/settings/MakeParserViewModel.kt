@@ -9,7 +9,7 @@ import com.openhand.khata.sms.ingest.SmsInbox
 import com.openhand.khata.sms.ingest.SmsIngestor
 import com.openhand.khata.sms.parser.CompiledRule
 import com.openhand.khata.sms.parser.RuleMaker
-import com.openhand.khata.sms.parser.SenderId
+import com.openhand.khata.sms.parser.SmsParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -51,7 +51,7 @@ class MakeParserViewModel @Inject constructor(
 
     private val _candidates = MutableStateFlow<List<SmsInbox.Message>?>(null)
 
-    /** Recent SMS from any bank-like sender that may be a transaction. Null until loaded. */
+    /** Recent SMS from any business sender that may be a transaction. Null until loaded. */
     val candidates: StateFlow<List<SmsInbox.Message>?> = _candidates.asStateFlow()
 
     private val _recent = MutableStateFlow<List<SmsInbox.Message>>(emptyList())
@@ -79,7 +79,8 @@ class MakeParserViewModel @Inject constructor(
     /** Needs the SMS permission. Senders are checked before any text is read. */
     fun loadCandidates(now: Long = System.currentTimeMillis()) {
         viewModelScope.launch {
-            _candidates.value = withContext(Dispatchers.IO) { candidateSms(inbox, now) }
+            val parser = ingestor.parser()
+            _candidates.value = withContext(Dispatchers.IO) { candidateSms(inbox, parser, now) }
         }
     }
 
@@ -98,7 +99,8 @@ class MakeParserViewModel @Inject constructor(
     /** Needs the SMS permission. Only SMS from [headers] are read. */
     fun loadRecent(headers: Set<String>, now: Long = System.currentTimeMillis()) {
         viewModelScope.launch {
-            _recent.value = withContext(Dispatchers.IO) { recentSms(inbox, headers, now) }
+            val parser = ingestor.parser()
+            _recent.value = withContext(Dispatchers.IO) { recentSms(inbox, parser, headers, now) }
         }
     }
 
@@ -113,18 +115,18 @@ class MakeParserViewModel @Inject constructor(
 }
 
 /**
- * The last [CANDIDATE_COUNT] SMS in the last [CANDIDATE_DAYS] days from senders that look like a
- * bank (a sender ID, not a phone number or a promotional sender) and that may be a transaction,
- * newest first.
+ * The last [CANDIDATE_COUNT] SMS in the last [CANDIDATE_DAYS] days that get past [parser]'s
+ * filters (a business sender, and text that may be a transaction), newest first.
  */
-internal fun candidateSms(inbox: SmsInbox, now: Long): List<SmsInbox.Message> = try {
-    inbox.bankMessages(now - TimeUnit.DAYS.toMillis(CANDIDATE_DAYS)) { sender ->
-        SenderId.parse(sender)?.promotional == false
-    }.filter { RuleMaker.mayBeTransaction(it.body) }.takeLast(CANDIDATE_COUNT).reversed()
-} catch (_: SecurityException) {
-    // The permission was taken away while the screen was open.
-    emptyList()
-}
+internal fun candidateSms(inbox: SmsInbox, parser: SmsParser, now: Long): List<SmsInbox.Message> =
+    try {
+        inbox.businessMessages(now - TimeUnit.DAYS.toMillis(CANDIDATE_DAYS), parser::accepts)
+            .filter { RuleMaker.mayBeTransaction(it.body, parser.filters) }
+            .takeLast(CANDIDATE_COUNT).reversed()
+    } catch (_: SecurityException) {
+        // The permission was taken away while the screen was open.
+        emptyList()
+    }
 
 private const val CANDIDATE_DAYS = 60L
 private const val CANDIDATE_COUNT = 30

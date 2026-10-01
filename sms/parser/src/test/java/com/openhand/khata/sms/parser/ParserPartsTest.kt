@@ -28,27 +28,27 @@ class ParserPartsTest {
     @Test
     fun senders() {
         mapOf(
-            "AX-KOTAKB-S" to SenderId("KOTAKB", promotional = false),
-            "JM-KOTAKB-S" to SenderId("KOTAKB", promotional = false),
-            "VM-HDFCBK-T" to SenderId("HDFCBK", promotional = false),
-            "JD-HDFCBK-G" to SenderId("HDFCBK", promotional = false),
-            "AD-HDFCBK" to SenderId("HDFCBK", promotional = false),
-            "HDFCBK" to SenderId("HDFCBK", promotional = false),
-            " ax-kotakb-s " to SenderId("KOTAKB", promotional = false),
-            "VM-KOTAKB-P" to SenderId("KOTAKB", promotional = true)
+            "AX-KOTAKB-S" to SenderId("KOTAKB", SenderCategory.SERVICE),
+            "JM-KOTAKB-S" to SenderId("KOTAKB", SenderCategory.SERVICE),
+            "VM-HDFCBK-T" to SenderId("HDFCBK", SenderCategory.TRANSACTIONAL),
+            "JD-HDFCBK-G" to SenderId("HDFCBK", SenderCategory.GOVERNMENT),
+            "AD-HDFCBK" to SenderId("HDFCBK", null),
+            "HDFCBK" to SenderId("HDFCBK", null),
+            " ax-kotakb-s " to SenderId("KOTAKB", SenderCategory.SERVICE),
+            "VM-KOTAKB-P" to SenderId("KOTAKB", SenderCategory.PROMOTIONAL)
         ).forEach { (sender, id) -> assertEquals(sender, id, SenderId.parse(sender)) }
         listOf("+919876543210", "9876543210", "AX-98765-S", "", "AB", "AX-KOTAK BANK-S", "A-B-C-D")
             .forEach { assertNull(it, SenderId.parse(it)) }
     }
 
     @Test
-    fun knownSenders() {
+    fun acceptedSendersDontDependOnTheRules() {
         val parser = SmsParser(BuiltInRules.load())
-        listOf("JM-KOTAKB-S", "AX-KOTAKB-T", "KOTAKB").forEach {
-            assertTrue(it, parser.isKnownSender(it))
+        listOf("JM-KOTAKB-S", "AX-OTHRBK-S", "KOTAKB", "AD-SHOPIN").forEach {
+            assertTrue(it, parser.accepts(it))
         }
-        listOf("VM-KOTAKB-P", "AX-OTHRBK-S", "+919876543210", "")
-            .forEach { assertTrue(it, !parser.isKnownSender(it)) }
+        listOf("VM-KOTAKB-P", "AX-KOTAKB-T", "JD-GOVTIN-G", "+919876543210", "")
+            .forEach { assertTrue(it, !parser.accepts(it)) }
     }
 
     @Test

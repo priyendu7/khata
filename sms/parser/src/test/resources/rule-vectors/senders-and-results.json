@@ -1,5 +1,5 @@
 {
-  "description": "Sender headers (operator prefix and TRAI suffix ignored), and each kind of result.",
+  "description": "Sender filters (operator prefix ignored, TRAI suffix checked) and each kind of result.",
   "zone": "Asia/Kolkata",
   "rules": [
     {
@@ -53,10 +53,23 @@
       }
     },
     {
-      "name": "transactional suffix, lower case",
+      "name": "transactional suffix, lower case, is dropped by 'only service senders' even with a rule",
       "sender": "vm-testbk-t",
       "body": "Sent Rs.366.00 from Test Bank A/c X1234 to GENERAL STORE on 23-09-26. UPI Ref 111122223333. Not done by you? Tap https://example.com/fraud",
       "receivedAt": "2026-09-23T14:05:00+05:30",
+      "expect": {
+        "result": "filtered",
+        "reason": "not_service"
+      }
+    },
+    {
+      "name": "transactional suffix with 'only service senders' off",
+      "sender": "vm-testbk-t",
+      "body": "Sent Rs.366.00 from Test Bank A/c X1234 to GENERAL STORE on 23-09-26. UPI Ref 111122223333. Not done by you? Tap https://example.com/fraud",
+      "receivedAt": "2026-09-23T14:05:00+05:30",
+      "filters": {
+        "onlyService": false
+      },
       "expect": {
         "result": "parsed",
         "ruleId": "test-upi-sent",
@@ -148,7 +161,66 @@
       "body": "Sent Rs.366.00 from Test Bank A/c X1234 to GENERAL STORE on 23-09-26. UPI Ref 111122223333. Not done by you? Tap https://example.com/fraud",
       "receivedAt": "2026-09-23T14:05:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "promotional"
+      }
+    },
+    {
+      "name": "promotional, with its switch off, is still dropped by 'only service senders'",
+      "sender": "AX-TESTBK-P",
+      "body": "Sent Rs.366.00 from Test Bank A/c X1234 to GENERAL STORE on 23-09-26. UPI Ref 111122223333. Not done by you? Tap https://example.com/fraud",
+      "receivedAt": "2026-09-23T14:05:00+05:30",
+      "filters": {
+        "dropPromotional": false
+      },
+      "expect": {
+        "result": "filtered",
+        "reason": "not_service"
+      }
+    },
+    {
+      "name": "promotional, with both switches off",
+      "sender": "AX-TESTBK-P",
+      "body": "Sent Rs.366.00 from Test Bank A/c X1234 to GENERAL STORE on 23-09-26. UPI Ref 111122223333. Not done by you? Tap https://example.com/fraud",
+      "receivedAt": "2026-09-23T14:05:00+05:30",
+      "filters": {
+        "dropPromotional": false,
+        "onlyService": false
+      },
+      "expect": {
+        "result": "parsed",
+        "ruleId": "test-upi-sent",
+        "bank": "Test Bank",
+        "amountPaise": 36600,
+        "direction": "debit",
+        "accountType": "bank",
+        "account": "1234",
+        "payee": "GENERAL STORE",
+        "ref": "111122223333",
+        "timestamp": "2026-09-23T14:05:00+05:30"
+      }
+    },
+    {
+      "name": "government suffix",
+      "sender": "JD-TESTBK-G",
+      "body": "Sent Rs.366.00 from Test Bank A/c X1234 to GENERAL STORE on 23-09-26. UPI Ref 111122223333. Not done by you? Tap https://example.com/fraud",
+      "receivedAt": "2026-09-23T14:05:00+05:30",
+      "expect": {
+        "result": "filtered",
+        "reason": "government"
+      }
+    },
+    {
+      "name": "government, with its switch off, is still dropped by 'only service senders'",
+      "sender": "JD-TESTBK-G",
+      "body": "Sent Rs.366.00 from Test Bank A/c X1234 to GENERAL STORE on 23-09-26. UPI Ref 111122223333. Not done by you? Tap https://example.com/fraud",
+      "receivedAt": "2026-09-23T14:05:00+05:30",
+      "filters": {
+        "dropGovernment": false
+      },
+      "expect": {
+        "result": "filtered",
+        "reason": "not_service"
       }
     },
     {
@@ -157,7 +229,8 @@
       "body": "Dear Customer, Biometric authentication is enabled on the app linked to your Test Bank A/c XXXX1234. If not done by you, call us.",
       "receivedAt": "2026-09-23T14:05:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "no_amount"
       }
     },
     {
@@ -166,7 +239,8 @@
       "body": "Your request will be processed within 24 hours 5 minutes.",
       "receivedAt": "2026-09-23T14:05:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "no_amount"
       }
     },
     {
@@ -180,12 +254,13 @@
       }
     },
     {
-      "name": "a bank the rules don't know",
+      "name": "a business sender the rules don't know goes to review",
       "sender": "AX-OTHRBK-S",
       "body": "Sent Rs.366.00 from Test Bank A/c X1234 to GENERAL STORE on 23-09-26. UPI Ref 111122223333. Not done by you? Tap https://example.com/fraud",
       "receivedAt": "2026-09-23T14:05:00+05:30",
       "expect": {
-        "result": "unknown_sender"
+        "result": "unparsed",
+        "bank": null
       }
     },
     {
@@ -194,7 +269,37 @@
       "body": "Sent Rs.366.00 from Test Bank A/c X1234 to GENERAL STORE on 23-09-26. UPI Ref 111122223333. Not done by you? Tap https://example.com/fraud",
       "receivedAt": "2026-09-23T14:05:00+05:30",
       "expect": {
-        "result": "unknown_sender"
+        "result": "filtered",
+        "reason": "phone_number"
+      }
+    },
+    {
+      "name": "a phone number is never read, with every switch off",
+      "sender": "+919876543210",
+      "body": "Sent Rs.366.00 from Test Bank A/c X1234 to GENERAL STORE on 23-09-26. UPI Ref 111122223333. Not done by you? Tap https://example.com/fraud",
+      "receivedAt": "2026-09-23T14:05:00+05:30",
+      "filters": {
+        "dropPromotional": false,
+        "dropGovernment": false,
+        "onlyService": false,
+        "noAmount": false,
+        "noTransactionWord": false,
+        "notTransaction": false
+      },
+      "expect": {
+        "result": "filtered",
+        "reason": "phone_number"
+      }
+    },
+    {
+      "name": "a business sender the rules don't know, with an OTP",
+      "sender": "AX-SHOPIN-S",
+      "body": "123456 is the OTP for your payment of Rs.1,499.00 at SHOP. Do not share.",
+      "receivedAt": "2026-09-23T14:05:00+05:30",
+      "expect": {
+        "result": "filtered",
+        "reason": "not_transaction",
+        "group": "otp"
       }
     }
   ]

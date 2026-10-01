@@ -10,10 +10,11 @@ class SmsInbox @Inject constructor(@ApplicationContext private val context: Cont
     data class Message(val sender: String, val body: String, val receivedAt: Long)
 
     /**
-     * SMS received since [since] (epoch millis) from senders [isBank] accepts, oldest first. The
-     * sender is checked first, so no one else's message text is ever read.
+     * SMS received since [since] (epoch millis) from senders [accepts] lets through (businesses,
+     * never people), oldest first. The sender is checked first, so no one else's message text is
+     * ever read.
      */
-    fun bankMessages(since: Long, isBank: (String) -> Boolean): List<Message> {
+    fun businessMessages(since: Long, accepts: (String) -> Boolean): List<Message> {
         val columns = arrayOf(Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE)
         val cursor = context.contentResolver.query(
             Telephony.Sms.Inbox.CONTENT_URI,
@@ -29,10 +30,7 @@ class SmsInbox @Inject constructor(@ApplicationContext private val context: Cont
             buildList {
                 while (it.moveToNext()) {
                     val sender = it.getString(address).orEmpty()
-                    if (isBank(
-                            sender
-                        )
-                    ) {
+                    if (accepts(sender)) {
                         add(Message(sender, it.getString(body).orEmpty(), it.getLong(date)))
                     }
                 }

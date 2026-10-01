@@ -34,8 +34,8 @@
     <string name="settings_sms_value">Record bank transactions from SMS automatically</string>
     <string name="sms_title">SMS import</string>
     <string name="sms_intro">Khata can record your bank transactions from the SMS your bank sends, so there\'s almost nothing to type.</string>
-    <string name="sms_point_banks">Only SMS from supported banks are read: Kotak, and banks you add in Settings &gt; Parsers. Anyone else\'s messages are skipped without being read.</string>
-    <string name="sms_point_ignored">OTPs, offers and reminders are ignored.</string>
+    <string name="sms_point_banks">Only SMS from businesses are read: senders with an ID like AX-HDFCBK-S. Messages from people (phone numbers) never are.</string>
+    <string name="sms_point_ignored">OTPs, offers, reminders and SMS with no amount are filtered out.</string>
     <string name="sms_point_private">Everything stays on this phone. Khata has no internet access and never sends SMS.</string>
     <string name="sms_switch">Read bank SMS</string>
     <string name="sms_switch_on">On. New bank SMS are recorded as they arrive.</string>
@@ -55,7 +55,8 @@
     <string name="sms_summary_recorded">Recorded: %1$d</string>
     <string name="sms_summary_to_review">New payees to review: %1$d</string>
     <string name="sms_summary_already_there">Already saved: %1$d</string>
-    <string name="sms_summary_unreadable">Bank SMS that couldn\'t be read: %1$d</string>
+    <string name="sms_summary_unreadable">SMS that couldn\'t be read: %1$d</string>
+    <string name="sms_summary_filtered">Filtered out: %1$d</string>
     <string name="settings_parsers">Parsers</string>
     <string name="settings_parsers_value">Read SMS from more banks with parser rules</string>
     <string name="parsers_title">Parsers</string>

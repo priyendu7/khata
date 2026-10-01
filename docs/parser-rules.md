@@ -32,7 +32,7 @@ and a rule that reads it:
 | `v` | yes | Format version. Always `1` for now. A rule with a newer version is refused, not half-read. |
 | `id` | yes | Short unique name: lower-case letters, digits and `-`, up to 64 characters. |
 | `bank` | yes | Bank name, shown to the user and used for new accounts. |
-| `senders` | yes | 1–10 sender headers, such as `KOTAKB`. Phones show senders as `AX-KOTAKB-S`: the 2-letter operator prefix changes and the TRAI suffix (`-S` service, `-T` transactional, `-G` government) is ignored. Promotional senders (`-P`) are never read. |
+| `senders` | yes | 1–10 sender headers, such as `KOTAKB`. Phones show senders as `AX-KOTAKB-S`: the 2-letter operator prefix changes and the TRAI suffix (`-S` service, `-T` transactional, `-G` government, `-P` promotional) isn't part of the header. Which suffixes are read is up to the sender filters (see [What the engine returns](#what-the-engine-returns)); promotional senders can't be named in a rule. |
 | `pattern` | yes | The regex, up to 1,000 characters. See below. |
 | `direction` | one of these two | `debit`, `credit` or `refund`: the same for every SMS the rule matches. |
 | `directionWords` | one of these two | Words that decide the direction, for example `{"debit": ["debited", "spent"], "credit": ["credited"]}`. They're checked in the order refund, debit, credit, against the `dir` group if the pattern has one, otherwise the whole SMS. |
@@ -119,13 +119,26 @@ Every rule, built-in, made in the app or pasted, is checked first (`RuleValidato
 
 ## What the engine returns
 
-For each SMS, the first rule (custom rules first, then built-in ones) whose sender and pattern match gives the transaction. If none matches:
+Every SMS goes through three steps, in this order:
 
-- **Not a transaction**, ignored: a promotional sender, or an SMS that clearly isn't a transaction. That means no amount at all (for example "Biometric authentication is enabled"), an OTP, a UPI collect request, a bill or due-date reminder, a balance-only message, an e-mandate being set up, an offer, or a failed or declined payment (unless money has come back for it: "refund of", "credited back", "reversed").
-- **Unparsed**, anything else from a known bank: it goes to the review inbox with its raw text, so a new format is noticed rather than lost.
-- **Unknown sender**: not from any bank the rules know. Never stored.
+1. **Sender filters**, before any text is read. They apply to every sender, including ones a rule names.
+   - A phone number (or anything else that isn't a business sender ID) is never read. This isn't a switch.
+   - **Drop promotional (`-P`)**, on by default.
+   - **Drop government (`-G`)**, on by default.
+   - **Only service senders (`-S`)**, on by default: drops `-T`, `-P` and `-G`. A sender shown with no suffix (some phones show only `HDFCBK`) passes.
+2. **Rules.** The first rule (custom rules first, then built-in ones) whose sender and pattern match gives the transaction. A rule that reads an SMS always wins: the content filters never see it.
+3. **Content filters**, only on an SMS no rule read. Each is a switch, on by default:
+   - **Not a transaction:** an OTP, a UPI collect request, a bill or due-date reminder, a balance-only message, an e-mandate being set up, an offer, or a failed or declined payment (unless money has come back for it: "refund of", "credited back", "reversed"). Checked first, as it says the most about the SMS.
+   - **No amount:** no `Rs`, `INR` or `₹` followed by a number (for example "Biometric authentication is enabled").
+   - **No transaction word:** none of the words in [`TransactionWords`](../sms/parser/src/main/java/com/openhand/khata/sms/parser/TransactionWords.kt), such as debited, credited, spent, received, UPI, NEFT, txn, Dr, Cr, or Hindi डेबिट, जमा, भुगतान. Most match the start of a word ("debit" matches "debited"); short ones such as `Dr`, `Cr` and `UPI` must be whole words, so "address" and "crore" don't count.
 
-The not-a-transaction checks run only after every rule has failed, so they can never drop an SMS a rule read. Real transaction SMS often mention these words too ("Never share card details/OTP"). A rule, in turn, should never match a failed payment or an OTP.
+The result is one of:
+
+- **Parsed**: the transaction a rule read.
+- **Filtered**, never stored, with the reason: `phone_number`, `promotional`, `government`, `not_service`, `no_amount`, `no_transaction_word`, or `not_transaction` with the word group that matched (`otp`, `collect_request`, `reminder`, `balance`, `mandate`, `offer`, `failed`) and the words it matched.
+- **Unparsed**, anything else: it goes to the review inbox with its raw text, so a new format is noticed rather than lost. Its bank is the bank of the first rule for that sender, or none for a business no rule knows (the review card shows the sender).
+
+Real transaction SMS often mention the not-a-transaction words ("Never share card details/OTP"), which is why content filters run only after every rule has failed. A rule, in turn, should never match a failed payment or an OTP.
 
 ## Tests
 

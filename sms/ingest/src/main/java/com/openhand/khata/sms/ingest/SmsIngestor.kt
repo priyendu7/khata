@@ -10,6 +10,7 @@ import com.openhand.khata.sms.parser.CompiledRule
 import com.openhand.khata.sms.parser.CustomRules
 import com.openhand.khata.sms.parser.ParseResult
 import com.openhand.khata.sms.parser.ParsedSms
+import com.openhand.khata.sms.parser.SmsFilters
 import com.openhand.khata.sms.parser.SmsParser
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,25 +23,26 @@ import javax.inject.Singleton
 class SmsIngestor @Inject constructor(
     private val importer: SmsImporter,
     private val unparsed: UnparsedSmsRepository,
-    private val customParsers: CustomParserRepository
+    private val customParsers: CustomParserRepository,
+    private val settings: SmsImportSettings
 ) {
     private val builtIn by lazy { BuiltInRules.load() }
 
-    /** The last parser built, with the custom rule codes it was built from. */
-    @Volatile private var current: Pair<List<String>, SmsParser>? = null
+    /** The last parser built, with the custom rule codes and filters it was built from. */
+    @Volatile private var current: Pair<Pair<List<String>, SmsFilters>, SmsParser>? = null
 
     /**
      * The rules as they are now: the custom rules that are switched on (PRD feature 8), then the
-     * built-in ones. Rebuilt only when the custom rules change, in the phone's time zone then.
+     * built-in ones, behind the filters the user has on. Rebuilt only when the custom rules or a
+     * filter switch change, in the phone's time zone then.
      */
     suspend fun parser(): SmsParser {
-        val codes = customParsers.enabledCodes()
-        current?.let { (builtFrom, parser) -> if (builtFrom == codes) return parser }
-        return CustomRules.parser(CustomRules.load(codes), builtIn).also { current = codes to it }
+        val key = customParsers.enabledCodes() to settings.filters.value
+        current?.let { (builtFrom, parser) -> if (builtFrom == key) return parser }
+        val (codes, filters) = key
+        return CustomRules.parser(CustomRules.load(codes), builtIn, filters)
+            .also { current = key to it }
     }
-
-    /** Whether [sender] is a bank the rules know; anyone else's SMS isn't read further. */
-    suspend fun isBankSender(sender: String): Boolean = parser().isKnownSender(sender)
 
     suspend fun ingest(sender: String, body: String, receivedAt: Long): IngestOutcome =
         ingest(sender, body, receivedAt, parser())
@@ -60,12 +62,12 @@ class SmsIngestor @Inject constructor(
             } else {
                 IngestOutcome.ALREADY_THERE
             }
-        ParseResult.NotTransaction, ParseResult.UnknownSender -> IngestOutcome.IGNORED
+        is ParseResult.Filtered -> IngestOutcome.FILTERED
     }
 
     /** How many of the SMS waiting in To review [rule] can read, before it's used on them. */
     suspend fun unparsedReadableBy(rule: CompiledRule): Int {
-        val parser = SmsParser(listOf(rule))
+        val parser = SmsParser(listOf(rule), filters = settings.filters.value)
         return unparsed.getAll().count {
             parser.parse(it.sender, it.body, it.receivedAt) is ParseResult.Parsed
         }
@@ -117,9 +119,9 @@ enum class IngestOutcome {
     RECORDED_FOR_REVIEW,
     ALREADY_THERE,
 
-    /** From a bank, has an amount, but no rule could read it. */
+    /** Got past the filters, but no rule could read it. */
     UNREADABLE,
 
-    /** Not a transaction (an OTP, an offer…) or not from a bank. */
-    IGNORED
+    /** Dropped by a filter: a sender switched off, or not a transaction (an OTP, an offer…). */
+    FILTERED
 }
