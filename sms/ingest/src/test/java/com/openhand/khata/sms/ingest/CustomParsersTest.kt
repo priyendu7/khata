@@ -6,6 +6,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.openhand.khata.core.data.CustomParserRepository
+import com.openhand.khata.core.data.DuplicateMatch
 import com.openhand.khata.core.data.SmsImporter
 import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -182,5 +184,22 @@ class CustomParsersTest {
 
         assertEquals(0, ingestor.retryUnparsed())
         assertEquals(1, db.unparsedSmsDao().observeAll().first().size)
+    }
+
+    @Test
+    fun explainSavesNothingAndMatchesWhatIngestDoes() = runTest {
+        add(kotakAtm)
+
+        val custom = ingestor.explain("JM-KOTAKB-S", atmSms, at)
+        assertEquals(listOf(TriedRule("kotak-atm", custom = true)), custom.rulesTried)
+        assertTrue(custom.preview!!.needsReview)
+        val builtIn = ingestor.explain("JM-KOTAKB-S", upiSms, at)
+        assertEquals(TriedRule("kotak-upi-sent", custom = false), builtIn.rulesTried.last())
+        assertEquals(0, saved().size)
+        assertEquals(0, db.unparsedSmsDao().observeAll().first().size)
+
+        ingestor.ingest("JM-KOTAKB-S", upiSms, at)
+        val again = ingestor.explain("JM-KOTAKB-S", upiSms, at)
+        assertEquals(DuplicateMatch.REFERENCE, again.preview!!.duplicate!!.match)
     }
 }

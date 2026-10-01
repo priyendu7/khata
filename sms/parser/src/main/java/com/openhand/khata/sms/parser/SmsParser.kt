@@ -48,17 +48,31 @@ class SmsParser(
      * @param receivedAt when the phone received the SMS, epoch millis. Used as the transaction
      *   time unless the SMS has a date on a different day.
      */
-    fun parse(sender: String, body: String, receivedAt: Long): ParseResult {
-        filters.senderReason(sender)?.let { return ParseResult.Filtered(it) }
+    fun parse(sender: String, body: String, receivedAt: Long): ParseResult =
+        explain(sender, body, receivedAt).result
+
+    /**
+     * [parse], with the rules it tried, for Settings > SMS import > Test a message. [parse] goes
+     * through here, so the two can't disagree.
+     */
+    fun explain(sender: String, body: String, receivedAt: Long): Explanation {
+        filters.senderReason(sender)?.let {
+            return Explanation(ParseResult.Filtered(it), emptyList())
+        }
         val header = requireNotNull(SenderId.parse(sender)).header
         val candidates = rules.filter { header in it.headers }
-        val parsed = candidates.firstNotNullOfOrNull { tryRule(it, body, receivedAt) }
+        val tried = mutableListOf<String>()
+        val parsed = candidates.firstNotNullOfOrNull { rule ->
+            tried += rule.rule.id
+            tryRule(rule, body, receivedAt)
+        }
         val dropped = if (parsed == null) filters.contentReason(body) else null
-        return when {
+        val result = when {
             parsed != null -> ParseResult.Parsed(parsed)
             dropped != null -> ParseResult.Filtered(dropped)
             else -> ParseResult.Unparsed(candidates.firstOrNull()?.rule?.bank)
         }
+        return Explanation(result, tried)
     }
 
     private fun tryRule(compiled: CompiledRule, body: String, receivedAt: Long): ParsedSms? {
@@ -154,6 +168,12 @@ sealed interface ParseResult {
      */
     data class Unparsed(val bank: String?) : ParseResult
 }
+
+/**
+ * What [SmsParser.parse] did with one SMS, and the ids of the rules it tried, in order. When a
+ * rule read it, that rule is the last one tried.
+ */
+data class Explanation(val result: ParseResult, val rulesTried: List<String>)
 
 /** What a rule read from one SMS. The balance is never included. */
 data class ParsedSms(

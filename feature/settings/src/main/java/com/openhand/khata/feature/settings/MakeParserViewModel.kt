@@ -27,6 +27,10 @@ import kotlinx.coroutines.withContext
 const val MAKE_FROM_UNPARSED_ARG = "unparsedId"
 const val NO_UNPARSED = -1L
 
+/** Or opens it on this sender and SMS text, from Test a message. */
+const val MAKE_FROM_SENDER_ARG = "sender"
+const val MAKE_FROM_BODY_ARG = "body"
+
 /**
  * Make a parser from an SMS (PRD feature 8): pick or paste an SMS, mark its parts, check the rule
  * on recent SMS from that bank, save it and share its code. Nothing leaves the phone.
@@ -69,10 +73,17 @@ class MakeParserViewModel @Inject constructor(
 
     init {
         val id = savedState.get<Long>(MAKE_FROM_UNPARSED_ARG) ?: NO_UNPARSED
-        if (id != NO_UNPARSED) {
-            viewModelScope.launch {
+        val body = savedState.get<String>(MAKE_FROM_BODY_ARG)
+        when {
+            id != NO_UNPARSED -> viewModelScope.launch {
                 unparsed.get(id)?.let { choose(it.sender, it.body, it.receivedAt) }
             }
+            body != null ->
+                choose(
+                    savedState.get<String>(MAKE_FROM_SENDER_ARG),
+                    body,
+                    System.currentTimeMillis()
+                )
         }
     }
 

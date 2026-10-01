@@ -61,7 +61,7 @@ internal fun TestResult(sms: ParsedSms?) {
 }
 
 @Composable
-private fun Field(label: Int, value: String?) {
+internal fun Field(label: Int, value: String?) {
     Text(
         stringResource(
             R.string.parser_field,

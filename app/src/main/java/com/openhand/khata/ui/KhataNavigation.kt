@@ -1,5 +1,6 @@
 package com.openhand.khata.ui
 
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -36,6 +37,8 @@ import com.openhand.khata.feature.insights.InsightsScreen
 import com.openhand.khata.feature.lock.LockSettingsSection
 import com.openhand.khata.feature.payees.PayeesScreen
 import com.openhand.khata.feature.settings.AddParserScreen
+import com.openhand.khata.feature.settings.MAKE_FROM_BODY_ARG
+import com.openhand.khata.feature.settings.MAKE_FROM_SENDER_ARG
 import com.openhand.khata.feature.settings.MAKE_FROM_UNPARSED_ARG
 import com.openhand.khata.feature.settings.MakeParserScreen
 import com.openhand.khata.feature.settings.NO_UNPARSED
@@ -43,6 +46,7 @@ import com.openhand.khata.feature.settings.ParsersScreen
 import com.openhand.khata.feature.settings.SettingsPage
 import com.openhand.khata.feature.settings.SettingsRoute
 import com.openhand.khata.feature.settings.SmsImportScreen
+import com.openhand.khata.feature.settings.TestMessageScreen
 import com.openhand.khata.feature.transactions.AddTransactionButton
 import com.openhand.khata.feature.transactions.FILTER_CATEGORY_ARG
 import com.openhand.khata.feature.transactions.FILTER_FROM_ARG
@@ -113,7 +117,20 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         composable(Route.PAYEES) { PayeesScreen(onBack = back) }
         composable(Route.EXPORT) { ExportScreen(onBack = back) }
         composable(Route.IMPORT) { ImportScreen(onBack = back) }
-        composable(Route.SMS_IMPORT) { SmsImportScreen(onBack = back) }
+        composable(Route.SMS_IMPORT) {
+            SmsImportScreen(
+                onBack = back,
+                onTestMessage = { navController.navigate(Route.TEST_MESSAGE) }
+            )
+        }
+        composable(Route.TEST_MESSAGE) {
+            TestMessageScreen(
+                onBack = back,
+                onMakeParser = { sender, body ->
+                    navController.navigate(Route.makeParser(sender, body))
+                }
+            )
+        }
         composable(Route.PARSERS) {
             ParsersScreen(onBack = back, onAdd = { navController.navigate(Route.ADD_PARSER) })
         }
@@ -135,7 +152,13 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
                     type = NavType.LongType
                     defaultValue = NO_UNPARSED
                 }
-            )
+            ) + listOf(MAKE_FROM_SENDER_ARG, MAKE_FROM_BODY_ARG).map {
+                navArgument(it) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            }
         ) { MakeParserScreen(onDone = back) }
         composable(Route.REVIEW) {
             ReviewScreen(
@@ -160,15 +183,22 @@ private object Route {
     const val EXPORT = "export"
     const val IMPORT = "import"
     const val SMS_IMPORT = "sms_import"
+    const val TEST_MESSAGE = "sms_import/test"
     const val PARSERS = "parsers"
     const val ADD_PARSER = "parsers/add"
     const val REVIEW = "review"
 
     /** Make a parser, from an SMS in To review or one to pick or paste. */
-    const val MAKE_PARSER = "parsers/make?$MAKE_FROM_UNPARSED_ARG={$MAKE_FROM_UNPARSED_ARG}"
+    const val MAKE_PARSER = "parsers/make?$MAKE_FROM_UNPARSED_ARG={$MAKE_FROM_UNPARSED_ARG}" +
+        "&$MAKE_FROM_SENDER_ARG={$MAKE_FROM_SENDER_ARG}&$MAKE_FROM_BODY_ARG={$MAKE_FROM_BODY_ARG}"
 
     fun makeParser(unparsedId: Long = NO_UNPARSED) =
         "parsers/make?$MAKE_FROM_UNPARSED_ARG=$unparsedId"
+
+    /** The rule maker on an SMS that isn't in To review, such as one from Test a message. */
+    fun makeParser(sender: String, body: String) = "parsers/make?$MAKE_FROM_SENDER_ARG=${Uri.encode(
+        sender
+    )}&$MAKE_FROM_BODY_ARG=${Uri.encode(body)}"
 
     /** Add (id 0) or edit a transaction. */
     const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}" +

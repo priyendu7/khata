@@ -264,6 +264,59 @@ class SmsImporterTest : RepositoryTest() {
         assertEquals(Totals(spentPaise = 40_000, incomePaise = 100_000), totals)
     }
 
+    @Test
+    fun previewSavesNothing() = runTest {
+        val rows = count()
+        val payees = db.payeeDao().observeWithDetails().first().size
+        val accounts = db.accountDao().getByLast4("7391").size
+
+        val preview = importer.preview(sms())
+
+        assertEquals(rows, count())
+        assertEquals(payees, db.payeeDao().observeWithDetails().first().size)
+        assertEquals(accounts, db.accountDao().getByLast4("7391").size)
+        assertEquals(null, preview.duplicate)
+        assertEquals(null, preview.account)
+        assertEquals(null, preview.payeeName)
+        assertTrue(preview.needsReview)
+    }
+
+    @Test
+    fun previewFindsTheAccountAKnownPayeeAndItsCategory() = runTest {
+        val food = db.categoryDao().getBySeedKey("food")!!.id
+        val work = db.tagDao().getOrCreate(listOf("work"))
+        val payeeId = db.payeeDao().insert(
+            PayeeEntity(
+                identifier = "mcdonalds",
+                displayName = "McDonald's",
+                defaultCategoryId = food
+            )
+        )
+        db.payeeDao().setDefaultTags(payeeId, work)
+        saved(sms(ref = "1", payee = "MCDONALDS"))
+
+        val preview = importer.preview(sms(ref = "2", at = AT + HOUR, payee = "MCDONALDS"))
+
+        assertEquals("Kotak 7391", preview.account?.name)
+        assertEquals("McDonald's", preview.payeeName)
+        assertEquals("food", preview.category?.seedKey)
+        assertEquals(listOf("work"), preview.tags)
+        assertFalse(preview.needsReview)
+        assertEquals(null, preview.duplicate)
+    }
+
+    @Test
+    fun previewReportsADuplicate() = runTest {
+        val first = saved(sms())
+
+        val preview = importer.preview(sms(body = "the same payment, another SMS"))
+
+        assertEquals(
+            SmsImportResult.Duplicate(first.transactionId, DuplicateMatch.REFERENCE),
+            preview.duplicate
+        )
+    }
+
     private companion object {
         const val AT = 1_790_000_000_000L
         const val MINUTE = 60_000L

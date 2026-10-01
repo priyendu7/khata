@@ -52,7 +52,11 @@ import java.time.format.DateTimeFormatter
  * SMS permission is asked for only when the user turns it on (PRD principle 6).
  */
 @Composable
-fun SmsImportScreen(onBack: () -> Unit, viewModel: SmsImportViewModel = hiltViewModel()) {
+fun SmsImportScreen(
+    onBack: () -> Unit,
+    onTestMessage: () -> Unit,
+    viewModel: SmsImportViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     val enabled by viewModel.enabled.collectAsStateWithLifecycle()
     val lastScan by viewModel.lastScan.collectAsStateWithLifecycle()
@@ -103,7 +107,8 @@ fun SmsImportScreen(onBack: () -> Unit, viewModel: SmsImportViewModel = hiltView
         },
         onOpenAppSettings = { context.openAppSettings() },
         onImport = viewModel::startImport,
-        onCancel = viewModel::cancelImport
+        onCancel = viewModel::cancelImport,
+        onTestMessage = onTestMessage
     )
 }
 
@@ -121,6 +126,7 @@ fun SmsImportContent(
     onOpenAppSettings: () -> Unit,
     onImport: (LocalDate) -> Unit,
     onCancel: () -> Unit,
+    onTestMessage: () -> Unit,
     today: LocalDate = LocalDate.now()
 ) {
     SubScreen(title = stringResource(R.string.sms_title), onBack = onBack) { padding ->
@@ -159,6 +165,13 @@ fun SmsImportContent(
                 HorizontalDivider(Modifier.padding(top = 16.dp))
                 PastSmsImport(progress, lastScan, onImport, onCancel, today)
             }
+            // Works with SMS import off too: it reads only what's pasted.
+            HorizontalDivider(Modifier.padding(top = 8.dp))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.sms_test_entry)) },
+                supportingContent = { Text(stringResource(R.string.sms_test_entry_note)) },
+                modifier = Modifier.clickable(onClick = onTestMessage)
+            )
         }
     }
 }
