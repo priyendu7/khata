@@ -1,6 +1,7 @@
 package com.openhand.khata.sms.ingest
 
 import com.openhand.khata.core.data.CustomParserRepository
+import com.openhand.khata.core.data.IgnoreRuleRepository
 import com.openhand.khata.core.data.SmsImportPreview
 import com.openhand.khata.core.data.SmsImportResult
 import com.openhand.khata.core.data.SmsImporter
@@ -9,6 +10,8 @@ import com.openhand.khata.core.model.SmsTransaction
 import com.openhand.khata.sms.parser.BuiltInRules
 import com.openhand.khata.sms.parser.CompiledRule
 import com.openhand.khata.sms.parser.CustomRules
+import com.openhand.khata.sms.parser.IgnoreRule
+import com.openhand.khata.sms.parser.IgnoreRules
 import com.openhand.khata.sms.parser.ParseResult
 import com.openhand.khata.sms.parser.ParsedSms
 import com.openhand.khata.sms.parser.SmsFilters
@@ -25,6 +28,7 @@ class SmsIngestor @Inject constructor(
     private val importer: SmsImporter,
     private val unparsed: UnparsedSmsRepository,
     private val customParsers: CustomParserRepository,
+    private val ignoreRules: IgnoreRuleRepository,
     private val settings: SmsImportSettings
 ) {
     private val builtIn by lazy { BuiltInRules.load() }
@@ -35,26 +39,31 @@ class SmsIngestor @Inject constructor(
     private class Built(
         val codes: List<String>,
         val filters: SmsFilters,
+        val ignore: List<IgnoreRule>,
         val parser: SmsParser,
         val customIds: Set<String>
     )
 
     /**
      * The rules as they are now: the custom rules that are switched on (PRD feature 8), then the
-     * built-in ones, behind the filters the user has on. Rebuilt only when the custom rules or a
-     * filter switch change, in the phone's time zone then.
+     * built-in ones, behind the filters and ignore rules the user has on. Rebuilt only when one of
+     * those changes, in the phone's time zone then.
      */
     suspend fun parser(): SmsParser = built().parser
 
     private suspend fun built(): Built {
         val codes = customParsers.enabledCodes()
         val filters = settings.filters.value
-        current?.let { if (it.codes == codes && it.filters == filters) return it }
+        val ignore = ignoreRules.enabled().map { IgnoreRule(it.id, it.header, it.pattern) }
+        current?.let {
+            if (it.codes == codes && it.filters == filters && it.ignore == ignore) return it
+        }
         val custom = CustomRules.load(codes)
         return Built(
             codes,
             filters,
-            CustomRules.parser(custom, builtIn, filters),
+            ignore,
+            CustomRules.parser(custom, builtIn, filters, IgnoreRules(ignore)),
             custom.mapTo(mutableSetOf()) { it.rule.id }
         ).also { current = it }
     }

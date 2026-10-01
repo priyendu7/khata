@@ -219,4 +219,17 @@
     <string name="filter_not_transaction_note">Also payment requests, balance-only SMS, mandates and failed payments.</string>
     <string name="filters_note">A change applies to new SMS straight away. To get back messages a filter dropped before, import past SMS again.</string>
     <string name="test_sms_open_filter">Change this filter</string>
+    <string name="filters_ignore_rules">Ignore rules</string>
+    <string name="filters_no_ignore_rules">None yet. In To review, an SMS no parser reads can be ignored by sender or by kind.</string>
+    <string name="filters_ignored_sender">Sender %1$s</string>
+    <string name="filters_ignored_like">Like this, from %1$s</string>
+    <string name="filter_reason_ignored_sender">You chose to ignore this sender.</string>
+    <string name="filter_reason_ignored_like_this">It\'s like a message you chose to ignore.</string>
+    <string name="ignore_like_title">Ignore messages like this</string>
+    <string name="ignore_like_intro">Tap the words that change from one message to the next, like a name or a plan. Numbers already change. Messages from this sender with the rest the same are ignored, unless a parser reads them.</string>
+    <string name="ignore_like_save">Ignore messages like this</string>
+    <plurals name="ignore_like_matches">
+        <item quantity="one">Matches %1$d SMS waiting in To review. It will be removed.</item>
+        <item quantity="other">Matches %1$d SMS waiting in To review. They will be removed.</item>
+    </plurals>
 </resources>

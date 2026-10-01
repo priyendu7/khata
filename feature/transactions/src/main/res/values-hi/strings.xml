@@ -76,4 +76,9 @@
     <string name="review_copied_body">शेयर करने से पहले नाम, खाता और कार्ड नंबर, बैलेंस और बाकी निजी जानकारी हटा दें। फिर इसे GitHub पर एक नए इश्यू में पेस्ट करें, ताकि यह फ़ॉर्मेट जोड़ा जा सके। खाता खुद कुछ नहीं भेजता।</string>
     <string name="review_open_github">GitHub खोलें</string>
     <string name="review_close">बंद करें</string>
+    <string name="review_ignore_sender">यह भेजने वाला अनदेखा करें</string>
+    <string name="review_ignore_like_this">ऐसे मैसेज अनदेखा करें</string>
+    <string name="review_ignore_sender_title">%1$s के सभी SMS अनदेखा करें?</string>
+    <string name="review_ignore_sender_body">रुके हुए SMS हटा दिए जाएँगे। इसे सेटिंग्स &gt; SMS इम्पोर्ट &gt; फ़िल्टर में वापस बदल सकते हैं।</string>
+    <string name="review_ignore_confirm">अनदेखा करें</string>
 </resources>

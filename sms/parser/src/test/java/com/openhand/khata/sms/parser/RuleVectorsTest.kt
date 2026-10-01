@@ -123,6 +123,9 @@ class RuleVectorsTest {
             FilterReason.NoAmount -> "no_amount"
             FilterReason.NoTransactionWord -> "no_transaction_word"
             is FilterReason.NotTransaction -> "not_transaction"
+            // Ignore rules live in the app's database, so no vector has one.
+            is FilterReason.IgnoredSender -> "ignored_sender"
+            is FilterReason.IgnoredLikeThis -> "ignored_like_this"
         }
         val group = (reason as? FilterReason.NotTransaction)?.group?.name?.lowercase()
         return mapOf("result" to "filtered", "reason" to name) +

@@ -39,6 +39,8 @@ import com.openhand.khata.feature.payees.PayeesScreen
 import com.openhand.khata.feature.settings.AddParserScreen
 import com.openhand.khata.feature.settings.FILTERS_SHOW_ARG
 import com.openhand.khata.feature.settings.FiltersScreen
+import com.openhand.khata.feature.settings.IGNORE_FROM_UNPARSED_ARG
+import com.openhand.khata.feature.settings.IgnoreLikeThisScreen
 import com.openhand.khata.feature.settings.MAKE_FROM_BODY_ARG
 import com.openhand.khata.feature.settings.MAKE_FROM_SENDER_ARG
 import com.openhand.khata.feature.settings.MAKE_FROM_UNPARSED_ARG
@@ -182,9 +184,18 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
                 },
                 onMakeParser = { unparsedId ->
                     navController.navigate(Route.makeParser(unparsedId))
+                },
+                onIgnoreLikeThis = { unparsedId ->
+                    navController.navigate(Route.ignoreLikeThis(unparsedId))
                 }
             )
         }
+        composable(
+            Route.IGNORE_LIKE_THIS,
+            arguments = listOf(
+                navArgument(IGNORE_FROM_UNPARSED_ARG) { type = NavType.LongType }
+            )
+        ) { IgnoreLikeThisScreen(onDone = back) }
     }
 }
 
@@ -206,6 +217,9 @@ private object Route {
     const val PARSERS = "parsers"
     const val ADD_PARSER = "parsers/add"
     const val REVIEW = "review"
+    const val IGNORE_LIKE_THIS = "review/ignore/{$IGNORE_FROM_UNPARSED_ARG}"
+
+    fun ignoreLikeThis(unparsedId: Long) = "review/ignore/$unparsedId"
 
     /** Make a parser, from an SMS in To review or one to pick or paste. */
     const val MAKE_PARSER = "parsers/make?$MAKE_FROM_UNPARSED_ARG={$MAKE_FROM_UNPARSED_ARG}" +

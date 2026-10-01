@@ -17,6 +17,8 @@ internal fun filterReasonText(reason: FilterReason): String = when (reason) {
     FilterReason.NotService -> stringResource(R.string.filter_reason_not_service)
     FilterReason.NoAmount -> stringResource(R.string.filter_reason_no_amount)
     FilterReason.NoTransactionWord -> stringResource(R.string.filter_reason_no_transaction_word)
+    is FilterReason.IgnoredSender -> stringResource(R.string.filter_reason_ignored_sender)
+    is FilterReason.IgnoredLikeThis -> stringResource(R.string.filter_reason_ignored_like_this)
     is FilterReason.NotTransaction -> stringResource(
         R.string.filter_reason_not_transaction,
         stringResource(groupLabel(reason.group)),

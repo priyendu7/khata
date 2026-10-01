@@ -74,4 +74,9 @@
     <string name="review_copied_body">Before sharing it, remove names, account and card numbers, balances and anything else personal. Then paste it into a new issue on GitHub, so this format can be added. Khata itself sends nothing.</string>
     <string name="review_open_github">Open GitHub</string>
     <string name="review_close">Close</string>
+    <string name="review_ignore_sender">Ignore this sender</string>
+    <string name="review_ignore_like_this">Ignore messages like this</string>
+    <string name="review_ignore_sender_title">Ignore all SMS from %1$s?</string>
+    <string name="review_ignore_sender_body">Waiting ones are removed. You can undo this in Settings &gt; SMS import &gt; Filters.</string>
+    <string name="review_ignore_confirm">Ignore</string>
 </resources>
