@@ -70,7 +70,9 @@ data class PayeeEntity(
     /** UPI ID, merchant name or account as it appears in SMS or entry, e.g. `paytmqr…@paytm`. */
     val identifier: String,
     @ColumnInfo(name = "display_name") val displayName: String,
-    @ColumnInfo(name = "default_category_id") val defaultCategoryId: Long?
+    @ColumnInfo(name = "default_category_id") val defaultCategoryId: Long?,
+    /** One of the user's own accounts: money to or from it is a transfer, not spending (#56). */
+    @ColumnInfo(name = "own_account", defaultValue = "0") val ownAccount: Boolean = false
 )
 
 /** A payee's default tags (the "default tags" of PRD feature 3), many-to-many. */
@@ -126,8 +128,8 @@ data class PayeeDefaultTagEntity(
         Index("account_id"),
         Index("payee_id"),
         Index("category_id"),
-        // Unique only when present: SQLite allows any number of NULLs in a unique index.
-        Index(value = ["reference_no"], unique = true)
+        // Not unique: both sides of a move between the user's own accounts can share one (#56).
+        Index("reference_no")
     ]
 )
 data class TransactionEntity(
@@ -141,7 +143,10 @@ data class TransactionEntity(
     @ColumnInfo(name = "payee_id") val payeeId: Long?,
     @ColumnInfo(name = "category_id") val categoryId: Long,
     val note: String?,
-    /** UPI or bank reference number; unique when present, which stops duplicate imports. */
+    /**
+     * UPI or bank reference number. SMS and CSV import treat the same reference on the same
+     * account as a duplicate; on another account it's the other side of a transfer.
+     */
     @ColumnInfo(name = "reference_no") val referenceNo: String?,
     val source: TransactionSource,
     /** Original SMS text, kept only for SMS-sourced transactions. */

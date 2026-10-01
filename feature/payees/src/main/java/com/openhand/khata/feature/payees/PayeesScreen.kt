@@ -176,10 +176,14 @@ internal fun PayeesContent(
     }
 }
 
-/** Name, the identifier when it differs, the defaults, and how many transactions it has. */
+/**
+ * Name, the identifier when it differs, the defaults (or "Own account"), and how many
+ * transactions it has.
+ */
 @Composable
 private fun PayeeRow(payee: Payee, category: Category?, onClick: () -> Unit) {
     val defaults = listOfNotNull(
+        stringResource(R.string.payees_own_account_label).takeIf { payee.ownAccount },
         category?.let { categoryName(it.name, it.seedKey) }
             ?: stringResource(R.string.payees_no_default_category),
         payee.defaultTags.takeIf { it.isNotEmpty() }?.joinToString(", ")

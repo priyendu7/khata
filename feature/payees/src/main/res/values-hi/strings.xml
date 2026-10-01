@@ -15,6 +15,9 @@
     <string name="payees_default_category">तय श्रेणी</string>
     <string name="payees_default_tags">तय टैग</string>
     <string name="payees_defaults_help">इस पाने वाले के नए लेन-देन को यही श्रेणी और टैग मिलेंगे। किसी भी एक लेन-देन पर आप इन्हें फिर भी बदल सकते हैं।</string>
+    <string name="payees_own_account">यह मेरा अपना खाता है</string>
+    <string name="payees_own_account_help">इसमें भेजा या इससे मिला पैसा आपके अपने खातों के बीच ट्रांसफ़र माना जाएगा, इसलिए यह खर्च या आय में नहीं गिना जाएगा। पहले से सहेजे गए लेन-देन जैसे हैं वैसे ही रहेंगे।</string>
+    <string name="payees_own_account_label">अपना खाता</string>
     <string name="payees_merge_into">दूसरे पाने वाले में मिलाएँ</string>
     <string name="payees_merge_title">%1$s को इसमें मिलाएँ…</string>
     <string name="payees_merge_confirm_title">%1$s को %2$s में मिलाएँ?</string>

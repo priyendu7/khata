@@ -202,13 +202,19 @@ private fun Parsed(sms: ParsedSms, rule: TriedRule, preview: SmsImportPreview?) 
     )
     Field(R.string.parser_field_reference, sms.reference)
     preview ?: return
-    if (preview.needsReview) {
-        Text(stringResource(R.string.test_sms_needs_review))
-    } else {
-        val category = preview.category
-        Field(R.string.test_sms_field_category, categoryName(category?.name, category?.seedKey))
-        if (preview.tags.isNotEmpty()) {
-            Field(R.string.test_sms_field_tags, preview.tags.joinToString(", "))
+    val transfer = preview.transfer
+    when {
+        transfer != null -> Text(stringResource(transferLabel(transfer)))
+        preview.needsReview -> Text(stringResource(R.string.test_sms_needs_review))
+        else -> {
+            val category = preview.category
+            Field(
+                R.string.test_sms_field_category,
+                categoryName(category?.name, category?.seedKey)
+            )
+            if (preview.tags.isNotEmpty()) {
+                Field(R.string.test_sms_field_tags, preview.tags.joinToString(", "))
+            }
         }
     }
     preview.duplicate?.let {

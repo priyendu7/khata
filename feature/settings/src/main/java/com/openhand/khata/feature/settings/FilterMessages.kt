@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.openhand.khata.core.data.DuplicateMatch
+import com.openhand.khata.core.data.TransferMatch
 import com.openhand.khata.sms.parser.FilterReason
 import com.openhand.khata.sms.parser.NotTransactionGroup
 
@@ -49,4 +50,11 @@ internal fun duplicateLabel(match: DuplicateMatch): Int = when (match) {
     DuplicateMatch.REFERENCE -> R.string.test_sms_duplicate_reference
     DuplicateMatch.SAME_SMS -> R.string.test_sms_duplicate_same_sms
     DuplicateMatch.AMOUNT_AND_TIME -> R.string.test_sms_duplicate_amount_time
+}
+
+@StringRes
+internal fun transferLabel(match: TransferMatch): Int = when (match) {
+    TransferMatch.CARD_PAYMENT -> R.string.test_sms_transfer_card_payment
+    TransferMatch.OWN_ACCOUNT -> R.string.test_sms_transfer_own_account
+    TransferMatch.OTHER_SIDE -> R.string.test_sms_transfer_other_side
 }

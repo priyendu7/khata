@@ -106,10 +106,11 @@ class BackupRepository @Inject constructor(private val db: Lazy<KhataDatabase>) 
     }
 
     /**
-     * A row is a duplicate when its reference number is already used (in the database or earlier
-     * in the file). Without one, it's a duplicate of a saved transaction on the same day, in the
-     * same direction, with the same amount and payee (or note). Each saved transaction matches
-     * one row at most, so two identical cups of tea on one day both import the first time.
+     * A row is a duplicate when its reference number is already used on the same account (in the
+     * database or earlier in the file): both sides of a transfer can share one. Without one, it's
+     * a duplicate of a saved transaction on the same day, in the same direction, with the same
+     * amount and payee (or note). Each saved transaction matches one row at most, so two
+     * identical cups of tea on one day both import the first time.
      */
     private suspend fun duplicates(
         resolver: ImportResolver,
@@ -117,7 +118,9 @@ class BackupRepository @Inject constructor(private val db: Lazy<KhataDatabase>) 
         zone: ZoneId
     ): List<Boolean> {
         val saved = resolver.database.backupDao().duplicateKeys()
-        val references = saved.mapNotNullTo(HashSet()) { it.referenceNo }
+        val references = saved.mapNotNullTo(HashSet()) { row ->
+            row.referenceNo?.let { ReferenceKey.of(it, row.accountName) }
+        }
         val unmatched = HashMap<DuplicateKey, Int>()
         saved.forEach { row ->
             val key = DuplicateKey.of(
@@ -132,7 +135,7 @@ class BackupRepository @Inject constructor(private val db: Lazy<KhataDatabase>) 
         return records.map { record ->
             val reference = record.referenceNo?.trim()?.ifEmpty { null }
             if (reference != null) {
-                !references.add(reference)
+                !references.add(ReferenceKey.of(reference, record.account))
             } else {
                 val party = resolver.existingPayee(record)?.displayName
                     ?: record.payeeName?.ifBlank { null }
@@ -149,6 +152,13 @@ class BackupRepository @Inject constructor(private val db: Lazy<KhataDatabase>) 
                 if (left > 0) unmatched[key] = left - 1
                 left > 0
             }
+        }
+    }
+
+    private data class ReferenceKey(val reference: String, val account: String?) {
+        companion object {
+            fun of(reference: String, account: String?) =
+                ReferenceKey(reference, account?.trim()?.lowercase()?.ifEmpty { null })
         }
     }
 

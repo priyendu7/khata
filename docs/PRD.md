@@ -129,7 +129,7 @@ Every filter can be switched off in Settings > SMS import > Filters, and all are
 
 **What no rule read** goes to the review inbox with its raw text, grouped by sender. For each group the user can make a parser (feature 8), **ignore this sender**, or **ignore messages like this** (the SMS's fixed text, with numbers and the words the user taps as the parts that change). After a parser is saved, every waiting SMS is read again, so one parser clears the whole group; after an ignore rule is saved, the waiting SMS it matches are removed. The user can also copy an SMS to report the format on GitHub themselves; the app never sends anything.
 
-**Test a message.** In Settings > SMS import, the user can paste a sender and an SMS and see what the app would do with it, without saving anything: not read (and by which filter), parsed (by which rule, with the transaction it would record, its category from payee memory, and whether it's already recorded), filtered out after no rule read it (by which filter and which words), or sent to the review inbox.
+**Test a message.** In Settings > SMS import, the user can paste a sender and an SMS and see what the app would do with it, without saving anything: not read (and by which filter), parsed (by which rule, with the transaction it would record, its category from payee memory, whether it would be a transfer and why, and whether it's already recorded), filtered out after no rule read it (by which filter and which words), or sent to the review inbox.
 
 ### 8. Custom parsers (later milestone)
 
@@ -161,10 +161,10 @@ There are six tables in one encrypted SQLite database. Amounts are stored as int
 | Table | Key fields | Notes |
 | --- | --- | --- |
 | Account | id, name, type (bank / credit card / debit card / wallet), bank, last4 | Filled in automatically from SMS, and editable |
-| Payee | id, identifier (UPI ID / merchant / account), display name, default category, default tags | This is the payee memory |
+| Payee | id, identifier (UPI ID / merchant / account), display name, default category, default tags, own account | This is the payee memory. Money to or from an own account is a transfer |
 | Category | id, name, color, icon, archived | One per transaction |
 | Tag | id, name | Linked to transactions through TransactionTag |
-| Transaction | id, amount_paise, direction, timestamp, account_id, payee_id, category_id, note, reference_no, source (sms / manual / csv), raw_sms, needs_review | reference_no is unique when present, which prevents duplicates |
+| Transaction | id, amount_paise, direction, timestamp, account_id, payee_id, category_id, note, reference_no, source (sms / manual / csv), raw_sms, needs_review | The same reference_no on the same account is a duplicate; on another account it is the other side of a transfer |
 | TransactionTag | transaction_id, tag_id | Links transactions to tags (many-to-many) |
 
 The CSV export has one row per transaction with these columns: date, time, amount, direction, account, payee, payee_name, category, tags (separated by "|"), note, reference_no.

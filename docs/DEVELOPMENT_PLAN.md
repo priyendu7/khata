@@ -158,7 +158,7 @@ By the end of this phase more banks are built in and SMS import handles the hard
 - [ ] HDFC rules with real samples (#53)
 - [ ] Built-in rules for ICICI, Axis and Federal (#63)
 - [ ] More Kotak formats: cards, NEFT/IMPS, refunds, ATM (#66)
-- [ ] Detect transfers: credit card bill payments (including CRED) and moving money between your own accounts (#56)
+- [x] Detect transfers: credit card bill payments (including CRED) and moving money between your own accounts (#56)
 - [ ] Local daily summary notification, optional (#58)
 
 **Target:** the same 95% sample accuracy as Phase 3 for every bank added here.

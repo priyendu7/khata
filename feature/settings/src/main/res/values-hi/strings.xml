@@ -180,6 +180,9 @@
     <string name="test_sms_duplicate_reference">पहले से दर्ज: एक लेन-देन का रेफ़रेंस नंबर यही है, इसलिए इसे छोड़ दिया जाएगा।</string>
     <string name="test_sms_duplicate_same_sms">इसी SMS से पहले से दर्ज है, इसलिए इसे छोड़ दिया जाएगा।</string>
     <string name="test_sms_duplicate_amount_time">पहले से दर्ज: 2 मिनट के अंदर वही रक़म और खाता, इसलिए इसे छोड़ दिया जाएगा।</string>
+    <string name="test_sms_transfer_card_payment">क्रेडिट कार्ड बिल का भुगतान: इसे ट्रांसफ़र के रूप में सहेजा जाएगा, जो खर्च या आय में नहीं गिना जाता।</string>
+    <string name="test_sms_transfer_own_account">आपके अपने खाते के रूप में चिह्नित प्राप्तकर्ता को या उससे: इसे ट्रांसफ़र के रूप में सहेजा जाएगा, जो खर्च या आय में नहीं गिना जाता।</string>
+    <string name="test_sms_transfer_other_side">आपके अपने खातों के बीच पैसे भेजने का दूसरा हिस्सा: यह और इससे मिलता लेन-देन, दोनों ट्रांसफ़र के रूप में सहेजे जाएँगे।</string>
     <string name="test_sms_rules_tried">इस भेजने वाले के लिए आज़माए गए पार्सर: %1$s</string>
     <string name="test_sms_no_rules">इस भेजने वाले के लिए कोई पार्सर नहीं है।</string>
     <string name="filter_reason_phone_number">लोगों (फ़ोन नंबर) के मैसेज कभी नहीं पढ़े जाते।</string>
