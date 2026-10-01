@@ -37,6 +37,7 @@ class TestMessageContentTest {
         needsReview = true
     )
     private val madeFrom = mutableListOf<Pair<String, String>>()
+    private val openedFilters = mutableListOf<FilterSwitch>()
 
     /** Explains with the built-in rules, as if nothing were saved yet. */
     private fun show() {
@@ -53,7 +54,8 @@ class TestMessageContentTest {
                         newPayee.takeIf { explained.result is ParseResult.Parsed }
                     )
                 },
-                onMakeParser = { sender, body -> madeFrom += sender to body }
+                onMakeParser = { sender, body -> madeFrom += sender to body },
+                onOpenFilter = { openedFilters += it }
             )
         }
     }
@@ -88,6 +90,8 @@ class TestMessageContentTest {
         compose.onNodeWithText("Not read").performScrollTo().assertExists()
         compose.onNodeWithText("Messages from people (phone numbers) are never read.")
             .assertExists()
+        // People's messages have no switch.
+        compose.onNodeWithText("Change this filter").assertDoesNotExist()
     }
 
     @Test
@@ -99,6 +103,8 @@ class TestMessageContentTest {
         compose.onNodeWithText("Filtered out after no parser read it").performScrollTo()
             .assertExists()
         compose.onNodeWithText("Bill reminder: ‘is due’", substring = true).assertExists()
+        compose.onNodeWithText("Change this filter").performScrollTo().performClick()
+        assertEquals(listOf(FilterSwitch.NOT_TRANSACTION), openedFilters)
     }
 
     @Test

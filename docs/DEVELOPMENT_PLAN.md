@@ -140,7 +140,7 @@ This phase is for using the app day to day, testing it, and acting on what comes
 **SMS filters** (PRD feature 7). The app reads every business sender, not only banks it has rules for, so a bank without a rule shows up in the review inbox instead of being skipped. Filters decide what's worth asking about.
 
 - [ ] Read every business sender; sender filters before parsing, content filters only on what no rule read (#86)
-- [ ] Settings > SMS import > Filters: switch each filter on or off (#87)
+- [x] Settings > SMS import > Filters: switch each filter on or off (#87)
 - [ ] Ignore this sender, and ignore messages like this (#88)
 - [ ] Review inbox: unreadable SMS grouped by sender (#89)
 - [x] Test a message: see what the app would do with an SMS (#90)

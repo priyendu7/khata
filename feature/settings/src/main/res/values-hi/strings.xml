@@ -196,4 +196,25 @@
     <string name="filter_group_mandate">मैंडेट या स्टैंडिंग इंस्ट्रक्शन</string>
     <string name="filter_group_offer">ऑफ़र</string>
     <string name="filter_group_failed">नाकाम भुगतान</string>
+    <string name="sms_filters_entry">फ़िल्टर</string>
+    <string name="sms_filters_entry_note">चुनें कि कौन से SMS समीक्षा तक पहुँचने से पहले छाँट दिए जाएँ।</string>
+    <string name="filters_title">फ़िल्टर</string>
+    <string name="filters_before_reading">पढ़ने से पहले</string>
+    <string name="filters_no_parser">जब कोई पार्सर SMS न पढ़ पाए</string>
+    <string name="filter_phone_numbers">लोगों के मैसेज</string>
+    <string name="filter_phone_numbers_note">लोगों (फ़ोन नंबर) के मैसेज कभी नहीं पढ़े जाते।</string>
+    <string name="filter_promotional">प्रचार वाले भेजने वाले छाँटें</string>
+    <string name="filter_promotional_note">-P पर ख़त्म होने वाले भेजने वाले सिर्फ़ विज्ञापन भेजते हैं।</string>
+    <string name="filter_government">सरकारी भेजने वाले छाँटें</string>
+    <string name="filter_government_note">-G पर ख़त्म होने वाले भेजने वाले सूचनाएँ भेजते हैं, भुगतान नहीं।</string>
+    <string name="filter_only_service">सिर्फ़ सर्विस वाले भेजने वाले</string>
+    <string name="filter_only_service_note">सिर्फ़ -S पर ख़त्म होने वाले भेजने वाले पढ़ें, जिनसे बैंक लेन-देन भेजते हैं। जिनके नाम के अंत में कुछ नहीं दिखता, वे भी पढ़े जाते हैं।</string>
+    <string name="filter_no_amount">बिना रक़म वाले SMS छाँटें</string>
+    <string name="filter_no_amount_note">भुगतान वाले SMS में हमेशा रक़म होती है, जैसे Rs.500 या ₹99।</string>
+    <string name="filter_no_transaction_word">बिना लेन-देन शब्द वाले SMS छाँटें</string>
+    <string name="filter_no_transaction_word_note">सिर्फ़ वे SMS रखें जिनमें debited, credited, paid, sent या UPI जैसा कुछ लिखा हो।</string>
+    <string name="filter_not_transaction">OTP, ऑफ़र और रिमाइंडर छाँटें</string>
+    <string name="filter_not_transaction_note">पैसे की माँग, सिर्फ़ बैलेंस वाले SMS, मैंडेट और नाकाम भुगतान भी।</string>
+    <string name="filters_note">बदलाव नए SMS पर तुरंत लागू होता है। जो मैसेज पहले किसी फ़िल्टर ने छाँटे थे, उन्हें वापस लाने के लिए पुराने SMS फिर से इम्पोर्ट करें।</string>
+    <string name="test_sms_open_filter">यह फ़िल्टर बदलें</string>
 </resources>

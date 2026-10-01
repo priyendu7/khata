@@ -198,4 +198,25 @@
     <string name="filter_group_mandate">Mandate or standing instruction</string>
     <string name="filter_group_offer">Offer</string>
     <string name="filter_group_failed">Failed payment</string>
+    <string name="sms_filters_entry">Filters</string>
+    <string name="sms_filters_entry_note">Choose which SMS are dropped before they reach To review.</string>
+    <string name="filters_title">Filters</string>
+    <string name="filters_before_reading">Before reading</string>
+    <string name="filters_no_parser">When no parser reads an SMS</string>
+    <string name="filter_phone_numbers">Messages from people</string>
+    <string name="filter_phone_numbers_note">Messages from people (phone numbers) are never read.</string>
+    <string name="filter_promotional">Drop promotional senders</string>
+    <string name="filter_promotional_note">Senders ending in -P only send ads.</string>
+    <string name="filter_government">Drop government senders</string>
+    <string name="filter_government_note">Senders ending in -G send alerts and notices, not payments.</string>
+    <string name="filter_only_service">Only service senders</string>
+    <string name="filter_only_service_note">Read only senders ending in -S, where banks send transactions. Senders shown without an ending are still read.</string>
+    <string name="filter_no_amount">Drop SMS with no amount</string>
+    <string name="filter_no_amount_note">A payment SMS always says how much, like Rs.500 or ₹99.</string>
+    <string name="filter_no_transaction_word">Drop SMS with no transaction word</string>
+    <string name="filter_no_transaction_word_note">Keep only SMS that say something like debited, credited, paid, sent or UPI.</string>
+    <string name="filter_not_transaction">Drop OTPs, offers and reminders</string>
+    <string name="filter_not_transaction_note">Also payment requests, balance-only SMS, mandates and failed payments.</string>
+    <string name="filters_note">A change applies to new SMS straight away. To get back messages a filter dropped before, import past SMS again.</string>
+    <string name="test_sms_open_filter">Change this filter</string>
 </resources>
