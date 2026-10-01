@@ -13,6 +13,9 @@ android {
 dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:ui"))
+    // Ignore this sender / messages like this on an SMS no parser read.
+    implementation(project(":sms:ingest"))
+    implementation(project(":sms:parser"))
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.kotlinx.coroutines.core)

@@ -19,6 +19,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -42,6 +43,7 @@ import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.TagInput
 import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.sms.parser.SenderId
 import java.time.Instant
 import java.time.ZoneId
 
@@ -54,6 +56,7 @@ fun ReviewScreen(
     onBack: () -> Unit,
     onAddByHand: (amountPaise: Long?, at: Long, unparsedId: Long) -> Unit,
     onMakeParser: (unparsedId: Long) -> Unit,
+    onIgnoreLikeThis: (unparsedId: Long) -> Unit,
     viewModel: ReviewViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -74,7 +77,9 @@ fun ReviewScreen(
         onMakeParser = { onMakeParser(it.id) },
         onDismiss = viewModel::dismiss,
         onCopy = { context.copyText(it.body) },
-        onOpenIssues = { context.openIssues() }
+        onOpenIssues = { context.openIssues() },
+        onIgnoreSender = viewModel::ignoreSender,
+        onIgnoreLikeThis = { onIgnoreLikeThis(it.id) }
     )
 }
 
@@ -92,9 +97,12 @@ fun ReviewContent(
     onMakeParser: (UnparsedSms) -> Unit = {},
     onDismiss: (UnparsedSms) -> Unit = {},
     onCopy: (UnparsedSms) -> Unit = {},
-    onOpenIssues: () -> Unit = {}
+    onOpenIssues: () -> Unit = {},
+    onIgnoreSender: (UnparsedSms) -> Unit = {},
+    onIgnoreLikeThis: (UnparsedSms) -> Unit = {}
 ) {
     var copied by rememberSaveable { mutableStateOf(false) }
+    var ignoring by remember { mutableStateOf<UnparsedSms?>(null) }
     SubScreen(title = stringResource(R.string.review_title), onBack = onBack) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             val item = queue?.firstOrNull()
@@ -110,7 +118,9 @@ fun ReviewContent(
                     onCopy = {
                         onCopy(sms)
                         copied = true
-                    }
+                    },
+                    onIgnoreSender = { ignoring = sms },
+                    onIgnoreLikeThis = { onIgnoreLikeThis(sms) }
                 )
                 item == null -> EmptyState(
                     icon = painterResource(UiR.drawable.ic_ledger),
@@ -130,6 +140,15 @@ fun ReviewContent(
         }
     }
     if (copied) CopiedDialog(onOpenIssues = onOpenIssues, onClose = { copied = false })
+    ignoring?.let { sms ->
+        // Only business senders reach To review, so the sender always has a header.
+        val header = SenderId.parse(sms.sender)?.header ?: sms.sender
+        IgnoreSenderDialog(
+            header = header,
+            onIgnore = { onIgnoreSender(sms) },
+            onClose = { ignoring = null }
+        )
+    }
 }
 
 @Composable

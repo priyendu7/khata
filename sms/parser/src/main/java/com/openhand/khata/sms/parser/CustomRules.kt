@@ -26,8 +26,9 @@ object CustomRules {
     fun parser(
         custom: List<CompiledRule>,
         builtIn: List<CompiledRule>,
-        filters: SmsFilters = SmsFilters()
-    ): SmsParser = SmsParser(custom + builtIn, filters = filters)
+        filters: SmsFilters = SmsFilters(),
+        ignore: IgnoreRules = IgnoreRules()
+    ): SmsParser = SmsParser(custom + builtIn, filters = filters, ignore = ignore)
 }
 
 sealed interface CodeCheck {

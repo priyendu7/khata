@@ -40,5 +40,18 @@ object KhataMigrations {
         }
     }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+    /** 3 → 4: "ignore this sender" and "ignore messages like this" rules (#88). */
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `ignore_rules` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`kind` TEXT NOT NULL, `header` TEXT NOT NULL, `pattern` TEXT, " +
+                    "`sample` TEXT NOT NULL, `enabled` INTEGER NOT NULL, " +
+                    "`created_at` INTEGER NOT NULL)"
+            )
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 }

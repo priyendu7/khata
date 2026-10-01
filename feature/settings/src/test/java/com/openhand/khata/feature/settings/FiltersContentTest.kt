@@ -7,9 +7,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import com.openhand.khata.core.model.IgnoreKind
+import com.openhand.khata.core.model.SmsIgnoreRule
 import com.openhand.khata.sms.parser.SmsFilters
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -85,5 +88,32 @@ class FiltersContentTest {
             .assertExists()
         compose.onNodeWithText("import past SMS again", substring = true).performScrollTo()
             .assertExists()
+    }
+
+    @Test
+    fun ignoreRulesAreListedWithASwitchAndDelete() {
+        val sender = SmsIgnoreRule(1, IgnoreKind.SENDER, "HDFCBK", null, "Rs.450 spent", true, 2)
+        val like = SmsIgnoreRule(2, IgnoreKind.TEMPLATE, "JIOPAY", "^x$", "Recharge done", false, 1)
+        val switched = mutableListOf<Pair<Long, Boolean>>()
+        val deleted = mutableListOf<Long>()
+        compose.setContent {
+            FiltersContent(
+                onBack = {},
+                filters = SmsFilters(),
+                onChange = { _, _ -> },
+                rules = listOf(sender, like),
+                onRuleEnabled = { rule, on -> switched += rule.id to on },
+                onDeleteRule = { deleted += it.id }
+            )
+        }
+
+        compose.onNodeWithText("Sender HDFCBK").performScrollTo().assertIsOn()
+        compose.onNodeWithText("Like this, from JIOPAY").performScrollTo().assertIsOff()
+            .performClick()
+        compose.onNodeWithText("Recharge done").assertExists()
+        compose.onAllNodesWithContentDescription("Delete")[0].performClick()
+
+        assertEquals(listOf(2L to true), switched)
+        assertEquals(listOf(1L), deleted)
     }
 }

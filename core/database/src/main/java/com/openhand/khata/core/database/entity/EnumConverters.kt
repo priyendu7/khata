@@ -3,6 +3,7 @@ package com.openhand.khata.core.database.entity
 import androidx.room.TypeConverter
 import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.IgnoreKind
 import com.openhand.khata.core.model.TransactionSource
 
 /**
@@ -50,4 +51,14 @@ class EnumConverters {
         fromAccountType(it) ==
             value
     }
+
+    @TypeConverter
+    fun fromIgnoreKind(value: IgnoreKind): String = when (value) {
+        IgnoreKind.SENDER -> "sender"
+        IgnoreKind.TEMPLATE -> "template"
+    }
+
+    @TypeConverter
+    fun toIgnoreKind(value: String): IgnoreKind =
+        IgnoreKind.entries.single { fromIgnoreKind(it) == value }
 }

@@ -57,7 +57,7 @@ enum class FilterSwitch(
     );
 
     companion object {
-        /** The switch that dropped an SMS for [reason]; null for phone numbers, which have none. */
+        /** The switch that dropped an SMS for [reason]; null for phone numbers and ignore rules. */
         fun of(reason: FilterReason): FilterSwitch? = when (reason) {
             FilterReason.PhoneNumber -> null
             FilterReason.Promotional -> PROMOTIONAL
@@ -66,6 +66,8 @@ enum class FilterSwitch(
             FilterReason.NoAmount -> NO_AMOUNT
             FilterReason.NoTransactionWord -> NO_TRANSACTION_WORD
             is FilterReason.NotTransaction -> NOT_TRANSACTION
+            // Ignore rules are listed below the switches, not switches themselves.
+            is FilterReason.IgnoredSender, is FilterReason.IgnoredLikeThis -> null
         }
     }
 }

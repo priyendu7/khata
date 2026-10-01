@@ -217,4 +217,17 @@
     <string name="filter_not_transaction_note">पैसे की माँग, सिर्फ़ बैलेंस वाले SMS, मैंडेट और नाकाम भुगतान भी।</string>
     <string name="filters_note">बदलाव नए SMS पर तुरंत लागू होता है। जो मैसेज पहले किसी फ़िल्टर ने छाँटे थे, उन्हें वापस लाने के लिए पुराने SMS फिर से इम्पोर्ट करें।</string>
     <string name="test_sms_open_filter">यह फ़िल्टर बदलें</string>
+    <string name="filters_ignore_rules">अनदेखा करने के नियम</string>
+    <string name="filters_no_ignore_rules">अभी कोई नहीं। समीक्षा में, जिस SMS को कोई पार्सर नहीं पढ़ता, उसे भेजने वाले या उसकी तरह के हिसाब से अनदेखा किया जा सकता है।</string>
+    <string name="filters_ignored_sender">भेजने वाला %1$s</string>
+    <string name="filters_ignored_like">%1$s से ऐसे मैसेज</string>
+    <string name="filter_reason_ignored_sender">आपने यह भेजने वाला अनदेखा करना चुना है।</string>
+    <string name="filter_reason_ignored_like_this">यह उस तरह का मैसेज है जिसे आपने अनदेखा करना चुना है।</string>
+    <string name="ignore_like_title">ऐसे मैसेज अनदेखा करें</string>
+    <string name="ignore_like_intro">उन शब्दों पर टैप करें जो हर मैसेज में बदलते हैं, जैसे कोई नाम या प्लान। नंबर पहले से बदलते माने जाते हैं। इस भेजने वाले के जिन मैसेज में बाक़ी सब यही हो, वे अनदेखा होंगे, जब तक कोई पार्सर उन्हें न पढ़े।</string>
+    <string name="ignore_like_save">ऐसे मैसेज अनदेखा करें</string>
+    <plurals name="ignore_like_matches">
+        <item quantity="one">समीक्षा में रुके %1$d SMS से मेल खाता है। उसे हटा दिया जाएगा।</item>
+        <item quantity="other">समीक्षा में रुके %1$d SMS से मेल खाता है। उन्हें हटा दिया जाएगा।</item>
+    </plurals>
 </resources>

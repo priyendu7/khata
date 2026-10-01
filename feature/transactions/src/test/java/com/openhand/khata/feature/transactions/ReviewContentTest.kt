@@ -1,5 +1,9 @@
 package com.openhand.khata.feature.transactions
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -9,6 +13,7 @@ import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.ReviewItem
 import com.openhand.khata.core.model.UnparsedSms
+import com.openhand.khata.sms.parser.IgnoreTemplate
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -43,6 +48,7 @@ class ReviewContentTest {
     )
 
     private val unparsedActions = mutableListOf<String>()
+    private val ignored = mutableListOf<String>()
     private val sms = UnparsedSms(
         id = 3,
         sender = "JM-KOTAKB-S",
@@ -58,6 +64,7 @@ class ReviewContentTest {
                 onDismiss = { unparsedActions += "dismiss ${it.id}" },
                 onCopy = { unparsedActions += "copy ${it.id}" },
                 onOpenIssues = { unparsedActions += "github" },
+                onIgnoreSender = { ignored += "sender ${it.id}" },
                 onBack = {},
                 queue = queue,
                 categories = categories,
@@ -138,5 +145,52 @@ class ReviewContentTest {
 
         assertEquals(listOf("add 3", "dismiss 3", "copy 3", "github"), unparsedActions)
         compose.onNodeWithText("SMS copied").assertDoesNotExist()
+    }
+
+    @Test
+    fun ignoringASenderAsksFirst() {
+        show(emptyList(), listOf(sms))
+
+        compose.onNodeWithText("Ignore this sender").performScrollTo().performClick()
+        compose.onNodeWithText("Ignore all SMS from KOTAKB?").assertExists()
+        compose.onNodeWithText("Cancel").performClick()
+        assertEquals(emptyList<String>(), ignored)
+
+        compose.onNodeWithText("Ignore this sender").performScrollTo().performClick()
+        compose.onNodeWithText("Ignore").performClick()
+        assertEquals(listOf("sender 3"), ignored)
+    }
+
+    /** The host saves the template as Ignore messages like this does with nothing tapped. */
+    @Test
+    fun ignoringLikeThisTakesTheCardAndItsMatchesOutOfToReview() {
+        val sameKind = sms.copy(id = 4, body = "Rs.500 withdrawn at ATM using card XX1111.")
+        val other = sms.copy(id = 5, body = "Rs.20 cashback credited to your account.")
+        compose.setContent {
+            var waiting by remember { mutableStateOf(listOf(sms, sameKind, other)) }
+            ReviewContent(
+                onBack = {},
+                queue = emptyList(),
+                categories = categories,
+                tagSuggestions = emptyList(),
+                onTagQueryChange = {},
+                onSave = { _, _, _, _ -> },
+                onSkip = {},
+                unparsed = waiting,
+                onIgnoreLikeThis = { from ->
+                    val template = IgnoreTemplate.compile(
+                        IgnoreTemplate.pattern(from.body, emptyList())
+                    )!!
+                    waiting = waiting.filterNot { template.matches(it.body) }
+                }
+            )
+        }
+        compose.onNodeWithText("3 left").assertExists()
+
+        compose.onNodeWithText("Ignore messages like this").performScrollTo().performClick()
+
+        compose.onNodeWithText("1 left").assertExists()
+        compose.onNodeWithText(sms.body).assertDoesNotExist()
+        compose.onNodeWithText(other.body).assertExists()
     }
 }

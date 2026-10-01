@@ -9,6 +9,7 @@ import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.ReviewItem
 import com.openhand.khata.core.model.UnparsedSms
+import com.openhand.khata.sms.ingest.SmsIgnoring
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,7 +30,8 @@ class ReviewViewModel @Inject constructor(
     private val review: ReviewRepository,
     private val unparsedSms: UnparsedSmsRepository,
     categories: CategoryRepository,
-    private val tags: TagRepository
+    private val tags: TagRepository,
+    private val ignoring: SmsIgnoring
 ) : ViewModel() {
     /** Waiting transactions, newest first; null until loaded. */
     val queue: StateFlow<List<ReviewItem>?> = review.observeQueue()
@@ -67,6 +69,11 @@ class ReviewViewModel @Inject constructor(
     /** Deletes it; nothing is kept. */
     fun dismiss(sms: UnparsedSms) {
         viewModelScope.launch { unparsedSms.delete(sms.id) }
+    }
+
+    /** Ignores every SMS from its sender, and removes the ones waiting here. */
+    fun ignoreSender(sms: UnparsedSms) {
+        viewModelScope.launch { ignoring.ignoreSender(sms) }
     }
 
     private companion object {

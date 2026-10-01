@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.UnparsedSms
+import com.openhand.khata.core.ui.R as UiR
 import java.time.Instant
 import java.time.ZoneId
 
@@ -40,7 +41,9 @@ internal fun UnparsedCard(
     onAddByHand: () -> Unit,
     onMakeParser: () -> Unit,
     onDismiss: () -> Unit,
-    onCopy: () -> Unit
+    onCopy: () -> Unit,
+    onIgnoreSender: () -> Unit,
+    onIgnoreLikeThis: () -> Unit
 ) {
     val at = Instant.ofEpochMilli(sms.receivedAt).atZone(ZoneId.systemDefault())
     Column(
@@ -77,9 +80,34 @@ internal fun UnparsedCard(
                 Text(stringResource(R.string.review_make_parser))
             }
             OutlinedButton(onClick = onDismiss) { Text(stringResource(R.string.review_dismiss)) }
+            OutlinedButton(onClick = onIgnoreLikeThis) {
+                Text(stringResource(R.string.review_ignore_like_this))
+            }
+            OutlinedButton(onClick = onIgnoreSender) {
+                Text(stringResource(R.string.review_ignore_sender))
+            }
             TextButton(onClick = onCopy) { Text(stringResource(R.string.review_copy)) }
         }
     }
+}
+
+/** "Ignore all SMS from HDFCBK? Waiting ones are removed." */
+@Composable
+internal fun IgnoreSenderDialog(header: String, onIgnore: () -> Unit, onClose: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text(stringResource(R.string.review_ignore_sender_title, header)) },
+        text = { Text(stringResource(R.string.review_ignore_sender_body)) },
+        confirmButton = {
+            TextButton(onClick = {
+                onIgnore()
+                onClose()
+            }) { Text(stringResource(R.string.review_ignore_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onClose) { Text(stringResource(UiR.string.cancel)) }
+        }
+    )
 }
 
 /** After copying: blank out personal details, then file it on GitHub yourself. */

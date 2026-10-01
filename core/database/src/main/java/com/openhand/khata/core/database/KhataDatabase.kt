@@ -36,9 +36,10 @@ import com.openhand.khata.core.database.entity.TransactionTagEntity
         TransactionTagEntity::class,
         MetadataEntity::class,
         UnparsedSmsEntity::class,
-        CustomParserEntity::class
+        CustomParserEntity::class,
+        IgnoreRuleEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(EnumConverters::class)
@@ -64,6 +65,8 @@ abstract class KhataDatabase : RoomDatabase() {
     abstract fun unparsedSmsDao(): UnparsedSmsDao
 
     abstract fun customParserDao(): CustomParserDao
+
+    abstract fun ignoreRuleDao(): IgnoreRuleDao
 
     companion object {
         const val NAME = "khata.db"

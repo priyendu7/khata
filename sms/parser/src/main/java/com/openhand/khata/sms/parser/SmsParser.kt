@@ -29,13 +29,19 @@ import java.util.Locale
 class SmsParser(
     private val rules: List<CompiledRule>,
     private val zone: ZoneId = ZoneId.systemDefault(),
-    val filters: SmsFilters = SmsFilters()
+    val filters: SmsFilters = SmsFilters(),
+    private val ignore: IgnoreRules = IgnoreRules()
 ) {
     /**
      * Whether the sender filters let [sender] through. SMS import checks this first, so it can
      * skip everyone else's messages without reading their text.
      */
-    fun accepts(sender: String): Boolean = filters.senderReason(sender) == null
+    fun accepts(sender: String): Boolean = senderReason(sender) == null
+
+    /** The sender filters, then the senders the user ignored. */
+    private fun senderReason(sender: String): FilterReason? = filters.senderReason(sender)
+        ?: ignore.senderRule(requireNotNull(SenderId.parse(sender)).header)
+            ?.let(FilterReason::IgnoredSender)
 
     /** The bank the first rule for [sender] names, or null for a sender the rules don't know. */
     fun bankOf(sender: String): String? = SenderId.parse(sender)?.let { id ->
@@ -56,9 +62,7 @@ class SmsParser(
      * through here, so the two can't disagree.
      */
     fun explain(sender: String, body: String, receivedAt: Long): Explanation {
-        filters.senderReason(sender)?.let {
-            return Explanation(ParseResult.Filtered(it), emptyList())
-        }
+        senderReason(sender)?.let { return Explanation(ParseResult.Filtered(it), emptyList()) }
         val header = requireNotNull(SenderId.parse(sender)).header
         val candidates = rules.filter { header in it.headers }
         val tried = mutableListOf<String>()
@@ -66,7 +70,7 @@ class SmsParser(
             tried += rule.rule.id
             tryRule(rule, body, receivedAt)
         }
-        val dropped = if (parsed == null) filters.contentReason(body) else null
+        val dropped = if (parsed == null) contentReason(header, body) else null
         val result = when {
             parsed != null -> ParseResult.Parsed(parsed)
             dropped != null -> ParseResult.Filtered(dropped)
@@ -74,6 +78,11 @@ class SmsParser(
         }
         return Explanation(result, tried)
     }
+
+    /** The content filters, then the user's "ignore messages like this" rules. */
+    private fun contentReason(header: String, body: String): FilterReason? =
+        filters.contentReason(body)
+            ?: ignore.likeThisRule(header, body)?.let(FilterReason::IgnoredLikeThis)
 
     private fun tryRule(compiled: CompiledRule, body: String, receivedAt: Long): ParsedSms? {
         val match = compiled.pattern.matcher(body).takeIf(Matcher::find) ?: return null

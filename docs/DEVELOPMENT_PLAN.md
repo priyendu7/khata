@@ -141,7 +141,7 @@ This phase is for using the app day to day, testing it, and acting on what comes
 
 - [ ] Read every business sender; sender filters before parsing, content filters only on what no rule read (#86)
 - [x] Settings > SMS import > Filters: switch each filter on or off (#87)
-- [ ] Ignore this sender, and ignore messages like this (#88)
+- [x] Ignore this sender, and ignore messages like this (#88)
 - [ ] Review inbox: unreadable SMS grouped by sender (#89)
 - [x] Test a message: see what the app would do with an SMS (#90)
 

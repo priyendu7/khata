@@ -60,6 +60,12 @@ sealed interface FilterReason {
 
     data object NoTransactionWord : FilterReason
 
+    /** A sender the user chose to ignore, by ignore rule [ruleId]. Checked before reading. */
+    data class IgnoredSender(val ruleId: Long) : FilterReason
+
+    /** Matched the user's "ignore messages like this" rule [ruleId]. */
+    data class IgnoredLikeThis(val ruleId: Long) : FilterReason
+
     /** The SMS matched [group]'s [words] (as written in the SMS). */
     data class NotTransaction(val group: NotTransactionGroup, val words: List<String>) :
         FilterReason

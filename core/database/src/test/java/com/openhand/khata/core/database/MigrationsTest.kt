@@ -4,6 +4,7 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -80,6 +81,41 @@ class MigrationsTest {
                 it.moveToFirst()
                 assertEquals("hdfc-upi", it.getString(0))
                 assertEquals(1, it.getInt(1))
+            }
+        }
+    }
+
+    @Test
+    fun version3To4AddsIgnoreRulesAndKeepsCustomParsersAndUnparsedSms() {
+        helper.createDatabase(dbName, 3).use { db ->
+            db.execSQL(
+                "INSERT INTO unparsed_sms (sender, body, received_at) " +
+                    "VALUES ('VM-HDFCBK-S', 'Rs.450 spent on card', 1790000000000)"
+            )
+            db.execSQL(
+                "INSERT INTO custom_parsers (rule_id, bank, code, enabled, added_at) " +
+                    "VALUES ('hdfc-upi', 'HDFC', 'khata1:e30', 1, 1790000000000)"
+            )
+        }
+
+        helper.runMigrationsAndValidate(dbName, 4, true, *KhataMigrations.ALL).use { db ->
+            db.query("SELECT body FROM unparsed_sms").use {
+                it.moveToFirst()
+                assertEquals("Rs.450 spent on card", it.getString(0))
+            }
+            db.query("SELECT rule_id FROM custom_parsers").use {
+                it.moveToFirst()
+                assertEquals("hdfc-upi", it.getString(0))
+            }
+            db.execSQL(
+                "INSERT INTO ignore_rules (kind, header, pattern, sample, enabled, created_at) " +
+                    "VALUES ('sender', 'HDFCBK', NULL, 'Rs.450 spent on card', 1, 1790000000000)"
+            )
+            db.query("SELECT kind, header, pattern FROM ignore_rules").use {
+                it.moveToFirst()
+                assertEquals("sender", it.getString(0))
+                assertEquals("HDFCBK", it.getString(1))
+                assertTrue(it.isNull(2))
             }
         }
     }
