@@ -46,6 +46,7 @@ class SmsImportContentTest {
                 onOpenAppSettings = { openedSettings = true },
                 onImport = { imports += it },
                 onCancel = { cancelled = true },
+                onFilters = {},
                 onTestMessage = {},
                 today = LocalDate.of(2026, 9, 29)
             )

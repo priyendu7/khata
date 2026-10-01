@@ -54,6 +54,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun SmsImportScreen(
     onBack: () -> Unit,
+    onFilters: () -> Unit,
     onTestMessage: () -> Unit,
     viewModel: SmsImportViewModel = hiltViewModel()
 ) {
@@ -108,6 +109,7 @@ fun SmsImportScreen(
         onOpenAppSettings = { context.openAppSettings() },
         onImport = viewModel::startImport,
         onCancel = viewModel::cancelImport,
+        onFilters = onFilters,
         onTestMessage = onTestMessage
     )
 }
@@ -126,6 +128,7 @@ fun SmsImportContent(
     onOpenAppSettings: () -> Unit,
     onImport: (LocalDate) -> Unit,
     onCancel: () -> Unit,
+    onFilters: () -> Unit,
     onTestMessage: () -> Unit,
     today: LocalDate = LocalDate.now()
 ) {
@@ -165,8 +168,13 @@ fun SmsImportContent(
                 HorizontalDivider(Modifier.padding(top = 16.dp))
                 PastSmsImport(progress, lastScan, onImport, onCancel, today)
             }
-            // Works with SMS import off too: it reads only what's pasted.
+            // Both work with SMS import off too; Test a message reads only what's pasted.
             HorizontalDivider(Modifier.padding(top = 8.dp))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.sms_filters_entry)) },
+                supportingContent = { Text(stringResource(R.string.sms_filters_entry_note)) },
+                modifier = Modifier.clickable(onClick = onFilters)
+            )
             ListItem(
                 headlineContent = { Text(stringResource(R.string.sms_test_entry)) },
                 supportingContent = { Text(stringResource(R.string.sms_test_entry_note)) },

@@ -37,6 +37,8 @@ import com.openhand.khata.feature.insights.InsightsScreen
 import com.openhand.khata.feature.lock.LockSettingsSection
 import com.openhand.khata.feature.payees.PayeesScreen
 import com.openhand.khata.feature.settings.AddParserScreen
+import com.openhand.khata.feature.settings.FILTERS_SHOW_ARG
+import com.openhand.khata.feature.settings.FiltersScreen
 import com.openhand.khata.feature.settings.MAKE_FROM_BODY_ARG
 import com.openhand.khata.feature.settings.MAKE_FROM_SENDER_ARG
 import com.openhand.khata.feature.settings.MAKE_FROM_UNPARSED_ARG
@@ -120,15 +122,27 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         composable(Route.SMS_IMPORT) {
             SmsImportScreen(
                 onBack = back,
+                onFilters = { navController.navigate(Route.filters()) },
                 onTestMessage = { navController.navigate(Route.TEST_MESSAGE) }
             )
         }
+        composable(
+            Route.FILTERS,
+            arguments = listOf(
+                navArgument(FILTERS_SHOW_ARG) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { FiltersScreen(onBack = back) }
         composable(Route.TEST_MESSAGE) {
             TestMessageScreen(
                 onBack = back,
                 onMakeParser = { sender, body ->
                     navController.navigate(Route.makeParser(sender, body))
-                }
+                },
+                onOpenFilter = { navController.navigate(Route.filters(it.name)) }
             )
         }
         composable(Route.PARSERS) {
@@ -184,6 +198,11 @@ private object Route {
     const val IMPORT = "import"
     const val SMS_IMPORT = "sms_import"
     const val TEST_MESSAGE = "sms_import/test"
+    const val FILTERS = "sms_import/filters?$FILTERS_SHOW_ARG={$FILTERS_SHOW_ARG}"
+
+    /** Filters, with [show]'s switch brought into view and marked. */
+    fun filters(show: String? = null) =
+        "sms_import/filters" + (show?.let { "?$FILTERS_SHOW_ARG=$it" } ?: "")
     const val PARSERS = "parsers"
     const val ADD_PARSER = "parsers/add"
     const val REVIEW = "review"

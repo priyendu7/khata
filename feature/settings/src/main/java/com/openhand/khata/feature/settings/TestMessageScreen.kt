@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +47,7 @@ import java.time.format.FormatStyle
 fun TestMessageScreen(
     onBack: () -> Unit,
     onMakeParser: (sender: String, body: String) -> Unit,
+    onOpenFilter: (FilterSwitch) -> Unit,
     viewModel: TestMessageViewModel = hiltViewModel()
 ) {
     val answer by viewModel.answer.collectAsStateWithLifecycle()
@@ -53,7 +55,8 @@ fun TestMessageScreen(
         onBack = onBack,
         answer = answer,
         onTest = { sender, body -> viewModel.test(sender, body) },
-        onMakeParser = onMakeParser
+        onMakeParser = onMakeParser,
+        onOpenFilter = onOpenFilter
     )
 }
 
@@ -62,7 +65,8 @@ fun TestMessageContent(
     onBack: () -> Unit,
     answer: SmsExplanation?,
     onTest: (sender: String, body: String) -> Unit,
-    onMakeParser: (sender: String, body: String) -> Unit
+    onMakeParser: (sender: String, body: String) -> Unit,
+    onOpenFilter: (FilterSwitch) -> Unit
 ) {
     var sender by rememberSaveable { mutableStateOf("") }
     var body by rememberSaveable { mutableStateOf("") }
@@ -110,14 +114,22 @@ fun TestMessageContent(
             }
             val testedSms = tested
             if (answer != null && testedSms != null) {
-                Answer(answer) { onMakeParser(testedSms.first.trim(), testedSms.second) }
+                Answer(
+                    answer,
+                    onMakeParser = { onMakeParser(testedSms.first.trim(), testedSms.second) },
+                    onOpenFilter = onOpenFilter
+                )
             }
         }
     }
 }
 
 @Composable
-private fun Answer(answer: SmsExplanation, onMakeParser: () -> Unit) {
+private fun Answer(
+    answer: SmsExplanation,
+    onMakeParser: () -> Unit,
+    onOpenFilter: (FilterSwitch) -> Unit
+) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             val result = answer.result
@@ -130,6 +142,11 @@ private fun Answer(answer: SmsExplanation, onMakeParser: () -> Unit) {
                     }
                     Title(stringResource(title))
                     Text(filterReasonText(result.reason))
+                    FilterSwitch.of(result.reason)?.let { switch ->
+                        TextButton(onClick = { onOpenFilter(switch) }) {
+                            Text(stringResource(R.string.test_sms_open_filter))
+                        }
+                    }
                 }
                 is ParseResult.Parsed -> Parsed(
                     result.sms,
