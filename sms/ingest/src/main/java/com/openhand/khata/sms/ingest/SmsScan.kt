@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.map
 class SmsScan @Inject constructor(@ApplicationContext private val context: Context) {
     private val workManager get() = WorkManager.getInstance(context)
 
-    /** Imports bank SMS received since [since] (epoch millis). Does nothing if one is running. */
+    /** Imports SMS received since [since] (epoch millis). Does nothing if one is running. */
     fun start(since: Long) {
         val request = OneTimeWorkRequestBuilder<SmsScanWorker>()
             .setInputData(workDataOf(SmsScanWorker.SINCE to since))

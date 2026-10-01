@@ -23,8 +23,11 @@ object CustomRules {
         codes.mapNotNull { (check(it) as? CodeCheck.Valid)?.rule }
 
     /** The engine's order: custom rules first, then built-in ones. */
-    fun parser(custom: List<CompiledRule>, builtIn: List<CompiledRule>): SmsParser =
-        SmsParser(custom + builtIn)
+    fun parser(
+        custom: List<CompiledRule>,
+        builtIn: List<CompiledRule>,
+        filters: SmsFilters = SmsFilters()
+    ): SmsParser = SmsParser(custom + builtIn, filters = filters)
 }
 
 sealed interface CodeCheck {

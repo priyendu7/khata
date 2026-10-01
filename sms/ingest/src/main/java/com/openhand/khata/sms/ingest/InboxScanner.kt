@@ -3,7 +3,7 @@ package com.openhand.khata.sms.ingest
 import javax.inject.Inject
 
 /**
- * Imports past bank SMS from the inbox (PRD feature 7): every one since the chosen date goes
+ * Imports past SMS from the inbox (PRD feature 7): every one since the chosen date goes
  * through [SmsIngestor], so running it again only adds what's new.
  */
 class InboxScanner @Inject constructor(
@@ -17,7 +17,7 @@ class InboxScanner @Inject constructor(
         onProgress: suspend (done: Int, total: Int) -> Unit = { _, _ -> }
     ): ScanSummary {
         val parser = ingestor.parser()
-        val messages = inbox.bankMessages(since, parser::isKnownSender)
+        val messages = inbox.businessMessages(since, parser::accepts)
         val counts = IngestOutcome.entries.associateWithTo(mutableMapOf()) { 0 }
         onProgress(0, messages.size)
         messages.forEachIndexed { index, message ->
@@ -33,7 +33,8 @@ class InboxScanner @Inject constructor(
             recorded = counts.getValue(IngestOutcome.RECORDED) + forReview,
             toReview = forReview,
             alreadyThere = counts.getValue(IngestOutcome.ALREADY_THERE),
-            unreadable = counts.getValue(IngestOutcome.UNREADABLE)
+            unreadable = counts.getValue(IngestOutcome.UNREADABLE),
+            filtered = counts.getValue(IngestOutcome.FILTERED)
         )
     }
 }

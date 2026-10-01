@@ -10,9 +10,9 @@ import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 /**
- * A bank SMS with an amount that no parser rule could read (PRD feature 7). It waits in the
- * review inbox with its raw text until the user adds it by hand or dismisses it; dismissed ones
- * are deleted. Only SMS from known bank senders are ever stored here.
+ * An SMS that got past the filters but no parser rule could read (PRD feature 7). It waits in
+ * the review inbox with its raw text until the user adds it by hand or dismisses it; dismissed
+ * ones are deleted. Only SMS from business senders are ever stored here, never from people.
  */
 @Entity(tableName = "unparsed_sms", indices = [Index("received_at")])
 data class UnparsedSmsEntity(

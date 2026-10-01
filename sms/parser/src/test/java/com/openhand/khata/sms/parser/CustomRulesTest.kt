@@ -140,7 +140,7 @@ class CustomRulesTest {
             BuiltInRules.load()
         )
 
-        assertTrue(parser.isKnownSender("AX-OTHRBK-S"))
+        assertEquals("Other", parser.bankOf("AX-OTHRBK-S"))
         val parsed = (parser.parse("JM-KOTAKB-S", atmSms, AT) as ParseResult.Parsed).sms
         assertEquals(200_000L, parsed.amountPaise)
         assertEquals("5678", parsed.accountLast4)

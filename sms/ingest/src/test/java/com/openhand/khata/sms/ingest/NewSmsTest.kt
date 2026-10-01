@@ -12,6 +12,7 @@ import com.openhand.khata.core.data.SmsImporter
 import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
+import com.openhand.khata.sms.parser.SmsFilters
 import dagger.Lazy
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -55,13 +56,10 @@ class NewSmsTest {
                 context,
                 settings,
                 SmsIngestor(
-                    SmsImporter(
-                        Lazy {
-                            db
-                        }
-                    ),
+                    SmsImporter(Lazy { db }),
                     UnparsedSmsRepository(Lazy { db }),
-                    CustomParserRepository(Lazy { db })
+                    CustomParserRepository(Lazy { db }),
+                    settings
                 )
             )
     }
@@ -128,6 +126,18 @@ class NewSmsTest {
             handler.handle(listOf(SmsPart("+919876543210", "Rs.500 for dinner", at)))
         )
         assertEquals(0, saved().size)
+    }
+
+    @Test
+    fun aTransactionalSenderIsDroppedUnlessOnlyServiceIsOff() = runTest {
+        allowSms()
+        settings.setEnabled(true)
+        val fromT = parts.map { it.copy(sender = "JM-KOTAKB-T") }
+
+        assertEquals(emptyList<IngestOutcome>(), handler.handle(fromT))
+
+        settings.setFilters(SmsFilters(onlyService = false))
+        assertEquals(listOf(IngestOutcome.RECORDED_FOR_REVIEW), handler.handle(fromT))
     }
 
     @Test

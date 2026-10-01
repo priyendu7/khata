@@ -29,7 +29,10 @@ import com.openhand.khata.core.model.UnparsedSms
 import java.time.Instant
 import java.time.ZoneId
 
-/** A bank SMS no rule could read (PRD feature 7): its text, and what to do with it. */
+/**
+ * An SMS no rule could read (PRD feature 7): its sender, its text, and what to do with it. The
+ * sender is shown rather than a bank, since a business no rule knows has none.
+ */
 @Composable
 internal fun UnparsedCard(
     sms: UnparsedSms,

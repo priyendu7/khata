@@ -1,5 +1,5 @@
 {
-  "description": "Bank SMS that no rule read: dropped if clearly not a transaction (OTP, collect request, reminder, balance, mandate, offer, failed payment, no amount), otherwise kept for review. The filter only runs after the rules, so it never drops a matched SMS.",
+  "description": "SMS that no rule read go through the content filters: dropped with a reason if clearly not a transaction (a word group such as OTP, collect request, reminder, balance, mandate, offer or failed payment; no amount; no transaction word), otherwise kept for review. The filters only run after the rules, so they never drop a matched SMS. A matched word group is reported before a missing amount or word.",
   "zone": "Asia/Kolkata",
   "rules": [
     {
@@ -39,7 +39,9 @@
       "body": "123456 is the OTP for your transaction of Rs.1,499.00 at AMAZON. Valid for 5 mins. Do not share.",
       "receivedAt": "2026-09-21T10:00:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "not_transaction",
+        "group": "otp"
       }
     },
     {
@@ -48,7 +50,9 @@
       "body": "Your one time password for Rs.500 payment is 4821.",
       "receivedAt": "2026-09-21T10:00:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "not_transaction",
+        "group": "otp"
       }
     },
     {
@@ -57,7 +61,9 @@
       "body": "SHOPNAME has requested money of Rs.300 from you on UPI. Ignore if not initiated by you.",
       "receivedAt": "2026-09-21T10:00:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "not_transaction",
+        "group": "collect_request"
       }
     },
     {
@@ -66,7 +72,9 @@
       "body": "Your credit card bill of Rs.12,400 is due on 05-10-26. Minimum amount due Rs.620.",
       "receivedAt": "2026-09-21T10:00:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "not_transaction",
+        "group": "reminder"
       }
     },
     {
@@ -75,7 +83,9 @@
       "body": "Your Avl Bal in A/c XX1234 as on 21-09-26 is Rs.5,430.25.",
       "receivedAt": "2026-09-21T10:00:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "not_transaction",
+        "group": "balance"
       }
     },
     {
@@ -84,7 +94,9 @@
       "body": "E-mandate for Rs.999 towards STREAMING SERVICE has been registered on your A/c XX1234.",
       "receivedAt": "2026-09-21T10:00:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "not_transaction",
+        "group": "mandate"
       }
     },
     {
@@ -93,7 +105,9 @@
       "body": "You are pre-approved for a personal loan of up to Rs.5,00,000. Apply now.",
       "receivedAt": "2026-09-21T10:00:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "not_transaction",
+        "group": "offer"
       }
     },
     {
@@ -102,7 +116,9 @@
       "body": "Payment of Rs.450 to FOOD APP failed. Any amount debited will be refunded",
       "receivedAt": "2026-09-21T10:00:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "not_transaction",
+        "group": "failed"
       }
     },
     {
@@ -111,7 +127,9 @@
       "body": "Transaction of Rs.2,000 on card XX5678 was declined.",
       "receivedAt": "2026-09-21T10:00:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "not_transaction",
+        "group": "failed"
       }
     },
     {
@@ -130,13 +148,153 @@
       "body": "Biometric authentication is enabled on your Test Bank app.",
       "receivedAt": "2026-09-21T10:00:00+05:30",
       "expect": {
-        "result": "not_transaction"
+        "result": "filtered",
+        "reason": "no_amount"
       }
     },
     {
       "name": "an unknown format with an amount goes to review",
       "sender": "AX-TESTBK-S",
       "body": "Rs.1,200 withdrawn from ATM using card XX5678.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "unparsed",
+        "bank": "Test Bank"
+      }
+    },
+    {
+      "name": "a word group switched off falls through to the other checks",
+      "sender": "AX-TESTBK-S",
+      "body": "123456 is the OTP for your transaction of Rs.1,499.00 at AMAZON. Valid for 5 mins. Do not share.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "filters": {
+        "notTransaction": false
+      },
+      "expect": {
+        "result": "filtered",
+        "reason": "no_transaction_word"
+      }
+    },
+    {
+      "name": "no amount switched off: a notice with a transaction word goes to review",
+      "sender": "AX-TESTBK-S",
+      "body": "Your UPI ID has been linked to A/c XX1234.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "filters": {
+        "noAmount": false
+      },
+      "expect": {
+        "result": "unparsed",
+        "bank": "Test Bank"
+      }
+    },
+    {
+      "name": "no transaction word",
+      "sender": "AX-TESTBK-S",
+      "body": "Your order of Rs.499 is out for delivery.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "filtered",
+        "reason": "no_transaction_word"
+      }
+    },
+    {
+      "name": "no transaction word switched off",
+      "sender": "AX-TESTBK-S",
+      "body": "Your order of Rs.499 is out for delivery.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "filters": {
+        "noTransactionWord": false
+      },
+      "expect": {
+        "result": "unparsed",
+        "bank": "Test Bank"
+      }
+    },
+    {
+      "name": "only left-out words: pay",
+      "sender": "AX-TESTBK-S",
+      "body": "Pay Rs.499 now to keep your plan running.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "filtered",
+        "reason": "no_transaction_word"
+      }
+    },
+    {
+      "name": "word start: debit matches debited",
+      "sender": "AX-TESTBK-S",
+      "body": "Rs.120 debited from A/c XX1234 at METRO.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "unparsed",
+        "bank": "Test Bank"
+      }
+    },
+    {
+      "name": "money coming in",
+      "sender": "AX-TESTBK-S",
+      "body": "You have received Rs.5,000 in A/c XX1234 from A FRIEND.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "unparsed",
+        "bank": "Test Bank"
+      }
+    },
+    {
+      "name": "payment method, whole word",
+      "sender": "AX-TESTBK-S",
+      "body": "Rs.75 to CHAI POINT via UPI. Ref 123456789012.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "unparsed",
+        "bank": "Test Bank"
+      }
+    },
+    {
+      "name": "Dr. is a whole word",
+      "sender": "AX-TESTBK-S",
+      "body": "A/c XX1234 Dr. with Rs.300 at SHOP.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "unparsed",
+        "bank": "Test Bank"
+      }
+    },
+    {
+      "name": "dr inside address is not",
+      "sender": "AX-TESTBK-S",
+      "body": "Rs.300 order shipped to your address.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "filtered",
+        "reason": "no_transaction_word"
+      }
+    },
+    {
+      "name": "Cr is a whole word",
+      "sender": "AX-TESTBK-S",
+      "body": "A/c XX1234 Cr with Rs.300 from SHOP.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "unparsed",
+        "bank": "Test Bank"
+      }
+    },
+    {
+      "name": "cr inside crore is not",
+      "sender": "AX-TESTBK-S",
+      "body": "Win prizes worth Rs.1 crore this festive season.",
+      "receivedAt": "2026-09-21T10:00:00+05:30",
+      "expect": {
+        "result": "filtered",
+        "reason": "no_transaction_word"
+      }
+    },
+    {
+      "name": "Hindi transaction word",
+      "sender": "AX-TESTBK-S",
+      "body": "आपके खाते XX1234 में Rs.500 जमा किए गए हैं।",
       "receivedAt": "2026-09-21T10:00:00+05:30",
       "expect": {
         "result": "unparsed",

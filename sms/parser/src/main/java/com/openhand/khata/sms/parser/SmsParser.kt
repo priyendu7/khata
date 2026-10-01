@@ -28,16 +28,14 @@ import java.util.Locale
  */
 class SmsParser(
     private val rules: List<CompiledRule>,
-    private val zone: ZoneId = ZoneId.systemDefault()
+    private val zone: ZoneId = ZoneId.systemDefault(),
+    val filters: SmsFilters = SmsFilters()
 ) {
-    private val knownHeaders: Set<String> = rules.flatMapTo(mutableSetOf()) { it.headers }
-
     /**
-     * Whether [sender] is a bank the rules know. SMS import checks this first, so it can skip
-     * everyone else's messages without reading their text.
+     * Whether the sender filters let [sender] through. SMS import checks this first, so it can
+     * skip everyone else's messages without reading their text.
      */
-    fun isKnownSender(sender: String): Boolean =
-        SenderId.parse(sender)?.let { it.header in knownHeaders && !it.promotional } == true
+    fun accepts(sender: String): Boolean = filters.senderReason(sender) == null
 
     /** The bank the first rule for [sender] names, or null for a sender the rules don't know. */
     fun bankOf(sender: String): String? = SenderId.parse(sender)?.let { id ->
@@ -45,25 +43,21 @@ class SmsParser(
     }
 
     /**
+     * Sender filters, then the rules for the sender, then content filters on what no rule read.
+     *
      * @param receivedAt when the phone received the SMS, epoch millis. Used as the transaction
      *   time unless the SMS has a date on a different day.
      */
     fun parse(sender: String, body: String, receivedAt: Long): ParseResult {
-        val id = SenderId.parse(sender)?.takeIf { it.header in knownHeaders }
-        return when {
-            id == null -> ParseResult.UnknownSender
-            id.promotional -> ParseResult.NotTransaction
-            else -> parseFromBank(id.header, body, receivedAt)
-        }
-    }
-
-    private fun parseFromBank(header: String, body: String, receivedAt: Long): ParseResult {
+        filters.senderReason(sender)?.let { return ParseResult.Filtered(it) }
+        val header = requireNotNull(SenderId.parse(sender)).header
         val candidates = rules.filter { header in it.headers }
         val parsed = candidates.firstNotNullOfOrNull { tryRule(it, body, receivedAt) }
+        val dropped = if (parsed == null) filters.contentReason(body) else null
         return when {
             parsed != null -> ParseResult.Parsed(parsed)
-            NotTransactionFilter.isNotTransaction(body) -> ParseResult.NotTransaction
-            else -> ParseResult.Unparsed(candidates.first().rule.bank)
+            dropped != null -> ParseResult.Filtered(dropped)
+            else -> ParseResult.Unparsed(candidates.firstOrNull()?.rule?.bank)
         }
     }
 
@@ -151,17 +145,14 @@ class SmsParser(
 sealed interface ParseResult {
     data class Parsed(val sms: ParsedSms) : ParseResult
 
+    /** Dropped by one of the [SmsFilters], for [reason]. Never stored. */
+    data class Filtered(val reason: FilterReason) : ParseResult
+
     /**
-     * From a known bank but not a transaction: a promotional sender, or no rule matched and
-     * [NotTransactionFilter] recognised it (an OTP, an offer, a reminder, a notice with no amount).
+     * No rule read it and the filters kept it: it may be a transaction. Goes to the review inbox.
+     * [bank] is null for a sender no rule knows.
      */
-    data object NotTransaction : ParseResult
-
-    /** From a known bank, no rule matched, and it may be a transaction. Goes to the review inbox. */
-    data class Unparsed(val bank: String) : ParseResult
-
-    /** Not from any bank the rules know. Never stored. */
-    data object UnknownSender : ParseResult
+    data class Unparsed(val bank: String?) : ParseResult
 }
 
 /** What a rule read from one SMS. The balance is never included. */

@@ -20,7 +20,7 @@ internal fun joinParts(parts: List<SmsPart>): List<SmsInbox.Message> =
     }
 
 /**
- * Records new bank SMS as they arrive (PRD feature 7), through the same [SmsIngestor] as the inbox
+ * Records new SMS as they arrive (PRD feature 7), through the same [SmsIngestor] as the inbox
  * import, so an SMS both of them see is saved once.
  */
 class NewSmsHandler @Inject constructor(
@@ -32,7 +32,7 @@ class NewSmsHandler @Inject constructor(
         if (!settings.enabled.value || !context.hasSmsPermissions()) return emptyList()
         // The sender is checked before the text is used, so no one else's SMS is ever read.
         val parser = ingestor.parser()
-        return joinParts(parts.filter { parser.isKnownSender(it.sender) })
+        return joinParts(parts.filter { parser.accepts(it.sender) })
             .map { ingestor.ingest(it.sender, it.body, it.receivedAt, parser) }
     }
 

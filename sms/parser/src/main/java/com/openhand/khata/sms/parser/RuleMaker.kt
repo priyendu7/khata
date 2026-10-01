@@ -118,8 +118,9 @@ object RuleMaker {
         }
     }
 
-    /** Whether [body] could be a transaction: has an amount, and isn't an OTP, offer or reminder. */
-    fun mayBeTransaction(body: String): Boolean = !NotTransactionFilter.isNotTransaction(body)
+    /** Whether [body] gets past [filters]' content checks, as an SMS no rule read must. */
+    fun mayBeTransaction(body: String, filters: SmsFilters = SmsFilters()): Boolean =
+        filters.contentReason(body) == null
 
     private fun trim(body: String, mark: Mark): Mark? {
         val start = mark.start.coerceIn(0, body.length)

@@ -32,8 +32,8 @@
     <string name="settings_sms_value">बैंक SMS से लेन-देन अपने-आप दर्ज करें</string>
     <string name="sms_title">SMS इम्पोर्ट</string>
     <string name="sms_intro">खाता आपके बैंक से आए SMS से लेन-देन अपने-आप दर्ज कर सकता है, ताकि आपको लगभग कुछ भी टाइप न करना पड़े।</string>
-    <string name="sms_point_banks">सिर्फ़ समर्थित बैंकों के SMS पढ़े जाते हैं: Kotak, और वे बैंक जो आप सेटिंग्स &gt; पार्सर में जोड़ें। बाकी सबके संदेश बिना पढ़े छोड़ दिए जाते हैं।</string>
-    <string name="sms_point_ignored">OTP, ऑफ़र और रिमाइंडर अनदेखे किए जाते हैं।</string>
+    <string name="sms_point_banks">सिर्फ़ कारोबारों के SMS पढ़े जाते हैं: ऐसे भेजने वाले जिनकी ID AX-HDFCBK-S जैसी हो। लोगों (फ़ोन नंबरों) के संदेश कभी नहीं पढ़े जाते।</string>
+    <string name="sms_point_ignored">OTP, ऑफ़र, रिमाइंडर और बिना रकम वाले SMS छाँट दिए जाते हैं।</string>
     <string name="sms_point_private">सब कुछ इसी फ़ोन पर रहता है। खाता के पास इंटरनेट की अनुमति नहीं है और यह कभी SMS नहीं भेजता।</string>
     <string name="sms_switch">बैंक SMS पढ़ें</string>
     <string name="sms_switch_on">चालू। नए बैंक SMS आते ही दर्ज हो जाते हैं।</string>
@@ -53,7 +53,8 @@
     <string name="sms_summary_recorded">दर्ज किए गए: %1$d</string>
     <string name="sms_summary_to_review">देखने के लिए नए पाने वाले: %1$d</string>
     <string name="sms_summary_already_there">पहले से सहेजे हुए: %1$d</string>
-    <string name="sms_summary_unreadable">बैंक SMS जो पढ़े नहीं जा सके: %1$d</string>
+    <string name="sms_summary_unreadable">SMS जो पढ़े नहीं जा सके: %1$d</string>
+    <string name="sms_summary_filtered">छाँटे गए: %1$d</string>
     <string name="settings_parsers">पार्सर</string>
     <string name="settings_parsers_value">पार्सर रूल से और बैंकों के SMS पढ़ें</string>
     <string name="parsers_title">पार्सर</string>

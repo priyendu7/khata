@@ -131,9 +131,9 @@ class SampleSmsTest {
                 "timestamp" to timestamp
             )
         }
-        ParseResult.NotTransaction -> mapOf("result" to "not_transaction")
+        // Samples say "not_transaction" for anything a filter drops.
+        is ParseResult.Filtered -> mapOf("result" to "not_transaction")
         is ParseResult.Unparsed -> mapOf("result" to "unparsed")
-        ParseResult.UnknownSender -> mapOf("result" to "unknown_sender")
     }
 
     private fun millis(iso: String): Long = OffsetDateTime.parse(iso).toInstant().toEpochMilli()

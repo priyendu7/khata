@@ -25,7 +25,7 @@ object RuleValidator {
         if (rule.id.length > MAX_ID_LENGTH || !ID.matches(rule.id)) errors += RuleError.BAD_ID
         if (rule.bank.isBlank() || rule.bank.length > MAX_BANK_LENGTH) errors += RuleError.BAD_BANK
         val senders = rule.senders.mapNotNull {
-            SenderId.parse(it)?.takeUnless(SenderId::promotional)
+            SenderId.parse(it)?.takeUnless { id -> id.category == SenderCategory.PROMOTIONAL }
         }
         if (senders.isEmpty() || senders.size != rule.senders.size || senders.size > MAX_SENDERS) {
             errors += RuleError.BAD_SENDERS

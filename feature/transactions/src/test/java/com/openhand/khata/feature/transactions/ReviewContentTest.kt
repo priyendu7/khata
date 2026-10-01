@@ -128,7 +128,7 @@ class ReviewContentTest {
     fun anUnreadableSmsCanBeAddedDismissedOrCopied() {
         show(emptyList(), listOf(sms))
 
-        compose.onNodeWithText("A bank SMS Khata couldn't read").assertExists()
+        compose.onNodeWithText("An SMS Khata couldn't read").assertExists()
         compose.onNodeWithText(sms.body).assertExists()
         compose.onNodeWithText("Add by hand").performScrollTo().performClick()
         compose.onNodeWithText("Dismiss").performScrollTo().performClick()

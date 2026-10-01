@@ -21,8 +21,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,6 +37,7 @@ class CustomParsersTest {
     private lateinit var db: KhataDatabase
     private lateinit var parsers: CustomParserRepository
     private lateinit var ingestor: SmsIngestor
+    private lateinit var settings: SmsImportSettings
 
     private val hdfc = ParserRule(
         v = 1,
@@ -73,10 +72,12 @@ class CustomParsersTest {
             .allowMainThreadQueries()
             .build()
         parsers = CustomParserRepository(Lazy { db })
+        settings = SmsImportSettings(context)
         ingestor = SmsIngestor(
             SmsImporter(Lazy { db }),
             UnparsedSmsRepository(Lazy { db }),
-            parsers
+            parsers,
+            settings
         )
     }
 
@@ -92,12 +93,11 @@ class CustomParsersTest {
     private suspend fun saved() = db.transactionDao().observeAll().first()
 
     @Test
-    fun sendersFromCustomRulesAreBanks() = runTest {
-        assertFalse(ingestor.isBankSender("VM-HDFCBK-S"))
+    fun aCustomRuleReadsASenderThatWouldOtherwiseGoToReview() = runTest {
+        assertEquals(IngestOutcome.UNREADABLE, ingestor.ingest("VM-HDFCBK-S", hdfcSms, at))
 
         add(hdfc)
 
-        assertTrue(ingestor.isBankSender("VM-HDFCBK-S"))
         assertEquals(IngestOutcome.RECORDED_FOR_REVIEW, ingestor.ingest("VM-HDFCBK-S", hdfcSms, at))
         with(saved().single()) {
             assertEquals(45_000L, amountPaise)
@@ -110,8 +110,7 @@ class CustomParsersTest {
         add(hdfc)
         parsers.setEnabled(idOf("hdfc-card"), false)
 
-        assertFalse(ingestor.isBankSender("VM-HDFCBK-S"))
-        assertEquals(IngestOutcome.IGNORED, ingestor.ingest("VM-HDFCBK-S", hdfcSms, at))
+        assertEquals(IngestOutcome.UNREADABLE, ingestor.ingest("VM-HDFCBK-S", hdfcSms, at))
         assertEquals(0, saved().size)
 
         parsers.setEnabled(idOf("hdfc-card"), true)
@@ -138,7 +137,7 @@ class CustomParsersTest {
     fun theNewSmsReceiverKnowsCustomSenders() = runTest {
         shadowOf(context as Application)
             .grantPermissions(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS)
-        val settings = SmsImportSettings(context).apply { setEnabled(true) }
+        settings.setEnabled(true)
         val handler = NewSmsHandler(context, settings, ingestor)
         add(hdfc)
 
