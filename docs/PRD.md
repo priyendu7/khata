@@ -54,7 +54,7 @@ These are hard rules. A change that breaks one of them does not ship.
 3. **Encrypted database.** Room on top of SQLCipher. The key is generated on the device and kept in the Android Keystore.
 4. **App lock.** By default the app is unlocked with the phone's own screen lock (fingerprint, face, or the phone's PIN or pattern) through BiometricPrompt, so there is no extra PIN to forget. Users can instead set an app-only PIN, which comes with a one-time recovery code. The app locks again after a timeout the user chooses. The screen is hidden in the recent-apps view and screenshots are blocked (FLAG_SECURE). Both the lock and screenshot blocking are on by default and can be turned off in Settings.
 5. **No silent cloud backup.** Android auto-backup is turned off (`allowBackup=false`), so data never goes to Google Drive behind the user's back. Backups happen only through CSV export, which the user starts.
-6. **Minimum permissions.** READ_SMS and RECEIVE_SMS are requested only when the user turns on SMS import, and manual entry works without them. We never ask for SEND_SMS or contacts.
+6. **Minimum permissions.** READ_SMS and RECEIVE_SMS are requested only when the user turns on SMS import, and manual entry works without them. Only SMS from business senders (sender IDs like `AX-HDFCBK-S`) are read; messages from people (phone numbers) never are. We never ask for SEND_SMS or contacts.
 7. **Open source under GPLv3.** Builds should be reproducible so that anyone can check that the published app matches the source.
 
 ## Features
@@ -103,17 +103,33 @@ v1 has eight features, and spending alerts are planned for later. SMS parsing sh
 
 ```mermaid
 flowchart LR
-    A[Bank SMS arrives] --> B{Sender is a<br/>known bank?}
-    B -- no --> X[Ignore]
-    B -- yes --> C{Transaction SMS?<br/>not OTP or promo}
-    C -- no --> X
-    C -- yes --> D[Parse amount, payee,<br/>account, reference]
-    D --> E{Payee known?}
+    A[SMS arrives,<br/>or past SMS scanned] --> B{Business sender?<br/>not a phone number}
+    B -- no --> X[Not read]
+    B -- yes --> C{Sender filters<br/>-P, -G, only -S,<br/>ignored senders}
+    C -- dropped --> X
+    C -- passed --> D{A rule reads it?}
+    D -- yes --> E{Payee known?}
     E -- yes --> F[Auto-categorize]
-    E -- no --> G[Review inbox]
+    E -- no --> G[Review inbox:<br/>name the payee]
+    D -- no --> H{Content filters<br/>no amount, no transaction word,<br/>OTP / offer / reminder,<br/>ignored like this}
+    H -- dropped --> X
+    H -- passed --> I[Review inbox:<br/>make a parser or<br/>ignore similar]
+    I -- parser saved --> J[Read every waiting<br/>SMS again]
 ```
 
-Parsing happens entirely on the device, with a rule set for each sender. Kotak is built in for v1; other banks (HDFC, ICICI, Federal, Axis first) are added through custom parsers (feature 8) and become built in after launch as real samples come in. With permission, the inbox can also be imported from a chosen start date. SMS that can't be parsed go to the review inbox with their raw text, and the user can report the format by filing a GitHub issue themselves; the app never sends anything.
+Parsing happens entirely on the device, with a rule set for each sender. Kotak is built in for v1; other banks (HDFC, ICICI, Federal, Axis first) are added through custom parsers (feature 8) and become built in after launch as real samples come in. With permission, the inbox can also be imported from a chosen start date.
+
+**Filters.** The app reads SMS from any business sender, never from people, and decides in three steps:
+
+1. **Sender filters**, before any text is read: drop promotional (`-P`) and government (`-G`) senders; accept only service senders (`-S`; a sender shown with no suffix passes); drop senders the user chose to ignore.
+2. **Parse** with the rules for that sender. A rule that reads the SMS always wins, so a filter below can never drop a transaction a rule reads.
+3. **Content filters**, only on SMS no rule read: drop messages with no amount, with no transaction word (credited, debited, spent, received, sent, paid, withdrawn…), that are OTPs, offers, bill reminders, balance-only or failed payments, or that match a "messages like this" ignore rule.
+
+Every filter can be switched off in Settings > SMS import > Filters, and all are on by default. What a filter drops isn't stored.
+
+**What no rule read** goes to the review inbox with its raw text, grouped by sender. For each group the user can make a parser (feature 8), **ignore this sender**, or **ignore messages like this** (the SMS's fixed text, with numbers and the words the user taps as the parts that change). After a parser is saved, every waiting SMS is read again, so one parser clears the whole group; after an ignore rule is saved, the waiting SMS it matches are removed. The user can also copy an SMS to report the format on GitHub themselves; the app never sends anything.
+
+**Test a message.** In Settings > SMS import, the user can paste a sender and an SMS and see what the app would do with it, without saving anything: not read (and by which filter), parsed (by which rule, with the transaction it would record, its category from payee memory, and whether it's already recorded), filtered out after no rule read it (by which filter and which words), or sent to the review inbox.
 
 ### 8. Custom parsers (later milestone)
 
