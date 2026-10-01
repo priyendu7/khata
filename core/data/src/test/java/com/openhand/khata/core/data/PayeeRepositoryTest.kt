@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -107,6 +108,18 @@ class PayeeRepositoryTest : RepositoryTest() {
         assertEquals("Chai stall", entity.displayName)
         assertEquals(emptyList<Long>(), db.payeeDao().defaultTagIds(id))
         assertEquals(id, payees.find("paytmqr281005050101@paytm")!!.id)
+    }
+
+    @Test
+    fun marksAPayeeAsOwnAccountAndBack() = runTest {
+        addPayee("PRIYENDU SINGH")
+
+        payees.save(payees.find("PRIYENDU SINGH")!!.copy(ownAccount = true))
+        assertTrue(payees.find("PRIYENDU SINGH")!!.ownAccount)
+        assertTrue(payees.observePayees().first().single().ownAccount)
+
+        payees.save(payees.find("PRIYENDU SINGH")!!.copy(ownAccount = false))
+        assertFalse(payees.find("PRIYENDU SINGH")!!.ownAccount)
     }
 
     @Test(expected = IllegalArgumentException::class)

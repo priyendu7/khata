@@ -94,19 +94,14 @@ class KhataDatabaseTest {
     }
 
     @Test
-    fun referenceNumberIsUniqueWhenPresent() = runTest {
+    fun bothSidesOfATransferCanShareAReferenceNumber() = runTest {
         val dao = db.transactionDao()
         dao.insert(transaction(referenceNo = "UPI123"))
-
-        assertThrows(SQLiteConstraintException::class.java) {
-            kotlinx.coroutines.runBlocking { dao.insert(transaction(referenceNo = "UPI123")) }
-        }
-
-        // Any number of transactions may have no reference number.
+        dao.insert(transaction(referenceNo = "UPI123"))
         dao.insert(transaction(referenceNo = null))
-        dao.insert(transaction(referenceNo = null))
+
         assertEquals(3, dao.observeAll().first().size)
-        assertEquals("UPI123", dao.getByReferenceNo("UPI123")!!.referenceNo)
+        assertEquals(2, dao.getByReferenceNo("UPI123").size)
     }
 
     @Test

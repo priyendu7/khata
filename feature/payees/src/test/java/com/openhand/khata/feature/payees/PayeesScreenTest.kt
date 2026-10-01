@@ -91,6 +91,35 @@ class PayeesScreenTest {
     }
 
     @Test
+    fun marksAPayeeAsOwnAccount() {
+        show()
+
+        compose.onNodeWithText("Ramesh").performClick()
+        compose.onNodeWithText("Edit payee").performClick()
+        compose.onNodeWithText("This is my own account").performClick()
+        compose.onNodeWithText("Save").performClick()
+
+        assertEquals(ramesh.copy(ownAccount = true), saved)
+    }
+
+    @Test
+    fun listsOwnAccounts() {
+        compose.setContent {
+            PayeesContent(
+                payees = listOf(ramesh.copy(ownAccount = true)),
+                categories = listOf(food),
+                tagSuggestions = emptyList(),
+                onTagQueryChange = {},
+                onSave = {},
+                onMerge = { _, _ -> },
+                onBack = {}
+            )
+        }
+
+        compose.onNodeWithText("Own account · No default category").assertIsDisplayed()
+    }
+
+    @Test
     fun mergesOnlyAfterConfirming() {
         show()
 

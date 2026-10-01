@@ -31,13 +31,15 @@ class SmsImporterTest : RepositoryTest() {
         payee: String? = "GENERAL STORE",
         last4: String? = "7391",
         direction: Direction = Direction.DEBIT,
+        bank: String = "Kotak",
+        type: AccountType = AccountType.BANK,
         body: String = "Sent Rs.${amount / 100} to $payee ref $ref at $at"
     ) = SmsTransaction(
         amountPaise = amount,
         direction = direction,
         timestamp = at,
-        bank = "Kotak",
-        accountType = AccountType.BANK,
+        bank = bank,
+        accountType = type,
         accountLast4 = last4,
         payee = payee,
         referenceNo = ref,
@@ -49,6 +51,16 @@ class SmsImporterTest : RepositoryTest() {
     private suspend fun count() = db.backupDao().exportRows(null, null).size
 
     private suspend fun allIds() = db.transactionDao().observeAll().first().map { it.id }.sorted()
+
+    private suspend fun directionOf(id: Long) = db.transactionDao().getById(id)!!.direction
+
+    /** The totals Home shows, after checking they follow the same rules as `Totals.of`. */
+    private suspend fun totals(): Totals {
+        val home = transactions.observeTotals(AT - DAY, AT + DAY).first()
+        val rows = db.transactionDao().observeAll().first()
+        assertEquals(Totals.of(rows.map { it.direction to it.amountPaise }), home)
+        return home
+    }
 
     @Test
     fun unknownPayeeIsSavedForReview() = runTest {
@@ -112,10 +124,10 @@ class SmsImporterTest : RepositoryTest() {
     @Test
     fun aPayeeTheUserNamedCountsAsKnown() = runTest {
         db.payeeDao().insert(
-            PayeeEntity(identifier = "CRED", displayName = "Card bill", defaultCategoryId = null)
+            PayeeEntity(identifier = "RAVI", displayName = "Ravi Kumar", defaultCategoryId = null)
         )
 
-        val result = saved(sms(payee = "CRED"))
+        val result = saved(sms(payee = "RAVI"))
 
         assertFalse(result.needsReview)
         assertEquals(
@@ -317,9 +329,214 @@ class SmsImporterTest : RepositoryTest() {
         )
     }
 
+    @Test
+    fun previewSaysACredPaymentWouldBeATransferWithoutReview() = runTest {
+        val preview = importer.preview(sms(payee = "CRED"))
+
+        assertEquals(TransferMatch.CARD_PAYMENT, preview.transfer)
+        assertFalse(preview.needsReview)
+    }
+
+    @Test
+    fun previewFindsTheOtherSideOfAMoveAndChangesNothing() = runTest {
+        val debit = saved(sms(ref = null, payee = "SELF"))
+
+        val preview = importer.preview(
+            sms(ref = null, last4 = "4455", direction = Direction.CREDIT, at = AT + 5 * MINUTE)
+        )
+
+        assertEquals(TransferMatch.OTHER_SIDE, preview.transfer)
+        assertEquals(Direction.DEBIT, directionOf(debit.transactionId))
+    }
+
+    @Test
+    fun previewOfADuplicateIsNotATransfer() = runTest {
+        saved(sms(payee = "CRED"))
+
+        val preview = importer.preview(sms(payee = "CRED", body = "the same payment, again"))
+
+        assertEquals(DuplicateMatch.REFERENCE, preview.duplicate?.match)
+        assertEquals(null, preview.transfer)
+    }
+
+    @Test
+    fun aCredPaymentAndTheCardsPaymentReceivedAreTransfersAndSpendingIsUnchanged() = runTest {
+        val purchase = saved(card(amount = 500_000, direction = Direction.DEBIT, payee = "AMAZON"))
+        assertEquals(Totals(spentPaise = 500_000, incomePaise = 0), totals())
+
+        val cred = saved(sms(amount = 500_000, payee = "CRED", ref = "212129343896"))
+        val received = saved(
+            card(
+                amount = 500_000,
+                direction = Direction.CREDIT,
+                payee = null,
+                at = AT + 10 * MINUTE,
+                body = "Payment of Rs 5000 received on your HDFC Bank Credit Card XX1234"
+            )
+        )
+
+        assertEquals(Direction.DEBIT, directionOf(purchase.transactionId))
+        assertEquals(Direction.TRANSFER, directionOf(cred.transactionId))
+        assertEquals(Direction.TRANSFER, directionOf(received.transactionId))
+        // Nothing to ask about a transfer: no category.
+        assertFalse(cred.needsReview)
+        assertFalse(received.needsReview)
+        assertEquals(3, count())
+        assertEquals(Totals(spentPaise = 500_000, incomePaise = 0), totals())
+    }
+
+    @Test
+    fun aCardBillPaidThroughBbpsIsATransfer() = runTest {
+        val result = saved(
+            sms(
+                payee = "BillDesk",
+                body = "Rs 4,500 debited from A/c X7391 towards BBPS payment for Axis Credit Card"
+            )
+        )
+
+        assertEquals(Direction.TRANSFER, directionOf(result.transactionId))
+        assertEquals(Totals.ZERO, totals())
+    }
+
+    @Test
+    fun aMoveBetweenOwnAccountsMakesBothSidesTransfersWithoutAddingAnything() = runTest {
+        val out = saved(sms(amount = 1_000_000, ref = "1", payee = "PRIYENDU S"))
+        assertEquals(Direction.DEBIT, directionOf(out.transactionId))
+
+        val into = saved(
+            sms(
+                amount = 1_000_000,
+                ref = "2",
+                payee = "PRIYENDU SINGH",
+                direction = Direction.CREDIT,
+                bank = "HDFC",
+                last4 = "5678",
+                at = AT + 20 * MINUTE
+            )
+        )
+
+        // The saved debit is updated, not saved again.
+        assertEquals(listOf(out.transactionId, into.transactionId), allIds())
+        assertEquals(Direction.TRANSFER, directionOf(out.transactionId))
+        assertEquals(Direction.TRANSFER, directionOf(into.transactionId))
+        assertFalse(db.transactionDao().getById(out.transactionId)!!.needsReview)
+        assertEquals(Totals.ZERO, totals())
+    }
+
+    @Test
+    fun theSameAmountTwoHoursApartIsNotAMove() = runTest {
+        val out = saved(sms(amount = 1_000_000, ref = "1"))
+        val into = saved(
+            sms(
+                amount = 1_000_000,
+                ref = "2",
+                payee = "EMPLOYER",
+                direction = Direction.CREDIT,
+                bank = "HDFC",
+                last4 = "5678",
+                at = AT + 2 * HOUR
+            )
+        )
+
+        assertEquals(Direction.DEBIT, directionOf(out.transactionId))
+        assertEquals(Direction.CREDIT, directionOf(into.transactionId))
+        assertEquals(Totals(spentPaise = 1_000_000, incomePaise = 1_000_000), totals())
+    }
+
+    @Test
+    fun theSameAmountOnTheSameAccountIsNotAMove() = runTest {
+        saved(sms(amount = 1_000_000, ref = "1"))
+        val back = saved(
+            sms(amount = 1_000_000, ref = "2", direction = Direction.CREDIT, at = AT + MINUTE)
+        )
+
+        assertEquals(Direction.CREDIT, directionOf(back.transactionId))
+    }
+
+    @Test
+    fun theSameReferenceOnAnotherAccountIsTheOtherSideNotADuplicate() = runTest {
+        val out = saved(sms(amount = 250_000, ref = "IMPS42"))
+        val into = importer.import(
+            sms(
+                amount = 250_000,
+                ref = "IMPS42",
+                direction = Direction.CREDIT,
+                bank = "HDFC",
+                last4 = "5678",
+                // Later than the time window: the reference alone links them.
+                at = AT + 3 * HOUR,
+                body = "Rs 2500 credited to HDFC A/c 5678 IMPS Ref IMPS42"
+            )
+        ) as SmsImportResult.Saved
+
+        assertEquals(Direction.TRANSFER, directionOf(out.transactionId))
+        assertEquals(Direction.TRANSFER, directionOf(into.transactionId))
+        // Seeing either SMS again adds nothing.
+        assertEquals(
+            SmsImportResult.Duplicate(out.transactionId, DuplicateMatch.REFERENCE),
+            importer.import(sms(amount = 250_000, ref = "IMPS42", body = "again"))
+        )
+        assertEquals(2, count())
+        assertEquals(Totals.ZERO, totals())
+    }
+
+    @Test
+    fun aPayeeMarkedAsOwnAccountMakesATransfer() = runTest {
+        db.payeeDao().insert(
+            PayeeEntity(
+                identifier = "PRIYENDU SINGH",
+                displayName = "My HDFC account",
+                defaultCategoryId = null,
+                ownAccount = true
+            )
+        )
+
+        val result = saved(sms(payee = "PRIYENDU SINGH"))
+
+        assertEquals(Direction.TRANSFER, directionOf(result.transactionId))
+        assertFalse(result.needsReview)
+        assertEquals(Totals.ZERO, totals())
+    }
+
+    @Test
+    fun aTransferChangedBackToAnExpenseStaysAnExpense() = runTest {
+        val cred = saved(sms(payee = "CRED"))
+        val edited = transactions.get(cred.transactionId)!!.copy(direction = Direction.DEBIT)
+        transactions.save(edited)
+
+        // The inbox scan seeing the SMS again doesn't undo the change.
+        val again = importer.import(sms(payee = "CRED"))
+
+        assertEquals(
+            SmsImportResult.Duplicate(cred.transactionId, DuplicateMatch.REFERENCE),
+            again
+        )
+        assertEquals(Direction.DEBIT, directionOf(cred.transactionId))
+        assertEquals(Totals(spentPaise = 36_600, incomePaise = 0), totals())
+    }
+
+    private fun card(
+        amount: Long,
+        direction: Direction,
+        payee: String?,
+        at: Long = AT - HOUR,
+        body: String = "Rs ${amount / 100} spent on HDFC Credit Card XX1234 at $payee"
+    ) = sms(
+        amount = amount,
+        direction = direction,
+        payee = payee,
+        ref = null,
+        bank = "HDFC",
+        type = AccountType.CREDIT_CARD,
+        last4 = "1234",
+        at = at,
+        body = body
+    )
+
     private companion object {
         const val AT = 1_790_000_000_000L
         const val MINUTE = 60_000L
         const val HOUR = 60 * MINUTE
+        const val DAY = 24 * HOUR
     }
 }

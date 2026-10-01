@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.openhand.khata.core.data.SmsImportPreview
+import com.openhand.khata.core.data.TransferMatch
 import com.openhand.khata.sms.ingest.SmsExplanation
 import com.openhand.khata.sms.ingest.TriedRule
 import com.openhand.khata.sms.parser.BuiltInRules
@@ -34,13 +35,14 @@ class TestMessageContentTest {
         payeeName = null,
         category = null,
         tags = emptyList(),
+        transfer = null,
         needsReview = true
     )
     private val madeFrom = mutableListOf<Pair<String, String>>()
     private val openedFilters = mutableListOf<FilterSwitch>()
 
     /** Explains with the built-in rules, as if nothing were saved yet. */
-    private fun show() {
+    private fun show(preview: SmsImportPreview = newPayee) {
         compose.setContent {
             var answer by remember { mutableStateOf<SmsExplanation?>(null) }
             TestMessageContent(
@@ -51,7 +53,7 @@ class TestMessageContentTest {
                     answer = SmsExplanation(
                         explained.result,
                         explained.rulesTried.map { TriedRule(it, custom = false) },
-                        newPayee.takeIf { explained.result is ParseResult.Parsed }
+                        preview.takeIf { explained.result is ParseResult.Parsed }
                     )
                 },
                 onMakeParser = { sender, body -> madeFrom += sender to body },
@@ -79,6 +81,19 @@ class TestMessageContentTest {
         compose.onNodeWithText("Reference: 111122223333").assertExists()
         compose.onNodeWithText("New payee: it would wait in To review", substring = true)
             .assertExists()
+    }
+
+    @Test
+    fun aCardBillPaymentSaysItWouldBeATransfer() {
+        show(newPayee.copy(transfer = TransferMatch.CARD_PAYMENT, needsReview = false))
+
+        test("JM-KOTAKB-S", KOTAK_SMS)
+
+        compose.onNodeWithText("A credit card bill payment", substring = true)
+            .performScrollTo()
+            .assertExists()
+        compose.onNodeWithText("New payee: it would wait in To review", substring = true)
+            .assertDoesNotExist()
     }
 
     @Test
