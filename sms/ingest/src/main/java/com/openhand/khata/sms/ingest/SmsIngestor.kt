@@ -1,6 +1,7 @@
 package com.openhand.khata.sms.ingest
 
 import com.openhand.khata.core.data.CustomParserRepository
+import com.openhand.khata.core.data.SmsImportPreview
 import com.openhand.khata.core.data.SmsImportResult
 import com.openhand.khata.core.data.SmsImporter
 import com.openhand.khata.core.data.UnparsedSmsRepository
@@ -28,20 +29,52 @@ class SmsIngestor @Inject constructor(
 ) {
     private val builtIn by lazy { BuiltInRules.load() }
 
-    /** The last parser built, with the custom rule codes and filters it was built from. */
-    @Volatile private var current: Pair<Pair<List<String>, SmsFilters>, SmsParser>? = null
+    /** The last parser built, with what it was built from and its custom rule ids. */
+    @Volatile private var current: Built? = null
+
+    private class Built(
+        val codes: List<String>,
+        val filters: SmsFilters,
+        val parser: SmsParser,
+        val customIds: Set<String>
+    )
 
     /**
      * The rules as they are now: the custom rules that are switched on (PRD feature 8), then the
      * built-in ones, behind the filters the user has on. Rebuilt only when the custom rules or a
      * filter switch change, in the phone's time zone then.
      */
-    suspend fun parser(): SmsParser {
-        val key = customParsers.enabledCodes() to settings.filters.value
-        current?.let { (builtFrom, parser) -> if (builtFrom == key) return parser }
-        val (codes, filters) = key
-        return CustomRules.parser(CustomRules.load(codes), builtIn, filters)
-            .also { current = key to it }
+    suspend fun parser(): SmsParser = built().parser
+
+    private suspend fun built(): Built {
+        val codes = customParsers.enabledCodes()
+        val filters = settings.filters.value
+        current?.let { if (it.codes == codes && it.filters == filters) return it }
+        val custom = CustomRules.load(codes)
+        return Built(
+            codes,
+            filters,
+            CustomRules.parser(custom, builtIn, filters),
+            custom.mapTo(mutableSetOf()) { it.rule.id }
+        ).also { current = it }
+    }
+
+    /**
+     * What [ingest] would do with this SMS, saving nothing (Settings > SMS import > Test a
+     * message). It takes the same steps with the same parser, read-only.
+     */
+    suspend fun explain(sender: String, body: String, receivedAt: Long): SmsExplanation {
+        val built = built()
+        val explanation = built.parser.explain(sender, body, receivedAt)
+        val preview = (explanation.result as? ParseResult.Parsed)
+            ?.let { importer.preview(it.sms.toTransaction(body)) }
+        return SmsExplanation(
+            result = explanation.result,
+            rulesTried = explanation.rulesTried.map {
+                TriedRule(it, custom = it in built.customIds)
+            },
+            preview = preview
+        )
     }
 
     suspend fun ingest(sender: String, body: String, receivedAt: Long): IngestOutcome =
@@ -111,6 +144,18 @@ class SmsIngestor @Inject constructor(
         rawSms = body
     )
 }
+
+/** [SmsIngestor.explain]'s answer. */
+data class SmsExplanation(
+    val result: ParseResult,
+    /** The rules tried for the sender, in order; a rule that read the SMS is the last. */
+    val rulesTried: List<TriedRule>,
+    /** What saving it would do, when a rule read it. */
+    val preview: SmsImportPreview?
+)
+
+/** A rule by id, and whether it's one the user added (Settings > Parsers) or built in. */
+data class TriedRule(val id: String, val custom: Boolean)
 
 enum class IngestOutcome {
     RECORDED,

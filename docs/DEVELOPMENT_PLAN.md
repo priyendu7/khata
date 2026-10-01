@@ -143,7 +143,7 @@ This phase is for using the app day to day, testing it, and acting on what comes
 - [ ] Settings > SMS import > Filters: switch each filter on or off (#87)
 - [ ] Ignore this sender, and ignore messages like this (#88)
 - [ ] Review inbox: unreadable SMS grouped by sender (#89)
-- [ ] Test a message: see what the app would do with an SMS (#90)
+- [x] Test a message: see what the app would do with an SMS (#90)
 
 Release #86 together with #88 and #89: reading every business sender without "ignore" and grouping fills the review inbox with shop and recharge messages.
 
