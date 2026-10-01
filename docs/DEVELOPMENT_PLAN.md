@@ -136,6 +136,7 @@ This phase is for using the app day to day, testing it, and acting on what comes
 
 - [ ] Events: tag every transaction in a date range (#73)
 - [ ] Create a category from the transaction editor (#74)
+- [ ] Counts in month: show a transaction, such as an early salary, in a different month (#93)
 
 **SMS filters** (PRD feature 7). The app reads every business sender, not only banks it has rules for, so a bank without a rule shows up in the review inbox instead of being skipped. Filters decide what's worth asking about.
 
