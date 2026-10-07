@@ -41,6 +41,7 @@ class CustomParsersTest {
     private lateinit var parsers: CustomParserRepository
     private lateinit var ingestor: SmsIngestor
     private lateinit var settings: SmsImportSettings
+    private lateinit var unparsed: UnparsedSmsRepository
 
     private val hdfc = ParserRule(
         v = 1,
@@ -76,9 +77,10 @@ class CustomParsersTest {
             .build()
         parsers = CustomParserRepository(Lazy { db })
         settings = SmsImportSettings(context)
+        unparsed = UnparsedSmsRepository(Lazy { db })
         ingestor = SmsIngestor(
             SmsImporter(Lazy { db }),
-            UnparsedSmsRepository(Lazy { db }),
+            unparsed,
             parsers,
             IgnoreRuleRepository(Lazy { db }),
             settings
@@ -179,6 +181,22 @@ class CustomParsersTest {
         assertEquals(0, ingestor.retryUnparsed())
     }
 
+    /** "Make a parser" on a group in To review: once saved, the whole group is read and leaves. */
+    @Test
+    fun aParserMadeForAGroupClearsIt() = runTest {
+        listOf("AX-KOTAKB-S", "JM-KOTAKB-S", "VM-KOTAKB-S").forEachIndexed { day, sender ->
+            val sms = "Rs.${day + 1},000 withdrawn at ATM using card XX5678."
+            ingestor.ingest(sender, sms, at + day * DAY)
+        }
+        ingestor.ingest("VM-HDFCBK-S", hdfcSms, at)
+        assertEquals(listOf(3, 1), unparsed.observeGroups().first().map { it.count })
+
+        add(kotakAtm)
+
+        assertEquals(3, ingestor.retryUnparsed())
+        assertEquals(listOf("HDFCBK"), unparsed.observeGroups().first().map { it.header })
+    }
+
     @Test
     fun smsNoRuleReadsStayInToReview() = runTest {
         ingestor.ingest("JM-KOTAKB-S", atmSms, at)
@@ -203,5 +221,9 @@ class CustomParsersTest {
         ingestor.ingest("JM-KOTAKB-S", upiSms, at)
         val again = ingestor.explain("JM-KOTAKB-S", upiSms, at)
         assertEquals(DuplicateMatch.REFERENCE, again.preview!!.duplicate!!.match)
+    }
+
+    private companion object {
+        const val DAY = 24 * 3_600_000L
     }
 }

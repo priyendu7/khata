@@ -2,6 +2,8 @@ package com.openhand.khata.sms.parser
 
 import com.google.re2j.Pattern
 import com.google.re2j.PatternSyntaxException
+import com.openhand.khata.core.model.SenderCategory
+import com.openhand.khata.core.model.SenderId
 import java.time.format.DateTimeFormatter
 
 /**

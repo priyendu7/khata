@@ -1,8 +1,11 @@
 package com.openhand.khata.core.data
 
+import androidx.room.withTransaction
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.database.UnparsedSmsEntity
+import com.openhand.khata.core.model.SenderId
 import com.openhand.khata.core.model.UnparsedSms
+import com.openhand.khata.core.model.UnparsedSmsGroup
 import dagger.Lazy
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -19,6 +22,15 @@ class UnparsedSmsRepository @Inject constructor(private val db: Lazy<KhataDataba
     /** Newest first. */
     fun observeAll(): Flow<List<UnparsedSms>> = db.observe { it.unparsedSmsDao().observeAll() }
         .map { rows -> rows.map(UnparsedSmsEntity::toModel) }
+
+    /**
+     * Grouped by sender header, whatever the operator prefix, so a past scan's many SMS from one
+     * sender are one card. The group with the newest SMS comes first.
+     */
+    fun observeGroups(): Flow<List<UnparsedSmsGroup>> = observeAll().map { newestFirst ->
+        newestFirst.groupBy { SenderId.parse(it.sender)?.header ?: it.sender }
+            .map { (header, messages) -> UnparsedSmsGroup(header, messages) }
+    }
 
     /** Oldest first, to read again with a new parser rule. */
     suspend fun getAll(): List<UnparsedSms> =
@@ -48,8 +60,21 @@ class UnparsedSmsRepository @Inject constructor(private val db: Lazy<KhataDataba
         db.io { it.unparsedSmsDao().deleteById(id) }
     }
 
+    /** Deletes them all at once: a group dismissed. */
+    suspend fun delete(ids: Collection<Long>) {
+        db.io { database ->
+            database.withTransaction {
+                // SQLite allows 999 variables in one statement on older phones.
+                ids.chunked(MAX_IDS_PER_DELETE).forEach {
+                    database.unparsedSmsDao().deleteByIds(it)
+                }
+            }
+        }
+    }
+
     private companion object {
         val SAME_SMS_WINDOW = TimeUnit.DAYS.toMillis(1)
+        const val MAX_IDS_PER_DELETE = 500
     }
 }
 

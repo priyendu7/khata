@@ -83,4 +83,21 @@
     <string name="review_ignore_sender_title">Ignore all SMS from %1$s?</string>
     <string name="review_ignore_sender_body">Waiting ones are removed. You can undo this in Settings &gt; SMS import &gt; Filters.</string>
     <string name="review_ignore_confirm">Ignore</string>
+    <string name="review_unparsed_title_many">SMS Khata couldn\'t read</string>
+    <string name="review_unparsed_body_many">They have an amount, but their format is new to Khata. Make a parser for a sender so Khata reads its SMS from now on, add them by hand, or dismiss the ones that aren\'t transactions.</string>
+    <plurals name="review_group_title">
+        <item quantity="one">%1$s · %2$d message</item>
+        <item quantity="other">%1$s · %2$d messages</item>
+    </plurals>
+    <plurals name="review_group_show">
+        <item quantity="one">Show %d</item>
+        <item quantity="other">Show all %d</item>
+    </plurals>
+    <string name="review_group_hide">Hide the messages</string>
+    <string name="review_dismiss_all">Dismiss all</string>
+    <plurals name="review_dismiss_all_title">
+        <item quantity="one">Dismiss %1$d SMS from %2$s?</item>
+        <item quantity="other">Dismiss all %1$d SMS from %2$s?</item>
+    </plurals>
+    <string name="review_dismiss_all_body">They\'re deleted and can\'t be brought back. New SMS from this sender still come here.</string>
 </resources>

@@ -1,5 +1,8 @@
 package com.openhand.khata.sms.parser
 
+import com.openhand.khata.core.model.SenderCategory
+import com.openhand.khata.core.model.SenderId
+
 /**
  * The SMS filters (PRD feature 7), each a switch the user can turn off; all are on by default.
  *

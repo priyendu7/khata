@@ -1,5 +1,7 @@
 package com.openhand.khata.sms.parser
 
+import com.openhand.khata.core.model.SenderCategory
+import com.openhand.khata.core.model.SenderId
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

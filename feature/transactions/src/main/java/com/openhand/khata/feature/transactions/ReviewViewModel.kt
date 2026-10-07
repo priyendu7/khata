@@ -9,6 +9,7 @@ import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.ReviewItem
 import com.openhand.khata.core.model.UnparsedSms
+import com.openhand.khata.core.model.UnparsedSmsGroup
 import com.openhand.khata.sms.ingest.SmsIgnoring
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -37,8 +38,8 @@ class ReviewViewModel @Inject constructor(
     val queue: StateFlow<List<ReviewItem>?> = review.observeQueue()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
-    /** Bank SMS no rule could read, newest first; shown after the transactions. */
-    val unparsed: StateFlow<List<UnparsedSms>> = unparsedSms.observeAll()
+    /** Bank SMS no rule could read, by sender, newest first; shown after the transactions. */
+    val unparsed: StateFlow<List<UnparsedSmsGroup>> = unparsedSms.observeGroups()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
 
     val categories: StateFlow<List<Category>> = categories.observeAll()
@@ -69,6 +70,11 @@ class ReviewViewModel @Inject constructor(
     /** Deletes it; nothing is kept. */
     fun dismiss(sms: UnparsedSms) {
         viewModelScope.launch { unparsedSms.delete(sms.id) }
+    }
+
+    /** Deletes every SMS in the group, after the user confirmed. Ones arriving since stay. */
+    fun dismissAll(group: UnparsedSmsGroup) {
+        viewModelScope.launch { unparsedSms.delete(group.messages.map { it.id }) }
     }
 
     /** Ignores every SMS from its sender, and removes the ones waiting here. */

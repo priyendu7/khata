@@ -4,12 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openhand.khata.core.data.CustomParserRepository
 import com.openhand.khata.core.model.CustomParser
+import com.openhand.khata.core.model.SenderId
 import com.openhand.khata.sms.ingest.SmsInbox
 import com.openhand.khata.sms.ingest.SmsIngestor
 import com.openhand.khata.sms.parser.BuiltInRules
 import com.openhand.khata.sms.parser.CompiledRule
 import com.openhand.khata.sms.parser.RuleCode
-import com.openhand.khata.sms.parser.SenderId
 import com.openhand.khata.sms.parser.SmsParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.TimeUnit

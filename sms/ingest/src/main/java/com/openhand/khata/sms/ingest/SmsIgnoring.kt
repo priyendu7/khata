@@ -3,10 +3,10 @@ package com.openhand.khata.sms.ingest
 import com.openhand.khata.core.data.IgnoreRuleRepository
 import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.model.IgnoreKind
+import com.openhand.khata.core.model.SenderId
 import com.openhand.khata.core.model.UnparsedSms
 import com.openhand.khata.sms.parser.IgnoreTemplate
 import com.openhand.khata.sms.parser.RuleMaker
-import com.openhand.khata.sms.parser.SenderId
 import javax.inject.Inject
 
 /**

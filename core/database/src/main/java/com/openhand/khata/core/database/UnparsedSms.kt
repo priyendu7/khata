@@ -47,4 +47,7 @@ interface UnparsedSmsDao {
 
     @Query("DELETE FROM unparsed_sms WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM unparsed_sms WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Long>)
 }
