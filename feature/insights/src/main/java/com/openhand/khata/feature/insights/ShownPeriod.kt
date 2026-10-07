@@ -1,7 +1,7 @@
 package com.openhand.khata.feature.insights
 
 /** The cards with their own period, each switched and stepped on its own. */
-enum class PeriodCard { CATEGORIES, TAGS }
+enum class PeriodCard { CATEGORIES, TAGS, ACCOUNTS }
 
 /** A card's period as its chips, ‹ › arrows and label show it. */
 interface ShownPeriod {

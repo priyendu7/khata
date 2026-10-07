@@ -70,6 +70,15 @@ data class TagSpendRow(
     val count: Int
 )
 
+/**
+ * An account's spending (expenses minus refunds) over a period. A null [account] is the
+ * transactions with no account.
+ */
+data class AccountSpendRow(
+    @Embedded(prefix = "account_") val account: AccountEntity?,
+    @ColumnInfo(name = "spent_paise") val spentPaise: Long
+)
+
 /** An expense, refund or income, with just what the charts need. */
 data class AmountRow(
     val timestamp: Long,
@@ -157,6 +166,26 @@ interface AccountDao {
         moveTransactions(id, moveTo)
         deleteById(id)
     }
+
+    /**
+     * Every account's spending (expenses minus refunds) for timestamps in [from, until), biggest
+     * first, with the transactions with no account as a null account. Each transaction has at
+     * most one account, so these add up to [TransactionDao.observeTotals]' spent figure.
+     * Accounts that net to zero are left out; more refunds than spending is negative, so last.
+     */
+    @Query(
+        "SELECT a.id AS account_id, a.name AS account_name, a.type AS account_type, " +
+            "a.bank AS account_bank, a.last4 AS account_last4, " +
+            "SUM(CASE t.direction WHEN 'debit' THEN t.amount_paise ELSE -t.amount_paise END) " +
+            "AS spent_paise " +
+            "FROM transactions t LEFT JOIN accounts a ON a.id = t.account_id " +
+            "WHERE t.direction IN ('debit', 'refund') " +
+            "AND COALESCE(t.counts_at, t.timestamp) >= :from " +
+            "AND COALESCE(t.counts_at, t.timestamp) < :until " +
+            "GROUP BY t.account_id HAVING spent_paise != 0 " +
+            "ORDER BY spent_paise DESC, a.id IS NULL, a.name"
+    )
+    fun observeAccountSpending(from: Long, until: Long): Flow<List<AccountSpendRow>>
 }
 
 @Dao
@@ -455,7 +484,8 @@ interface TransactionDao {
      * Every category's spending (expenses minus refunds) for timestamps in [from, until), biggest
      * first, with the same rules as [observeTopCategory]. A category with more refunds than
      * spending comes last with a negative total; categories that net to zero are left out.
-     * [tagId] limits it to one tag's transactions, and [untagged] to those with no tag.
+     * [tagId] limits it to one tag's transactions, and [untagged] to those with no tag;
+     * [accountId] to one account's, and [noAccount] to those with no account.
      */
     @Query(
         "SELECT c.id AS category_id, c.name AS category_name, " +
@@ -471,13 +501,18 @@ interface TransactionDao {
             "WHERE x.transaction_id = t.id AND x.tag_id = :tagId)) " +
             "AND (NOT :untagged OR NOT EXISTS (SELECT 1 FROM transaction_tags x " +
             "WHERE x.transaction_id = t.id)) " +
+            "AND (:accountId IS NULL OR t.account_id = :accountId) " +
+            "AND (NOT :noAccount OR t.account_id IS NULL) " +
             "GROUP BY c.id HAVING spent_paise != 0 ORDER BY spent_paise DESC, c.id"
     )
+    @Suppress("LongParameterList")
     fun observeCategorySpending(
         from: Long,
         until: Long,
         tagId: Long?,
-        untagged: Boolean
+        untagged: Boolean,
+        accountId: Long?,
+        noAccount: Boolean
     ): Flow<List<CategorySpendRow>>
 
     /**
@@ -510,6 +545,7 @@ interface TransactionDao {
             "LEFT JOIN accounts a ON a.id = t.account_id " +
             "WHERE (:categoryId IS NULL OR t.category_id = :categoryId) " +
             "AND (:accountId IS NULL OR t.account_id = :accountId) " +
+            "AND (NOT :noAccount OR t.account_id IS NULL) " +
             "AND (:tagId IS NULL OR EXISTS (SELECT 1 FROM transaction_tags x " +
             "WHERE x.transaction_id = t.id AND x.tag_id = :tagId)) " +
             "AND (NOT :untagged OR NOT EXISTS (SELECT 1 FROM transaction_tags x " +
@@ -528,6 +564,7 @@ interface TransactionDao {
         tagId: Long?,
         untagged: Boolean,
         accountId: Long?,
+        noAccount: Boolean,
         from: Long?,
         until: Long?
     ): Flow<List<TransactionRow>>

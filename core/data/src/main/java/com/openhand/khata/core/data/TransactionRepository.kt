@@ -4,6 +4,8 @@ import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.database.dao.TransactionRow
 import com.openhand.khata.core.database.entity.PayeeEntity
 import com.openhand.khata.core.database.entity.TransactionEntity
+import com.openhand.khata.core.model.Account
+import com.openhand.khata.core.model.AccountSpend
 import com.openhand.khata.core.model.AmountEntry
 import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.CountsIn
@@ -40,6 +42,7 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
                 tagId = filter.tagId,
                 untagged = filter.untagged,
                 accountId = filter.accountId,
+                noAccount = filter.noAccount,
                 from = filter.from,
                 until = filter.until
             )
@@ -71,7 +74,7 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
      * [observeTotals]: added up, they give its spent figure. Refunds beyond spending are negative.
      */
     fun observeCategorySpending(from: Long, until: Long): Flow<List<CategorySpend>> =
-        observeCategorySpending(from, until, tagId = null, untagged = false)
+        observeCategorySpending(from, until, CategoryScope())
 
     /**
      * Like [observeCategorySpending], for one [tag]'s transactions only, or those with no tag
@@ -81,12 +84,37 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
         from: Long,
         until: Long,
         tag: Tag?
-    ): Flow<List<CategorySpend>> =
-        observeCategorySpending(from, until, tagId = tag?.id, untagged = tag == null)
+    ): Flow<List<CategorySpend>> = observeCategorySpending(
+        from,
+        until,
+        CategoryScope(tagId = tag?.id, untagged = tag == null)
+    )
 
-    private fun observeCategorySpending(from: Long, until: Long, tagId: Long?, untagged: Boolean) =
-        db.observe { it.transactionDao().observeCategorySpending(from, until, tagId, untagged) }
-            .map { rows -> rows.map { CategorySpend(it.category.toModel(), it.spentPaise) } }
+    /**
+     * Like [observeCategorySpending], for one [account]'s transactions only, or those with no
+     * account when [account] is null. Added up, they give its figure in [observeAccountSpending].
+     */
+    fun observeCategorySpendingForAccount(
+        from: Long,
+        until: Long,
+        account: Account?
+    ): Flow<List<CategorySpend>> = observeCategorySpending(
+        from,
+        until,
+        CategoryScope(accountId = account?.id, noAccount = account == null)
+    )
+
+    private fun observeCategorySpending(from: Long, until: Long, scope: CategoryScope) =
+        db.observe {
+            it.transactionDao().observeCategorySpending(
+                from,
+                until,
+                scope.tagId,
+                scope.untagged,
+                scope.accountId,
+                scope.noAccount
+            )
+        }.map { rows -> rows.map { CategorySpend(it.category.toModel(), it.spentPaise) } }
 
     /**
      * Each tag's spending in [from, until), biggest first, then Untagged (a null tag) when there
@@ -99,6 +127,17 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
             rows.map { row ->
                 TagSpend(row.tag?.let { Tag(it.id, it.name) }, row.spentPaise, row.count)
             }
+        }
+
+    /**
+     * Each account's spending in [from, until), biggest first, with No account as a null account.
+     * Added up, they give [observeTotals]' spent figure: transfers never count, so paying a card
+     * bill isn't counted again. Accounts that net to zero are left out; refunds beyond spending
+     * are negative and come last.
+     */
+    fun observeAccountSpending(from: Long, until: Long): Flow<List<AccountSpend>> =
+        db.observe { it.accountDao().observeAccountSpending(from, until) }.map { rows ->
+            rows.map { AccountSpend(it.account?.toModel(), it.spentPaise) }
         }
 
     /** Every expense, refund and income in [from, until), for the Insights charts. */
@@ -217,4 +256,12 @@ private fun TransactionRow.toModel(zone: ZoneId) = TransactionListItem(
     category = category.toModel(),
     tags = tags?.split(TransactionRow.TAG_SEPARATOR)?.sortedBy { it.lowercase() }.orEmpty(),
     countsIn = CountsIn.fromMillis(countsAt, zone)
+)
+
+/** Which transactions a category breakdown covers: a tag (or untagged), an account (or none). */
+private data class CategoryScope(
+    val tagId: Long? = null,
+    val untagged: Boolean = false,
+    val accountId: Long? = null,
+    val noAccount: Boolean = false
 )

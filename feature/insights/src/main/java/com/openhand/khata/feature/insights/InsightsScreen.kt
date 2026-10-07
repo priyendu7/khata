@@ -28,6 +28,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.openhand.khata.core.model.Account
+import com.openhand.khata.core.model.Tag
 import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.ui.DateRangeDialog
 import com.openhand.khata.core.ui.R as UiR
@@ -37,7 +39,7 @@ import java.time.YearMonth
 
 /**
  * Insights tab, wired to its [InsightsViewModel]. [onOpenTransactions] opens the transactions list
- * with a filter: a category, tag or both (or neither) over a period.
+ * with a filter: a category, tag or account (or a mix, or none) over a period.
  */
 @Composable
 fun InsightsScreen(
@@ -47,7 +49,8 @@ fun InsightsScreen(
 ) {
     val donut by viewModel.donut.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
-    val tagBreakdown by viewModel.tagBreakdown.collectAsStateWithLifecycle()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val breakdown by viewModel.breakdown.collectAsStateWithLifecycle()
     val heatmap by viewModel.heatmap.collectAsStateWithLifecycle()
     val monthly by viewModel.monthly.collectAsStateWithLifecycle()
     // The card whose custom dates are being picked, if any.
@@ -81,19 +84,30 @@ fun InsightsScreen(
         onSelectMonths = viewModel::selectMonths,
         onOpenMonth = { openRange(viewModel.rangeOf(it)) },
         tags = tags,
-        tagBreakdown = tagBreakdown,
-        tagActions = TagActions(
+        accounts = accounts,
+        breakdown = breakdown,
+        tagActions = CardActions(
             onSelectPeriod = { selectPeriod(it, PeriodCard.TAGS) },
             onStepPeriod = { viewModel.stepPeriod(it, PeriodCard.TAGS) },
             onSelectPast = { viewModel.selectPast(it, PeriodCard.TAGS) },
-            onOpenTag = viewModel::openTag,
-            onCloseTag = viewModel::closeTag,
-            onOpenTransactions = onOpenTransactions
+            onOpen = viewModel::openTag
         ),
+        accountActions = CardActions(
+            onSelectPeriod = { selectPeriod(it, PeriodCard.ACCOUNTS) },
+            onStepPeriod = { viewModel.stepPeriod(it, PeriodCard.ACCOUNTS) },
+            onSelectPast = { viewModel.selectPast(it, PeriodCard.ACCOUNTS) },
+            onOpen = viewModel::openAccount
+        ),
+        onCloseBreakdown = viewModel::closeBreakdown,
+        onOpenTransactions = onOpenTransactions,
         modifier = modifier
     )
     pickingDates?.let { card ->
-        val span = if (card == PeriodCard.TAGS) tags?.span else donut?.span
+        val span = when (card) {
+            PeriodCard.CATEGORIES -> donut?.span
+            PeriodCard.TAGS -> tags?.span
+            PeriodCard.ACCOUNTS -> accounts?.span
+        }
         DateRangeDialog(
             start = span?.first,
             end = span?.last,
@@ -109,8 +123,9 @@ fun InsightsScreen(
 /**
  * The charts: spending by category for a period ([onOpenCategory] gets null for "Other";
  * [onStepPeriod] gets -1 for back and 1 for forward, [onSelectPast] how many periods back), by
- * tag for its own period (with [tagBreakdown] open over it), by day over the last 12 months, and
- * month by month. Each shows nothing until its first load.
+ * tag, by account, by day over the last 12 months, and month by month. The tag and account cards
+ * have their own periods, and [breakdown] is the sheet open over one of them. Each shows nothing
+ * until its first load.
  */
 @Composable
 fun InsightsContent(
@@ -126,8 +141,12 @@ fun InsightsContent(
     onOpenMonth: (YearMonth) -> Unit,
     modifier: Modifier = Modifier,
     tags: TagsState? = null,
-    tagBreakdown: TagBreakdownState? = null,
-    tagActions: TagActions = TagActions()
+    accounts: AccountsState? = null,
+    breakdown: BreakdownState? = null,
+    tagActions: CardActions<Tag?> = CardActions(),
+    accountActions: CardActions<Account?> = CardActions(),
+    onCloseBreakdown: () -> Unit = {},
+    onOpenTransactions: (TransactionFilter) -> Unit = {}
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -136,11 +155,12 @@ fun InsightsContent(
         ScreenTitle(stringResource(UiR.string.nav_insights))
         donut?.let { DonutCard(it, onSelectPeriod, onStepPeriod, onSelectPast, onOpenCategory) }
         tags?.let { TagCard(it, tagActions) }
+        accounts?.let { AccountCard(it, accountActions) }
         heatmap?.let { HeatmapCard(it, onOpenDay) }
         monthly?.let { MonthlyCard(it, onSelectMonths, onOpenMonth) }
         Spacer(Modifier.height(8.dp))
     }
-    tagBreakdown?.let { TagBreakdownSheet(it, tagActions) }
+    breakdown?.let { BreakdownSheet(it, onCloseBreakdown, onOpenTransactions) }
 }
 
 /** A titled card holding one chart. */

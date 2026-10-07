@@ -72,13 +72,13 @@ private fun ChartPeriod.label(): Int = when (this) {
     ChartPeriod.CUSTOM -> R.string.insights_period_custom
 }
 
-/** A legend row: a slice (or a category left out of the donut) and where tapping it goes. */
-private data class LegendEntry(
-    val categoryId: Long?,
+/** A legend row: a slice (or an entry left out of the donut) and what tapping it opens. */
+internal data class LegendEntry<K>(
+    val key: K,
     val name: String,
     val color: Color,
     val paise: Long,
-    /** Percent of the donut, or null for a category that isn't in it. */
+    /** Percent of the donut, or null for an entry that isn't in it. */
     val share: Int?
 )
 
@@ -89,7 +89,7 @@ internal fun CategoryBreakdownChart(breakdown: CategoryBreakdown, onOpenCategory
     val slices = breakdown.slices.map { it.toEntry(theme, charted) } +
         listOfNotNull(
             breakdown.otherPaise.takeIf { it > 0 }?.let {
-                LegendEntry(
+                LegendEntry<Long?>(
                     null,
                     stringResource(R.string.insights_other),
                     theme.other,
@@ -98,6 +98,27 @@ internal fun CategoryBreakdownChart(breakdown: CategoryBreakdown, onOpenCategory
                 )
             }
         )
+    SpendingDonut(
+        slices = slices,
+        refunded = breakdown.refunded.map { it.toEntry(theme, null) },
+        totalPaise = breakdown.totalPaise,
+        onOpen = onOpenCategory,
+        theme = theme
+    )
+}
+
+/**
+ * A donut of [slices] with [totalPaise] in the middle, its legend, and then the [refunded] entries
+ * (more refunds than spending) that a donut can't draw. Tapping any of them calls [onOpen].
+ */
+@Composable
+internal fun <K> SpendingDonut(
+    slices: List<LegendEntry<K>>,
+    refunded: List<LegendEntry<K>>,
+    totalPaise: Long,
+    onOpen: (K) -> Unit,
+    theme: ChartTheme = chartTheme()
+) {
     val donutSlices = slices.map {
         DonutSlice(
             it.paise,
@@ -114,24 +135,22 @@ internal fun CategoryBreakdownChart(breakdown: CategoryBreakdown, onOpenCategory
         CategoryDonut(
             slices = donutSlices,
             label = stringResource(R.string.insights_spent),
-            amount = Money.format(breakdown.totalPaise),
-            onSliceClick = { onOpenCategory(slices[it].categoryId) },
+            amount = Money.format(totalPaise),
+            onSliceClick = { onOpen(slices[it].key) },
             theme = theme,
             modifier = Modifier
                 .fillMaxWidth(DONUT_WIDTH)
                 .align(Alignment.CenterHorizontally)
                 .padding(vertical = 8.dp)
         )
-        slices.forEach { LegendRow(it) { onOpenCategory(it.categoryId) } }
-        if (breakdown.refunded.isNotEmpty()) {
-            RefundedSection(breakdown.refunded.map { it.toEntry(theme, null) }, onOpenCategory)
-        }
+        slices.forEach { LegendRow(it) { onOpen(it.key) } }
+        if (refunded.isNotEmpty()) RefundedSection(refunded, onOpen)
     }
 }
 
-/** Categories with more refunds than spending: a donut can't draw them, so they're listed. */
+/** Entries with more refunds than spending: a donut can't draw them, so they're listed. */
 @Composable
-private fun RefundedSection(entries: List<LegendEntry>, onOpenCategory: (Long?) -> Unit) {
+private fun <K> RefundedSection(entries: List<LegendEntry<K>>, onOpen: (K) -> Unit) {
     Column(Modifier.padding(top = 8.dp)) {
         Text(
             stringResource(R.string.insights_refunded_title),
@@ -143,12 +162,12 @@ private fun RefundedSection(entries: List<LegendEntry>, onOpenCategory: (Long?) 
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
-    entries.forEach { LegendRow(it) { onOpenCategory(it.categoryId) } }
+    entries.forEach { LegendRow(it) { onOpen(it.key) } }
 }
 
 @Composable
-private fun CategorySpend.toEntry(theme: ChartTheme, charted: Long?) = LegendEntry(
-    categoryId = category.id,
+private fun CategorySpend.toEntry(theme: ChartTheme, charted: Long?) = LegendEntry<Long?>(
+    key = category.id,
     name = categoryName(category.name, category.seedKey),
     color = theme.categoryColor(category.color),
     paise = spentPaise,
@@ -157,7 +176,7 @@ private fun CategorySpend.toEntry(theme: ChartTheme, charted: Long?) = LegendEnt
 
 /** A legend line; TalkBack reads it as name, amount and share, and it opens the transactions. */
 @Composable
-private fun LegendRow(entry: LegendEntry, onClick: () -> Unit) {
+private fun LegendRow(entry: LegendEntry<*>, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

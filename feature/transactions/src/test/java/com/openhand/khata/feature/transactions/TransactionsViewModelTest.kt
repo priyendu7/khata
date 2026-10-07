@@ -10,6 +10,8 @@ import com.openhand.khata.core.data.TagRepository
 import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
+import com.openhand.khata.core.model.Account
+import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Transaction
 import dagger.Lazy
@@ -28,7 +30,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** The list opened from Insights' tag card: one tag's transactions, or the untagged ones. */
+/** The list opened from Insights: one tag's or account's transactions, or those with none. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -52,9 +54,19 @@ class TransactionsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private suspend fun add(at: Long, tags: List<String> = emptyList()) = transactions.save(
-        Transaction(amountPaise = 100_00, direction = Direction.DEBIT, timestamp = at, tags = tags)
-    )
+    private suspend fun add(at: Long, tags: List<String> = emptyList(), accountId: Long? = null) =
+        transactions.save(
+            Transaction(
+                amountPaise = 100_00,
+                direction = Direction.DEBIT,
+                timestamp = at,
+                accountId = accountId,
+                tags = tags
+            )
+        )
+
+    private suspend fun account(name: String) =
+        AccountRepository(lazyDb).save(Account(name = name, type = AccountType.CREDIT_CARD))
 
     private fun list(args: Map<String, Long>) = TransactionsViewModel(
         SavedStateHandle(args),
@@ -103,6 +115,46 @@ class TransactionsViewModelTest {
         // Picking a tag from the filter replaces Untagged.
         viewModel.setTag(db.tagDao().search("Goa", 1).single().id)
         assertEquals(false, viewModel.filter.value.untagged)
+    }
+
+    @Test
+    fun opensWithAnAccountAndARange() = runTest {
+        val card = account("HDFC Card")
+        val onCard = add(AT, accountId = card)
+        add(AT + 1)
+        add(AT + 2, accountId = account("Savings"))
+        add(UNTIL, accountId = card) // After the range.
+
+        val viewModel = list(
+            mapOf(FILTER_ACCOUNT_ARG to card, FILTER_FROM_ARG to AT, FILTER_UNTIL_ARG to UNTIL)
+        )
+
+        assertEquals(card, viewModel.filter.value.accountId)
+        assertEquals(setOf(onCard), viewModel.shownIds())
+    }
+
+    @Test
+    fun opensWithNoAccount() = runTest {
+        val card = account("HDFC Card")
+        add(AT, accountId = card)
+        val none = add(AT + 1)
+
+        val viewModel = list(
+            mapOf(
+                FILTER_ACCOUNT_ARG to FILTER_NO_ACCOUNT,
+                FILTER_FROM_ARG to AT,
+                FILTER_UNTIL_ARG to UNTIL
+            )
+        )
+
+        assertEquals(true, viewModel.filter.value.noAccount)
+        assertEquals(null, viewModel.filter.value.accountId)
+        assertEquals(setOf(none), viewModel.shownIds())
+
+        // Picking an account from the filter replaces No account.
+        viewModel.setAccount(card)
+        assertEquals(false, viewModel.filter.value.noAccount)
+        assertEquals(card, viewModel.filter.value.accountId)
     }
 
     private companion object {

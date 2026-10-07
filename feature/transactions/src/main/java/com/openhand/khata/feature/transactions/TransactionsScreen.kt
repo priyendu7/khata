@@ -177,18 +177,12 @@ private fun FilterRow(filter: TransactionFilter, viewModel: TransactionsViewMode
             selected = category != null
         ) { dialog = FilterDialog.CATEGORY }
         FilterButton(
-            label = if (filter.untagged) {
-                stringResource(UiR.string.tag_untagged)
-            } else {
-                tags.firstOrNull { it.id == filter.tagId }?.name
-                    ?: stringResource(R.string.field_tag)
-            },
+            label = tagLabel(filter, tags),
             selected = filter.tagId != null || filter.untagged
         ) { dialog = FilterDialog.TAG }
         FilterButton(
-            label = accounts.firstOrNull { it.id == filter.accountId }?.name
-                ?: stringResource(R.string.field_account),
-            selected = filter.accountId != null
+            label = accountLabel(filter, accounts),
+            selected = filter.accountId != null || filter.noAccount
         ) { dialog = FilterDialog.ACCOUNT }
         FilterButton(
             label = if (first != null && last != null) {
@@ -240,9 +234,11 @@ private fun FilterRow(filter: TransactionFilter, viewModel: TransactionsViewMode
         )
         FilterDialog.ACCOUNT -> ChoiceDialog(
             title = stringResource(R.string.field_account),
-            choices = listOf(Choice<Long?>(null, stringResource(R.string.filter_any_account))) +
-                accounts.map { Choice(it.id, it.name) },
-            selected = filter.accountId,
+            choices = listOf(
+                Choice<Long?>(null, stringResource(R.string.filter_any_account)),
+                Choice<Long?>(FILTER_NO_ACCOUNT, stringResource(R.string.no_account))
+            ) + accounts.map { Choice(it.id, it.name) },
+            selected = if (filter.noAccount) FILTER_NO_ACCOUNT else filter.accountId,
             onSelect = {
                 viewModel.setAccount(it)
                 close()

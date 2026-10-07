@@ -4,10 +4,14 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
+import com.openhand.khata.core.data.AccountRepository
 import com.openhand.khata.core.data.CategoryRepository
 import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
+import com.openhand.khata.core.model.Account
+import com.openhand.khata.core.model.AccountSpend
+import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Transaction
 import com.openhand.khata.core.model.TransactionFilter
@@ -33,7 +37,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Switching the donut's and tag card's periods, on a real in-memory database. */
+/** Switching the donut's, tag card's and account card's periods, on a real in-memory database. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -63,16 +67,21 @@ class InsightsViewModelTest {
         on: LocalDate,
         paise: Long,
         category: String,
-        tags: List<String> = emptyList()
+        tags: List<String> = emptyList(),
+        accountId: Long? = null
     ) = transactions.save(
         Transaction(
             amountPaise = paise,
             direction = Direction.DEBIT,
             timestamp = on.atTime(12, 0).atZone(zone).toInstant().toEpochMilli(),
+            accountId = accountId,
             categoryId = db.categoryDao().getBySeedKey(category)!!.id,
             tags = tags
         )
     )
+
+    private suspend fun account(name: String) =
+        AccountRepository(Lazy { db }).save(Account(name = name, type = AccountType.BANK))
 
     private fun viewModel() = InsightsViewModel(
         transactions,
@@ -289,14 +298,14 @@ class InsightsViewModelTest {
         spend(today, 200_00, "food", listOf("Goa trip"))
 
         val viewModel = viewModel()
-        viewModel.tagBreakdown.test {
+        viewModel.breakdown.test {
             assertNull(awaitItem())
             viewModel.stepPeriod(-1, PeriodCard.TAGS)
             val goa = viewModel.tags.first { it?.back == 1 }!!.spending.first().tag
             assertEquals("Goa trip", goa?.name)
 
             viewModel.openTag(goa)
-            var state = awaitUntil { it.tag == goa }
+            var state = awaitUntil { it.of == BreakdownOf.OfTag(goa) }
             assertEquals(DateSpan(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31)), state.span)
             assertEquals(1_400_00L, state.breakdown.totalPaise)
             assertEquals(
@@ -314,11 +323,82 @@ class InsightsViewModelTest {
             )
 
             viewModel.openTag(null)
-            state = awaitUntil { it.tag == null }
+            state = awaitUntil { it.of == BreakdownOf.OfTag(null) }
             assertEquals(50_00L, state.breakdown.totalPaise)
             assertEquals(true, state.filter().untagged)
 
-            viewModel.closeTag()
+            viewModel.closeBreakdown()
+            assertNull(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun theAccountCardsPeriodIsIndependent() = runTest {
+        val savings = account("Savings")
+        spend(today, 100_00, "food", accountId = savings)
+        spend(LocalDate.of(2026, 8, 10), 300_00, "travel")
+
+        val viewModel = viewModel()
+        viewModel.tags.test {
+            awaitUntil { it.period == ChartPeriod.MONTH }
+            viewModel.accounts.test {
+                var accounts = awaitUntil { it.period == ChartPeriod.MONTH }
+                assertEquals(listOf("Savings"), accounts.spending.map { it.account?.name })
+
+                viewModel.stepPeriod(-1, PeriodCard.ACCOUNTS)
+                accounts = awaitUntil { it.back == 1 }
+                assertEquals(LocalDate.of(2026, 8, 1), accounts.span.first)
+                assertEquals(listOf(AccountSpend(null, 300_00)), accounts.spending)
+
+                viewModel.selectPeriod(ChartPeriod.YEAR, PeriodCard.ACCOUNTS)
+                accounts = awaitUntil { it.period == ChartPeriod.YEAR }
+                assertEquals(listOf(300_00L, 100_00L), accounts.spending.map { it.spentPaise })
+                cancelAndIgnoreRemainingEvents()
+            }
+            // The other cards never moved.
+            assertEquals(0, viewModel.tags.value!!.back)
+            assertEquals(ChartPeriod.MONTH, viewModel.tags.value!!.period)
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(ChartPeriod.MONTH, viewModel.donut.first { it != null }!!.period)
+    }
+
+    @Test
+    fun openingAnAccountGivesItsBreakdownForTheShownPeriod() = runTest {
+        val card = account("HDFC Card")
+        spend(LocalDate.of(2026, 8, 10), 1_000_00, "travel", accountId = card)
+        spend(LocalDate.of(2026, 8, 11), 400_00, "food", accountId = card)
+        spend(LocalDate.of(2026, 8, 12), 50_00, "food")
+        spend(today, 200_00, "food", accountId = card)
+
+        val viewModel = viewModel()
+        viewModel.breakdown.test {
+            assertNull(awaitItem())
+            viewModel.stepPeriod(-1, PeriodCard.ACCOUNTS)
+            val hdfc = viewModel.accounts.first { it?.back == 1 }!!.spending.first().account
+            assertEquals(card, hdfc?.id)
+
+            viewModel.openAccount(hdfc)
+            var state = awaitUntil { it.of == BreakdownOf.OfAccount(hdfc) }
+            assertEquals(DateSpan(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31)), state.span)
+            assertEquals(1_400_00L, state.breakdown.totalPaise)
+            assertEquals(
+                TransactionFilter(accountId = card, from = state.from, until = state.until),
+                state.filter()
+            )
+
+            viewModel.openAccount(null)
+            state = awaitUntil { it.of == BreakdownOf.OfAccount(null) }
+            assertEquals(50_00L, state.breakdown.totalPaise)
+            assertEquals(true, state.filter().noAccount)
+
+            // The sheet follows its card's period, not the tag card's.
+            viewModel.stepPeriod(1, PeriodCard.ACCOUNTS)
+            state = awaitUntil { it.span.first == LocalDate.of(2026, 9, 1) }
+            assertEquals(0L, state.breakdown.totalPaise)
+
+            viewModel.closeBreakdown()
             assertNull(awaitItem())
             cancelAndIgnoreRemainingEvents()
         }

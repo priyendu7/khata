@@ -19,6 +19,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.Money
+import com.openhand.khata.core.model.Tag
 import com.openhand.khata.core.model.TagSpend
 import com.openhand.khata.core.ui.R as UiR
 
@@ -28,7 +29,7 @@ import com.openhand.khata.core.ui.R as UiR
  * than was spent.
  */
 @Composable
-internal fun TagCard(tags: TagsState, actions: TagActions) {
+internal fun TagCard(tags: TagsState, actions: CardActions<Tag?>) {
     ChartCard(stringResource(R.string.insights_by_tag)) {
         PeriodChips(tags.period, actions.onSelectPeriod)
         PeriodStepper(tags, actions.onStepPeriod, actions.onSelectPast)
@@ -41,7 +42,7 @@ internal fun TagCard(tags: TagsState, actions: TagActions) {
             // Bars are sized against the biggest; a tag with more refunds than spending has none.
             val biggest = tags.spending.maxOf { it.spentPaise }
             tags.spending.forEach { spend ->
-                TagBar(spend, biggest) { actions.onOpenTag(spend.tag) }
+                TagBar(spend, biggest) { actions.onOpen(spend.tag) }
             }
             Text(
                 stringResource(R.string.insights_tag_note),

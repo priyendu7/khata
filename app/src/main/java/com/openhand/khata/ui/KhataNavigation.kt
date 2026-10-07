@@ -54,8 +54,10 @@ import com.openhand.khata.feature.settings.SettingsRoute
 import com.openhand.khata.feature.settings.SmsImportScreen
 import com.openhand.khata.feature.settings.TestMessageScreen
 import com.openhand.khata.feature.transactions.AddTransactionButton
+import com.openhand.khata.feature.transactions.FILTER_ACCOUNT_ARG
 import com.openhand.khata.feature.transactions.FILTER_CATEGORY_ARG
 import com.openhand.khata.feature.transactions.FILTER_FROM_ARG
+import com.openhand.khata.feature.transactions.FILTER_NO_ACCOUNT
 import com.openhand.khata.feature.transactions.FILTER_TAG_ARG
 import com.openhand.khata.feature.transactions.FILTER_UNTAGGED
 import com.openhand.khata.feature.transactions.FILTER_UNTIL_ARG
@@ -98,6 +100,7 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
             arguments = listOf(
                 FILTER_CATEGORY_ARG,
                 FILTER_TAG_ARG,
+                FILTER_ACCOUNT_ARG,
                 FILTER_FROM_ARG,
                 FILTER_UNTIL_ARG
             ).map {
@@ -254,16 +257,20 @@ private object Route {
         "transaction/0?$PREFILL_AMOUNT_ARG=${amountPaise ?: NO_PREFILL}" +
             "&$PREFILL_AT_ARG=$at&$FROM_UNPARSED_ARG=$unparsedId"
 
-    /** The transactions list, filtered by a category, a tag and a date range (each optional). */
+    /** The transactions list, filtered by a category, tag, account and dates (each optional). */
     const val TRANSACTIONS = "transactions?$FILTER_CATEGORY_ARG={$FILTER_CATEGORY_ARG}" +
-        "&$FILTER_TAG_ARG={$FILTER_TAG_ARG}" +
+        "&$FILTER_TAG_ARG={$FILTER_TAG_ARG}&$FILTER_ACCOUNT_ARG={$FILTER_ACCOUNT_ARG}" +
         "&$FILTER_FROM_ARG={$FILTER_FROM_ARG}&$FILTER_UNTIL_ARG={$FILTER_UNTIL_ARG}"
 
-    /** Opens the list with [filter]'s category, tag (or untagged) and dates; search isn't kept. */
+    /**
+     * Opens the list with [filter]'s category, tag (or untagged), account (or none) and dates;
+     * search isn't kept.
+     */
     fun transactions(filter: TransactionFilter): String {
         val tag = if (filter.untagged) FILTER_UNTAGGED else filter.tagId
+        val account = if (filter.noAccount) FILTER_NO_ACCOUNT else filter.accountId
         return "transactions?$FILTER_CATEGORY_ARG=${filter.categoryId ?: NO_FILTER}" +
-            "&$FILTER_TAG_ARG=${tag ?: NO_FILTER}" +
+            "&$FILTER_TAG_ARG=${tag ?: NO_FILTER}&$FILTER_ACCOUNT_ARG=${account ?: NO_FILTER}" +
             "&$FILTER_FROM_ARG=${filter.from ?: NO_FILTER}" +
             "&$FILTER_UNTIL_ARG=${filter.until ?: NO_FILTER}"
     }
