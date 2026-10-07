@@ -26,6 +26,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.openhand.khata.R
+import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.feature.accounts.AccountsScreen
 import com.openhand.khata.feature.categories.CategoriesScreen
 import com.openhand.khata.feature.categories.EventsScreen
@@ -55,6 +56,8 @@ import com.openhand.khata.feature.settings.TestMessageScreen
 import com.openhand.khata.feature.transactions.AddTransactionButton
 import com.openhand.khata.feature.transactions.FILTER_CATEGORY_ARG
 import com.openhand.khata.feature.transactions.FILTER_FROM_ARG
+import com.openhand.khata.feature.transactions.FILTER_TAG_ARG
+import com.openhand.khata.feature.transactions.FILTER_UNTAGGED
 import com.openhand.khata.feature.transactions.FILTER_UNTIL_ARG
 import com.openhand.khata.feature.transactions.FROM_UNPARSED_ARG
 import com.openhand.khata.feature.transactions.NO_FILTER
@@ -86,15 +89,18 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
             MainTabs(
                 onOpen = { page -> navController.navigate(page.route()) },
                 onOpenTransaction = { id -> navController.navigate(Route.transaction(id)) },
-                onOpenTransactions = { categoryId, from, until ->
-                    navController.navigate(Route.transactions(categoryId, from, until))
-                },
+                onOpenTransactions = { navController.navigate(Route.transactions(it)) },
                 onReview = { navController.navigate(Route.REVIEW) { launchSingleTop = true } }
             )
         }
         composable(
             Route.TRANSACTIONS,
-            arguments = listOf(FILTER_CATEGORY_ARG, FILTER_FROM_ARG, FILTER_UNTIL_ARG).map {
+            arguments = listOf(
+                FILTER_CATEGORY_ARG,
+                FILTER_TAG_ARG,
+                FILTER_FROM_ARG,
+                FILTER_UNTIL_ARG
+            ).map {
                 navArgument(it) {
                     type = NavType.LongType
                     defaultValue = NO_FILTER
@@ -248,13 +254,19 @@ private object Route {
         "transaction/0?$PREFILL_AMOUNT_ARG=${amountPaise ?: NO_PREFILL}" +
             "&$PREFILL_AT_ARG=$at&$FROM_UNPARSED_ARG=$unparsedId"
 
-    /** The transactions list, filtered by a category (null for any) and a date range. */
+    /** The transactions list, filtered by a category, a tag and a date range (each optional). */
     const val TRANSACTIONS = "transactions?$FILTER_CATEGORY_ARG={$FILTER_CATEGORY_ARG}" +
+        "&$FILTER_TAG_ARG={$FILTER_TAG_ARG}" +
         "&$FILTER_FROM_ARG={$FILTER_FROM_ARG}&$FILTER_UNTIL_ARG={$FILTER_UNTIL_ARG}"
 
-    fun transactions(categoryId: Long?, from: Long, until: Long) =
-        "transactions?$FILTER_CATEGORY_ARG=${categoryId ?: NO_FILTER}" +
-            "&$FILTER_FROM_ARG=$from&$FILTER_UNTIL_ARG=$until"
+    /** Opens the list with [filter]'s category, tag (or untagged) and dates; search isn't kept. */
+    fun transactions(filter: TransactionFilter): String {
+        val tag = if (filter.untagged) FILTER_UNTAGGED else filter.tagId
+        return "transactions?$FILTER_CATEGORY_ARG=${filter.categoryId ?: NO_FILTER}" +
+            "&$FILTER_TAG_ARG=${tag ?: NO_FILTER}" +
+            "&$FILTER_FROM_ARG=${filter.from ?: NO_FILTER}" +
+            "&$FILTER_UNTIL_ARG=${filter.until ?: NO_FILTER}"
+    }
 }
 
 private fun SettingsPage.route() = when (this) {
@@ -274,7 +286,7 @@ private fun SettingsPage.route() = when (this) {
 private fun MainTabs(
     onOpen: (SettingsPage) -> Unit,
     onOpenTransaction: (Long) -> Unit,
-    onOpenTransactions: (categoryId: Long?, from: Long, until: Long) -> Unit,
+    onOpenTransactions: (TransactionFilter) -> Unit,
     onReview: () -> Unit,
     reviewCount: ReviewCountViewModel = hiltViewModel()
 ) {

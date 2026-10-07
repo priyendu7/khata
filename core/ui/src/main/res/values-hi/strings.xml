@@ -27,6 +27,7 @@
     <string name="field_tags_hint">टैग लिखें, फिर Enter दबाएँ</string>
     <string name="tag_add">टैग जोड़ें</string>
     <string name="tag_remove">%1$s हटाएँ</string>
+    <string name="tag_untagged">बिना टैग</string>
 
     <!-- The category form (CategoryEditor), shared by Settings and the pickers. -->
     <string name="categories_add">श्रेणी जोड़ें</string>

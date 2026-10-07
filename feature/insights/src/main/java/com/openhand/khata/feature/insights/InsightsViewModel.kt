@@ -9,6 +9,9 @@ import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.CategoryBreakdown
 import com.openhand.khata.core.model.HeatLevels
 import com.openhand.khata.core.model.MonthlyComparison
+import com.openhand.khata.core.model.Tag
+import com.openhand.khata.core.model.TagSpend
+import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.model.spendingByDay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.DayOfWeek
@@ -27,6 +30,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
@@ -34,19 +38,43 @@ import kotlinx.coroutines.flow.update
 
 /** The category donut for one period (PRD feature 5). */
 data class DonutState(
+    override val period: ChartPeriod,
+    override val span: DateSpan,
+    override val from: Long,
+    override val until: Long,
+    val breakdown: CategoryBreakdown,
+    override val back: Int = 0,
+    override val choices: List<DateSpan> = emptyList()
+) : ShownPeriod
+
+/** Spending by tag for one period: each tag, biggest first, then Untagged. */
+data class TagsState(
+    override val period: ChartPeriod,
+    override val span: DateSpan,
+    override val from: Long,
+    override val until: Long,
+    val spending: List<TagSpend>,
+    override val back: Int = 0,
+    override val choices: List<DateSpan> = emptyList()
+) : ShownPeriod
+
+/** One tag's spending (or Untagged's, when [tag] is null) by category, for the tag card's period. */
+data class TagBreakdownState(
+    val tag: Tag?,
     val period: ChartPeriod,
     val span: DateSpan,
-    /** [span] as the `[from, until)` milliseconds the transactions list filters by. */
     val from: Long,
     val until: Long,
-    val breakdown: CategoryBreakdown,
-    /** How many periods before the current one [span] is; 0 for a custom period. */
-    val back: Int = 0,
-    /** What tapping the label offers to jump to, newest first: index `i` is `i` periods back. */
-    val choices: List<DateSpan> = emptyList()
+    val breakdown: CategoryBreakdown
 ) {
-    /** Whether › can step forward: it can't go past the current period. */
-    val canStepForward: Boolean get() = period != ChartPeriod.CUSTOM && back > 0
+    /** The transactions list for this tag and period, of one category or of any (null). */
+    fun filter(categoryId: Long? = null) = TransactionFilter(
+        categoryId = categoryId,
+        tagId = tag?.id,
+        untagged = tag == null,
+        from = from,
+        until = until
+    )
 }
 
 /**
@@ -81,8 +109,11 @@ private data class Selection(
     val back: Int = 0
 )
 
-/** What the donut shows: the [selection] worked out against [today]. */
+/** What a card shows: the [selection] worked out against [today]. */
 private data class Shown(val selection: Selection, val today: LocalDate, val span: DateSpan)
+
+/** The tag whose breakdown is open; a null [tag] is Untagged. */
+private data class OpenTag(val tag: Tag?)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -101,7 +132,10 @@ class InsightsViewModel internal constructor(
         WeekFields.of(Locale.getDefault()).firstDayOfWeek
     )
 
-    private val selection = MutableStateFlow(Selection(ChartPeriod.MONTH))
+    private val selections = PeriodCard.entries.associateWith {
+        MutableStateFlow(Selection(ChartPeriod.MONTH))
+    }
+    private val openTag = MutableStateFlow<OpenTag?>(null)
     private val monthCount = MutableStateFlow(SHORT_MONTHS)
     private val days = today.distinctUntilChanged()
 
@@ -110,34 +144,84 @@ class InsightsViewModel internal constructor(
         .map { it?.let { millis -> Instant.ofEpochMilli(millis).atZone(zone).year } }
         .distinctUntilChanged()
 
-    /** Null until the first load; then updated live as transactions or the period change. */
-    val donut: StateFlow<DonutState?> =
-        combine(selection, days) { selected, date ->
+    /** [card]'s selection worked out against today, as today moves on. */
+    private fun shown(card: PeriodCard): Flow<Shown> =
+        combine(selections.getValue(card), days) { selected, date ->
             val span = selected.custom
                 ?: DateSpan.of(selected.period, date, firstDayOfWeek, selected.back)
             Shown(selected, date, span)
-        }
-            .distinctUntilChanged()
-            .flatMapLatest { shown ->
-                val span = shown.span
-                val from = span.from(zone)
-                val until = span.until(zone)
-                combine(transactions.observeCategorySpending(from, until), firstYear) {
-                        spent,
-                        first
-                    ->
-                    DonutState(
-                        period = shown.selection.period,
-                        span = span,
-                        from = from,
-                        until = until,
-                        breakdown = CategoryBreakdown.of(spent),
-                        back = shown.selection.back,
-                        choices = choices(shown.selection.period, shown.today, first)
-                    )
-                }
+        }.distinctUntilChanged()
+
+    /** Null until the first load; then updated live as transactions or the period change. */
+    val donut: StateFlow<DonutState?> = shown(PeriodCard.CATEGORIES)
+        .flatMapLatest { shown ->
+            val span = shown.span
+            val from = span.from(zone)
+            val until = span.until(zone)
+            combine(transactions.observeCategorySpending(from, until), firstYear) { spent, first ->
+                DonutState(
+                    period = shown.selection.period,
+                    span = span,
+                    from = from,
+                    until = until,
+                    breakdown = CategoryBreakdown.of(spent),
+                    back = shown.selection.back,
+                    choices = choices(shown.selection.period, shown.today, first)
+                )
             }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+
+    private val shownTags = shown(PeriodCard.TAGS)
+        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), replay = 1)
+
+    /** The tag card, with its own period; null until the first load. */
+    val tags: StateFlow<TagsState?> = shownTags
+        .flatMapLatest { shown ->
+            val span = shown.span
+            val from = span.from(zone)
+            val until = span.until(zone)
+            combine(transactions.observeTagSpending(from, until), firstYear) { spent, first ->
+                TagsState(
+                    period = shown.selection.period,
+                    span = span,
+                    from = from,
+                    until = until,
+                    spending = spent,
+                    back = shown.selection.back,
+                    choices = choices(shown.selection.period, shown.today, first)
+                )
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+
+    /** The open tag's breakdown, following the tag card's period; null when none is open. */
+    val tagBreakdown: StateFlow<TagBreakdownState?> = combine(openTag, shownTags, ::Pair)
+        .flatMapLatest { (open, shown) ->
+            if (open == null) return@flatMapLatest flowOf(null)
+            val from = shown.span.from(zone)
+            val until = shown.span.until(zone)
+            transactions.observeCategorySpendingForTag(from, until, open.tag).map {
+                TagBreakdownState(
+                    tag = open.tag,
+                    period = shown.selection.period,
+                    span = shown.span,
+                    from = from,
+                    until = until,
+                    breakdown = CategoryBreakdown.of(it)
+                )
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+
+    /** Opens [tag]'s breakdown, or Untagged's for null. */
+    fun openTag(tag: Tag?) {
+        openTag.value = OpenTag(tag)
+    }
+
+    fun closeTag() {
+        openTag.value = null
+    }
 
     /** The last 24 months, or every year since the first transaction; weeks have no list. */
     private fun choices(period: ChartPeriod, today: LocalDate, firstYear: Int?): List<DateSpan> {
@@ -199,28 +283,30 @@ class InsightsViewModel internal constructor(
 
     private fun rangeOf(span: DateSpan) = span.from(zone) to span.until(zone)
 
-    /** This week, month or year; for a custom period use [selectRange]. */
-    fun selectPeriod(period: ChartPeriod) {
+    /** This week, month or year on [card]; for a custom period use [selectRange]. */
+    fun selectPeriod(period: ChartPeriod, card: PeriodCard = PeriodCard.CATEGORIES) {
         require(period != ChartPeriod.CUSTOM) { "Use selectRange for custom dates" }
-        selection.value = Selection(period)
+        selections.getValue(card).value = Selection(period)
     }
 
     /** One period back (-1) or forward (+1), never past the current one or for custom dates. */
-    fun stepPeriod(delta: Int) {
-        selection.update {
+    fun stepPeriod(delta: Int, card: PeriodCard = PeriodCard.CATEGORIES) {
+        selections.getValue(card).update {
             if (it.period == ChartPeriod.CUSTOM) it else it.copy(back = maxOf(0, it.back - delta))
         }
     }
 
     /** The period [back] periods before the current one, of the kind already shown. */
-    fun selectPast(back: Int) {
+    fun selectPast(back: Int, card: PeriodCard = PeriodCard.CATEGORIES) {
         require(back >= 0) { "Only past periods" }
-        selection.update { if (it.period == ChartPeriod.CUSTOM) it else it.copy(back = back) }
+        selections.getValue(card).update {
+            if (it.period == ChartPeriod.CUSTOM) it else it.copy(back = back)
+        }
     }
 
     /** Days from [first] to [last], both included. */
-    fun selectRange(first: LocalDate, last: LocalDate) {
-        selection.value = Selection(ChartPeriod.CUSTOM, DateSpan(first, last))
+    fun selectRange(first: LocalDate, last: LocalDate, card: PeriodCard = PeriodCard.CATEGORIES) {
+        selections.getValue(card).value = Selection(ChartPeriod.CUSTOM, DateSpan(first, last))
     }
 
     companion object {

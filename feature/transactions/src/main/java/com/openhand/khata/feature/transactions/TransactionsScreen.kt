@@ -177,9 +177,13 @@ private fun FilterRow(filter: TransactionFilter, viewModel: TransactionsViewMode
             selected = category != null
         ) { dialog = FilterDialog.CATEGORY }
         FilterButton(
-            label = tags.firstOrNull { it.id == filter.tagId }?.name
-                ?: stringResource(R.string.field_tag),
-            selected = filter.tagId != null
+            label = if (filter.untagged) {
+                stringResource(UiR.string.tag_untagged)
+            } else {
+                tags.firstOrNull { it.id == filter.tagId }?.name
+                    ?: stringResource(R.string.field_tag)
+            },
+            selected = filter.tagId != null || filter.untagged
         ) { dialog = FilterDialog.TAG }
         FilterButton(
             label = accounts.firstOrNull { it.id == filter.accountId }?.name
@@ -223,9 +227,11 @@ private fun FilterRow(filter: TransactionFilter, viewModel: TransactionsViewMode
         )
         FilterDialog.TAG -> ChoiceDialog(
             title = stringResource(R.string.field_tag),
-            choices = listOf(Choice<Long?>(null, stringResource(R.string.filter_any_tag))) +
-                tags.map { Choice(it.id, it.name) },
-            selected = filter.tagId,
+            choices = listOf(
+                Choice<Long?>(null, stringResource(R.string.filter_any_tag)),
+                Choice<Long?>(FILTER_UNTAGGED, stringResource(UiR.string.tag_untagged))
+            ) + tags.map { Choice(it.id, it.name) },
+            selected = if (filter.untagged) FILTER_UNTAGGED else filter.tagId,
             onSelect = {
                 viewModel.setTag(it)
                 close()

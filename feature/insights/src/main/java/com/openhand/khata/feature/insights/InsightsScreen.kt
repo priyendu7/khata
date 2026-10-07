@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.ui.DateRangeDialog
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
@@ -35,57 +36,81 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 /**
- * Insights tab, wired to its [InsightsViewModel]. [onOpenTransactions] opens the transactions of a
- * category (null for all of them) between `from` and `until`.
+ * Insights tab, wired to its [InsightsViewModel]. [onOpenTransactions] opens the transactions list
+ * with a filter: a category, tag or both (or neither) over a period.
  */
 @Composable
 fun InsightsScreen(
-    onOpenTransactions: (categoryId: Long?, from: Long, until: Long) -> Unit,
+    onOpenTransactions: (TransactionFilter) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: InsightsViewModel = hiltViewModel()
 ) {
     val donut by viewModel.donut.collectAsStateWithLifecycle()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val tagBreakdown by viewModel.tagBreakdown.collectAsStateWithLifecycle()
     val heatmap by viewModel.heatmap.collectAsStateWithLifecycle()
     val monthly by viewModel.monthly.collectAsStateWithLifecycle()
-    var pickingDates by rememberSaveable { mutableStateOf(false) }
+    // The card whose custom dates are being picked, if any.
+    var pickingDates by rememberSaveable { mutableStateOf<PeriodCard?>(null) }
+    fun selectPeriod(period: ChartPeriod, card: PeriodCard) {
+        if (period ==
+            ChartPeriod.CUSTOM
+        ) {
+            pickingDates = card
+        } else {
+            viewModel.selectPeriod(period, card)
+        }
+    }
+    fun openRange(range: Pair<Long, Long>) =
+        onOpenTransactions(TransactionFilter(from = range.first, until = range.second))
     InsightsContent(
         donut = donut,
         heatmap = heatmap,
         monthly = monthly,
-        onSelectPeriod = {
-            if (it == ChartPeriod.CUSTOM) pickingDates = true else viewModel.selectPeriod(it)
-        },
+        onSelectPeriod = { selectPeriod(it, PeriodCard.CATEGORIES) },
         onStepPeriod = viewModel::stepPeriod,
         onSelectPast = viewModel::selectPast,
-        onOpenCategory = { id -> donut?.let { onOpenTransactions(id, it.from, it.until) } },
-        onOpenDay = { day ->
-            val (from, until) = viewModel.rangeOf(day)
-            onOpenTransactions(null, from, until)
+        onOpenCategory = { id ->
+            donut?.let {
+                onOpenTransactions(
+                    TransactionFilter(categoryId = id, from = it.from, until = it.until)
+                )
+            }
         },
+        onOpenDay = { openRange(viewModel.rangeOf(it)) },
         onSelectMonths = viewModel::selectMonths,
-        onOpenMonth = { month ->
-            val (from, until) = viewModel.rangeOf(month)
-            onOpenTransactions(null, from, until)
-        },
+        onOpenMonth = { openRange(viewModel.rangeOf(it)) },
+        tags = tags,
+        tagBreakdown = tagBreakdown,
+        tagActions = TagActions(
+            onSelectPeriod = { selectPeriod(it, PeriodCard.TAGS) },
+            onStepPeriod = { viewModel.stepPeriod(it, PeriodCard.TAGS) },
+            onSelectPast = { viewModel.selectPast(it, PeriodCard.TAGS) },
+            onOpenTag = viewModel::openTag,
+            onCloseTag = viewModel::closeTag,
+            onOpenTransactions = onOpenTransactions
+        ),
         modifier = modifier
     )
-    if (pickingDates) {
+    pickingDates?.let { card ->
+        val span = if (card == PeriodCard.TAGS) tags?.span else donut?.span
         DateRangeDialog(
-            start = donut?.span?.first,
-            end = donut?.span?.last,
+            start = span?.first,
+            end = span?.last,
             onPick = { first, last ->
-                viewModel.selectRange(first, last)
-                pickingDates = false
+                viewModel.selectRange(first, last, card)
+                pickingDates = null
             },
-            onDismiss = { pickingDates = false }
+            onDismiss = { pickingDates = null }
         )
     }
 }
 
 /**
- * The three charts: spending by category for a period ([onOpenCategory] gets null for "Other";
+ * The charts: spending by category for a period ([onOpenCategory] gets null for "Other";
  * [onStepPeriod] gets -1 for back and 1 for forward, [onSelectPast] how many periods back), by
- * day over the last 12 months, and month by month. Each shows nothing until its first load.
+ * tag for its own period (with [tagBreakdown] open over it), by day over the last 12 months, and
+ * month by month. Each shows nothing until its first load.
  */
 @Composable
 fun InsightsContent(
@@ -99,7 +124,10 @@ fun InsightsContent(
     onOpenDay: (LocalDate) -> Unit,
     onSelectMonths: (Int) -> Unit,
     onOpenMonth: (YearMonth) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tags: TagsState? = null,
+    tagBreakdown: TagBreakdownState? = null,
+    tagActions: TagActions = TagActions()
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -107,10 +135,12 @@ fun InsightsContent(
     ) {
         ScreenTitle(stringResource(UiR.string.nav_insights))
         donut?.let { DonutCard(it, onSelectPeriod, onStepPeriod, onSelectPast, onOpenCategory) }
+        tags?.let { TagCard(it, tagActions) }
         heatmap?.let { HeatmapCard(it, onOpenDay) }
         monthly?.let { MonthlyCard(it, onSelectMonths, onOpenMonth) }
         Spacer(Modifier.height(8.dp))
     }
+    tagBreakdown?.let { TagBreakdownSheet(it, tagActions) }
 }
 
 /** A titled card holding one chart. */

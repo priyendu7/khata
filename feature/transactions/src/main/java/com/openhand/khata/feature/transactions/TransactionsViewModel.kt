@@ -32,9 +32,13 @@ import kotlinx.coroutines.flow.update
 
 /** Navigation arguments that open the list already filtered; [NO_FILTER] (or none) means "any". */
 const val FILTER_CATEGORY_ARG = "category"
+const val FILTER_TAG_ARG = "tag"
 const val FILTER_FROM_ARG = "from"
 const val FILTER_UNTIL_ARG = "until"
 const val NO_FILTER = -1L
+
+/** A tag filter value meaning transactions with no tag at all. */
+const val FILTER_UNTAGGED = -2L
 
 /** What the list shows: the filter, and the days that match it (null until the first load). */
 data class ListState(val filter: TransactionFilter, val days: List<DaySection>?)
@@ -53,7 +57,7 @@ class TransactionsViewModel @Inject constructor(
             categoryId = savedState.filterArg(FILTER_CATEGORY_ARG),
             from = savedState.filterArg(FILTER_FROM_ARG),
             until = savedState.filterArg(FILTER_UNTIL_ARG)
-        )
+        ).withTag(savedState.filterArg(FILTER_TAG_ARG))
     )
     val filter: StateFlow<TransactionFilter> = _filter.asStateFlow()
 
@@ -83,7 +87,8 @@ class TransactionsViewModel @Inject constructor(
 
     fun setCategory(id: Long?) = _filter.update { it.copy(categoryId = id) }
 
-    fun setTag(id: Long?) = _filter.update { it.copy(tagId = id) }
+    /** A tag's id, [FILTER_UNTAGGED], or null for any. */
+    fun setTag(id: Long?) = _filter.update { it.withTag(id) }
 
     fun setAccount(id: Long?) = _filter.update { it.copy(accountId = id) }
 
@@ -106,6 +111,9 @@ class TransactionsViewModel @Inject constructor(
         const val SEARCH_DEBOUNCE_MILLIS = 200L
     }
 }
+
+private fun TransactionFilter.withTag(id: Long?) =
+    copy(tagId = id.takeUnless { it == FILTER_UNTAGGED }, untagged = id == FILTER_UNTAGGED)
 
 private fun SavedStateHandle.filterArg(key: String): Long? =
     get<Long>(key)?.takeUnless { it == NO_FILTER }

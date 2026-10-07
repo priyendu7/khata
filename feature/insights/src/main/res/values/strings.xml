@@ -29,6 +29,17 @@
     <string name="insights_nothing_spent_title">Nothing spent in this period</string>
     <string name="insights_nothing_spent_body">Pick another period, or add expenses from Home or Transactions.</string>
     <string name="insights_income">Income</string>
+    <!-- Spending by tag card and its breakdown sheet. -->
+    <string name="insights_by_tag">Spending by tag</string>
+    <string name="insights_tag_note">A transaction with several tags counts in each.</string>
+    <plurals name="insights_tag_count">
+        <item quantity="one">%d transaction</item>
+        <item quantity="other">%d transactions</item>
+    </plurals>
+    <!-- The sheet's title: a tag (or Untagged), then its period, e.g. "Goa trip · October 2026". -->
+    <string name="insights_tag_title">%1$s · %2$s</string>
+    <string name="insights_tag_total">%1$s spent</string>
+    <string name="insights_see_transactions">See transactions</string>
     <string name="insights_heatmap_title">Spending by day</string>
     <string name="insights_less">Less</string>
     <string name="insights_more">More</string>

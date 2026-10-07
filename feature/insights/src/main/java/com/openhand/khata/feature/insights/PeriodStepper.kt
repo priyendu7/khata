@@ -27,52 +27,52 @@ import com.openhand.khata.core.ui.R as UiR
 import java.time.format.DateTimeFormatter
 
 /**
- * The donut's dates as ‹ label ›: the arrows step a period back or forward, and tapping the label
+ * A card's dates as ‹ label ›: the arrows step a period back or forward, and tapping the label
  * lists earlier months or years to jump to. A custom period shows just its dates.
  */
 @Composable
 internal fun PeriodStepper(
-    donut: DonutState,
+    shown: ShownPeriod,
     onStepPeriod: (Int) -> Unit,
     onSelectPast: (Int) -> Unit
 ) {
-    if (donut.period == ChartPeriod.CUSTOM) {
+    if (shown.period == ChartPeriod.CUSTOM) {
         Text(
-            spanLabel(ChartPeriod.CUSTOM, donut.span),
+            spanLabel(ChartPeriod.CUSTOM, shown.span),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         return
     }
-    val choose = donut.period.chooseName()?.takeIf { donut.choices.isNotEmpty() }
+    val choose = shown.period.chooseName()?.takeIf { shown.choices.isNotEmpty() }
     var choosing by rememberSaveable { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         IconButton(onClick = { onStepPeriod(-1) }) {
             Icon(
                 painterResource(UiR.drawable.ic_chevron_left),
-                contentDescription = stringResource(donut.period.previousName())
+                contentDescription = stringResource(shown.period.previousName())
             )
         }
         PeriodLabel(
-            text = spanLabel(donut.period, donut.span),
+            text = spanLabel(shown.period, shown.span),
             chooseLabel = choose?.let { stringResource(it) },
             onClick = { choosing = true },
             modifier = Modifier.weight(1f)
         )
-        IconButton(onClick = { onStepPeriod(1) }, enabled = donut.canStepForward) {
+        IconButton(onClick = { onStepPeriod(1) }, enabled = shown.canStepForward) {
             Icon(
                 painterResource(UiR.drawable.ic_chevron_right),
-                contentDescription = stringResource(donut.period.nextName())
+                contentDescription = stringResource(shown.period.nextName())
             )
         }
     }
     if (choosing && choose != null) {
         ChoiceDialog(
             title = stringResource(choose),
-            choices = donut.choices.mapIndexed { back, span ->
-                Choice(back, spanLabel(donut.period, span))
+            choices = shown.choices.mapIndexed { back, span ->
+                Choice(back, spanLabel(shown.period, span))
             },
-            selected = donut.back,
+            selected = shown.back,
             onSelect = {
                 onSelectPast(it)
                 choosing = false
@@ -136,7 +136,7 @@ private fun ChartPeriod.chooseName(): Int? = when (this) {
 
 /** "September 2026", "22–28 Sep", "2025", or a custom period's first and last days. */
 @Composable
-private fun spanLabel(period: ChartPeriod, span: DateSpan): String {
+internal fun spanLabel(period: ChartPeriod, span: DateSpan): String {
     val locale = LocalConfiguration.current.locales[0]
     fun format(pattern: String) = DateTimeFormatter.ofPattern(pattern, locale)
     val first = span.first

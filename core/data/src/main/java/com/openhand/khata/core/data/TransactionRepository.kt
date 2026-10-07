@@ -8,6 +8,8 @@ import com.openhand.khata.core.model.AmountEntry
 import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.CountsIn
 import com.openhand.khata.core.model.DefaultCategory
+import com.openhand.khata.core.model.Tag
+import com.openhand.khata.core.model.TagSpend
 import com.openhand.khata.core.model.Totals
 import com.openhand.khata.core.model.Transaction
 import com.openhand.khata.core.model.TransactionFilter
@@ -36,6 +38,7 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
                 query = query,
                 categoryId = filter.categoryId,
                 tagId = filter.tagId,
+                untagged = filter.untagged,
                 accountId = filter.accountId,
                 from = filter.from,
                 until = filter.until
@@ -68,8 +71,35 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
      * [observeTotals]: added up, they give its spent figure. Refunds beyond spending are negative.
      */
     fun observeCategorySpending(from: Long, until: Long): Flow<List<CategorySpend>> =
-        db.observe { it.transactionDao().observeCategorySpending(from, until) }
+        observeCategorySpending(from, until, tagId = null, untagged = false)
+
+    /**
+     * Like [observeCategorySpending], for one [tag]'s transactions only, or those with no tag
+     * when [tag] is null. Added up, they give that tag's figure in [observeTagSpending].
+     */
+    fun observeCategorySpendingForTag(
+        from: Long,
+        until: Long,
+        tag: Tag?
+    ): Flow<List<CategorySpend>> =
+        observeCategorySpending(from, until, tagId = tag?.id, untagged = tag == null)
+
+    private fun observeCategorySpending(from: Long, until: Long, tagId: Long?, untagged: Boolean) =
+        db.observe { it.transactionDao().observeCategorySpending(from, until, tagId, untagged) }
             .map { rows -> rows.map { CategorySpend(it.category.toModel(), it.spentPaise) } }
+
+    /**
+     * Each tag's spending in [from, until), biggest first, then Untagged (a null tag) when there
+     * is any. A transaction with several tags counts in each, so these can add up to more than
+     * was spent. Tags that net to zero are left out; refunds beyond spending are negative and
+     * come just before Untagged.
+     */
+    fun observeTagSpending(from: Long, until: Long): Flow<List<TagSpend>> =
+        db.observe { it.tagDao().observeTagSpending(from, until) }.map { rows ->
+            rows.map { row ->
+                TagSpend(row.tag?.let { Tag(it.id, it.name) }, row.spentPaise, row.count)
+            }
+        }
 
     /** Every expense, refund and income in [from, until), for the Insights charts. */
     fun observeAmounts(from: Long, until: Long): Flow<List<AmountEntry>> =

@@ -29,6 +29,15 @@
     <string name="insights_refunded_body">चार्ट में नहीं, पर कुल में गिना गया है।</string>
     <string name="insights_nothing_spent_title">इस अवधि में कोई खर्च नहीं</string>
     <string name="insights_nothing_spent_body">कोई और अवधि चुनें, या होम या लेन-देन से खर्च जोड़ें।</string>
+    <string name="insights_by_tag">टैग के हिसाब से खर्च</string>
+    <string name="insights_tag_note">कई टैग वाला लेन-देन हर टैग में गिना जाता है।</string>
+    <plurals name="insights_tag_count">
+        <item quantity="one">%d लेन-देन</item>
+        <item quantity="other">%d लेन-देन</item>
+    </plurals>
+    <string name="insights_tag_title">%1$s · %2$s</string>
+    <string name="insights_tag_total">%1$s खर्च</string>
+    <string name="insights_see_transactions">लेन-देन देखें</string>
     <string name="insights_income">आय</string>
     <string name="insights_heatmap_title">रोज़ का खर्च</string>
     <string name="insights_less">कम</string>

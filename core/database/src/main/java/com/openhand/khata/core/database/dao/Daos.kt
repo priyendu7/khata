@@ -60,6 +60,16 @@ data class CategorySpendRow(
     @ColumnInfo(name = "spent_paise") val spentPaise: Long
 )
 
+/**
+ * A tag's spending (expenses minus refunds) over a period, and how many transactions it covers.
+ * A null [tag] is the transactions with no tag at all.
+ */
+data class TagSpendRow(
+    @Embedded(prefix = "tag_") val tag: TagEntity?,
+    @ColumnInfo(name = "spent_paise") val spentPaise: Long,
+    val count: Int
+)
+
 /** An expense, refund or income, with just what the charts need. */
 data class AmountRow(
     val timestamp: Long,
@@ -241,6 +251,27 @@ interface TagDao {
         moveEvent(from, into)
         deleteById(from)
     }
+
+    /**
+     * Every tag's spending (expenses minus refunds) for timestamps in [from, until), biggest
+     * first, then the untagged transactions' (a null tag: the left join groups them together).
+     * A transaction with several tags counts in each, so these can add up to more than was
+     * spent. Tags that net to zero are left out; more refunds than spending is negative.
+     */
+    @Query(
+        "SELECT g.id AS tag_id, g.name AS tag_name, " +
+            "SUM(CASE t.direction WHEN 'debit' THEN t.amount_paise ELSE -t.amount_paise END) " +
+            "AS spent_paise, COUNT(DISTINCT t.id) AS count " +
+            "FROM transactions t " +
+            "LEFT JOIN transaction_tags tt ON tt.transaction_id = t.id " +
+            "LEFT JOIN tags g ON g.id = tt.tag_id " +
+            "WHERE t.direction IN ('debit', 'refund') " +
+            "AND COALESCE(t.counts_at, t.timestamp) >= :from " +
+            "AND COALESCE(t.counts_at, t.timestamp) < :until " +
+            "GROUP BY g.id HAVING spent_paise != 0 " +
+            "ORDER BY g.id IS NULL, spent_paise DESC, g.name"
+    )
+    fun observeTagSpending(from: Long, until: Long): Flow<List<TagSpendRow>>
 }
 
 @Dao
@@ -424,6 +455,7 @@ interface TransactionDao {
      * Every category's spending (expenses minus refunds) for timestamps in [from, until), biggest
      * first, with the same rules as [observeTopCategory]. A category with more refunds than
      * spending comes last with a negative total; categories that net to zero are left out.
+     * [tagId] limits it to one tag's transactions, and [untagged] to those with no tag.
      */
     @Query(
         "SELECT c.id AS category_id, c.name AS category_name, " +
@@ -435,9 +467,18 @@ interface TransactionDao {
             "WHERE t.direction IN ('debit', 'refund') " +
             "AND COALESCE(t.counts_at, t.timestamp) >= :from " +
             "AND COALESCE(t.counts_at, t.timestamp) < :until " +
+            "AND (:tagId IS NULL OR EXISTS (SELECT 1 FROM transaction_tags x " +
+            "WHERE x.transaction_id = t.id AND x.tag_id = :tagId)) " +
+            "AND (NOT :untagged OR NOT EXISTS (SELECT 1 FROM transaction_tags x " +
+            "WHERE x.transaction_id = t.id)) " +
             "GROUP BY c.id HAVING spent_paise != 0 ORDER BY spent_paise DESC, c.id"
     )
-    fun observeCategorySpending(from: Long, until: Long): Flow<List<CategorySpendRow>>
+    fun observeCategorySpending(
+        from: Long,
+        until: Long,
+        tagId: Long?,
+        untagged: Boolean
+    ): Flow<List<CategorySpendRow>>
 
     /**
      * Every expense, refund and income for timestamps in [from, until), for charts that group by
@@ -471,6 +512,8 @@ interface TransactionDao {
             "AND (:accountId IS NULL OR t.account_id = :accountId) " +
             "AND (:tagId IS NULL OR EXISTS (SELECT 1 FROM transaction_tags x " +
             "WHERE x.transaction_id = t.id AND x.tag_id = :tagId)) " +
+            "AND (NOT :untagged OR NOT EXISTS (SELECT 1 FROM transaction_tags x " +
+            "WHERE x.transaction_id = t.id)) " +
             "AND (:from IS NULL OR COALESCE(t.counts_at, t.timestamp) >= :from) " +
             "AND (:until IS NULL OR COALESCE(t.counts_at, t.timestamp) < :until) " +
             "AND (:query IS NULL OR p.display_name LIKE '%' || :query || '%' ESCAPE '\\' " +
@@ -483,6 +526,7 @@ interface TransactionDao {
         query: String?,
         categoryId: Long?,
         tagId: Long?,
+        untagged: Boolean,
         accountId: Long?,
         from: Long?,
         until: Long?
