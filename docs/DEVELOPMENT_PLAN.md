@@ -118,7 +118,7 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 
 - [ ] Ask for SMS permissions only when the user turns SMS import on, with a clear explanation screen first
 - [ ] Receiver for new SMS, plus a one-time scan of the inbox from a start date the user picks
-- [ ] Review inbox: cards for new payees with a count badge; name, category and tags; skip. A remembered category also files the payee's older uncategorized transactions (#57)
+- [x] Review inbox: cards for new payees with a count badge; name, category and tags; skip. A remembered category also files the payee's older uncategorized transactions (#57)
 - [ ] Unparsed bank SMS appear in the review inbox with their raw text
 
 **Custom parsers**
@@ -134,14 +134,15 @@ By the end of this phase your bank SMS are recorded automatically, and anyone ca
 
 This phase is for using the app day to day, testing it, and acting on what comes up. Its issues improve features that already exist rather than adding new areas.
 
-- [ ] Events: tag every transaction in a date range (#73)
-- [ ] Create a category from the transaction editor (#74)
-- [ ] Counts in month: show a transaction, such as an early salary, in a different month (#93)
-- [ ] Spending by category: step back to earlier months, weeks and years (#98)
+- [x] Events: tag every transaction in a date range (#73)
+- [x] Create a category from the transaction editor (#74)
+- [x] Counts in month: show a transaction, such as an early salary, in a different month (#93)
+- [x] Spending by category: step back to earlier months, weeks and years (#98)
+- [ ] Insights: spending by tag, with each tag's spending by category (#104)
 
 **SMS filters** (PRD feature 7). The app reads every business sender, not only banks it has rules for, so a bank without a rule shows up in the review inbox instead of being skipped. Filters decide what's worth asking about.
 
-- [ ] Read every business sender; sender filters before parsing, content filters only on what no rule read (#86)
+- [x] Read every business sender; sender filters before parsing, content filters only on what no rule read (#86)
 - [x] Settings > SMS import > Filters: switch each filter on or off (#87)
 - [x] Ignore this sender, and ignore messages like this (#88)
 - [ ] Review inbox: unreadable SMS grouped by sender (#89)
