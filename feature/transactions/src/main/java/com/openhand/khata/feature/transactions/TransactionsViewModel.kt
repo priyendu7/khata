@@ -33,12 +33,16 @@ import kotlinx.coroutines.flow.update
 /** Navigation arguments that open the list already filtered; [NO_FILTER] (or none) means "any". */
 const val FILTER_CATEGORY_ARG = "category"
 const val FILTER_TAG_ARG = "tag"
+const val FILTER_ACCOUNT_ARG = "account"
 const val FILTER_FROM_ARG = "from"
 const val FILTER_UNTIL_ARG = "until"
 const val NO_FILTER = -1L
 
 /** A tag filter value meaning transactions with no tag at all. */
 const val FILTER_UNTAGGED = -2L
+
+/** An account filter value meaning transactions with no account. */
+const val FILTER_NO_ACCOUNT = -2L
 
 /** What the list shows: the filter, and the days that match it (null until the first load). */
 data class ListState(val filter: TransactionFilter, val days: List<DaySection>?)
@@ -58,6 +62,7 @@ class TransactionsViewModel @Inject constructor(
             from = savedState.filterArg(FILTER_FROM_ARG),
             until = savedState.filterArg(FILTER_UNTIL_ARG)
         ).withTag(savedState.filterArg(FILTER_TAG_ARG))
+            .withAccount(savedState.filterArg(FILTER_ACCOUNT_ARG))
     )
     val filter: StateFlow<TransactionFilter> = _filter.asStateFlow()
 
@@ -90,7 +95,8 @@ class TransactionsViewModel @Inject constructor(
     /** A tag's id, [FILTER_UNTAGGED], or null for any. */
     fun setTag(id: Long?) = _filter.update { it.withTag(id) }
 
-    fun setAccount(id: Long?) = _filter.update { it.copy(accountId = id) }
+    /** An account's id, [FILTER_NO_ACCOUNT], or null for any. */
+    fun setAccount(id: Long?) = _filter.update { it.withAccount(id) }
 
     /** Days from [first] to [last], both included, in the phone's time zone; nulls clear it. */
     fun setDates(first: LocalDate?, last: LocalDate?) {
@@ -114,6 +120,11 @@ class TransactionsViewModel @Inject constructor(
 
 private fun TransactionFilter.withTag(id: Long?) =
     copy(tagId = id.takeUnless { it == FILTER_UNTAGGED }, untagged = id == FILTER_UNTAGGED)
+
+private fun TransactionFilter.withAccount(id: Long?) = copy(
+    accountId = id.takeUnless { it == FILTER_NO_ACCOUNT },
+    noAccount = id == FILTER_NO_ACCOUNT
+)
 
 private fun SavedStateHandle.filterArg(key: String): Long? =
     get<Long>(key)?.takeUnless { it == NO_FILTER }

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openhand.khata.core.data.CategoryRepository
 import com.openhand.khata.core.data.TransactionRepository
+import com.openhand.khata.core.model.Account
+import com.openhand.khata.core.model.AccountSpend
 import com.openhand.khata.core.model.AmountEntry
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.CategoryBreakdown
@@ -11,7 +13,6 @@ import com.openhand.khata.core.model.HeatLevels
 import com.openhand.khata.core.model.MonthlyComparison
 import com.openhand.khata.core.model.Tag
 import com.openhand.khata.core.model.TagSpend
-import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.model.spendingByDay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.DayOfWeek
@@ -58,24 +59,16 @@ data class TagsState(
     override val choices: List<DateSpan> = emptyList()
 ) : ShownPeriod
 
-/** One tag's spending (or Untagged's, when [tag] is null) by category, for the tag card's period. */
-data class TagBreakdownState(
-    val tag: Tag?,
-    val period: ChartPeriod,
-    val span: DateSpan,
-    val from: Long,
-    val until: Long,
-    val breakdown: CategoryBreakdown
-) {
-    /** The transactions list for this tag and period, of one category or of any (null). */
-    fun filter(categoryId: Long? = null) = TransactionFilter(
-        categoryId = categoryId,
-        tagId = tag?.id,
-        untagged = tag == null,
-        from = from,
-        until = until
-    )
-}
+/** Spending by account for one period: each account, biggest first, No account among them. */
+data class AccountsState(
+    override val period: ChartPeriod,
+    override val span: DateSpan,
+    override val from: Long,
+    override val until: Long,
+    val spending: List<AccountSpend>,
+    override val back: Int = 0,
+    override val choices: List<DateSpan> = emptyList()
+) : ShownPeriod
 
 /**
  * The calendar heatmap (PRD feature 5): spending on each day from [first] to [today], and the
@@ -112,8 +105,15 @@ private data class Selection(
 /** What a card shows: the [selection] worked out against [today]. */
 private data class Shown(val selection: Selection, val today: LocalDate, val span: DateSpan)
 
-/** The tag whose breakdown is open; a null [tag] is Untagged. */
-private data class OpenTag(val tag: Tag?)
+/** A card's shown period, with everything [ShownPeriod] needs. */
+private data class CardPeriod(
+    val period: ChartPeriod,
+    val span: DateSpan,
+    val from: Long,
+    val until: Long,
+    val back: Int,
+    val choices: List<DateSpan>
+)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -135,7 +135,7 @@ class InsightsViewModel internal constructor(
     private val selections = PeriodCard.entries.associateWith {
         MutableStateFlow(Selection(ChartPeriod.MONTH))
     }
-    private val openTag = MutableStateFlow<OpenTag?>(null)
+    private val openBreakdown = MutableStateFlow<BreakdownOf?>(null)
     private val monthCount = MutableStateFlow(SHORT_MONTHS)
     private val days = today.distinctUntilChanged()
 
@@ -152,75 +152,112 @@ class InsightsViewModel internal constructor(
             Shown(selected, date, span)
         }.distinctUntilChanged()
 
-    /** Null until the first load; then updated live as transactions or the period change. */
-    val donut: StateFlow<DonutState?> = shown(PeriodCard.CATEGORIES)
+    /** Each card's selection, shared by the card and the breakdown sheet that follows it. */
+    private val shownCards = PeriodCard.entries.associateWith { card ->
+        shown(card).shareIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            replay = 1
+        )
+    }
+
+    /**
+     * [card]'s state, built from its [CardPeriod] and what [load] gives for it; updated live, and
+     * null until the first load.
+     */
+    private fun <T, S> cardState(
+        card: PeriodCard,
+        load: (from: Long, until: Long) -> Flow<T>,
+        build: (CardPeriod, T) -> S
+    ): StateFlow<S?> = shownCards.getValue(card)
         .flatMapLatest { shown ->
-            val span = shown.span
-            val from = span.from(zone)
-            val until = span.until(zone)
-            combine(transactions.observeCategorySpending(from, until), firstYear) { spent, first ->
-                DonutState(
-                    period = shown.selection.period,
-                    span = span,
-                    from = from,
-                    until = until,
-                    breakdown = CategoryBreakdown.of(spent),
-                    back = shown.selection.back,
-                    choices = choices(shown.selection.period, shown.today, first)
-                )
-            }
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
-
-    private val shownTags = shown(PeriodCard.TAGS)
-        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), replay = 1)
-
-    /** The tag card, with its own period; null until the first load. */
-    val tags: StateFlow<TagsState?> = shownTags
-        .flatMapLatest { shown ->
-            val span = shown.span
-            val from = span.from(zone)
-            val until = span.until(zone)
-            combine(transactions.observeTagSpending(from, until), firstYear) { spent, first ->
-                TagsState(
-                    period = shown.selection.period,
-                    span = span,
-                    from = from,
-                    until = until,
-                    spending = spent,
-                    back = shown.selection.back,
-                    choices = choices(shown.selection.period, shown.today, first)
-                )
-            }
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
-
-    /** The open tag's breakdown, following the tag card's period; null when none is open. */
-    val tagBreakdown: StateFlow<TagBreakdownState?> = combine(openTag, shownTags, ::Pair)
-        .flatMapLatest { (open, shown) ->
-            if (open == null) return@flatMapLatest flowOf(null)
             val from = shown.span.from(zone)
             val until = shown.span.until(zone)
-            transactions.observeCategorySpendingForTag(from, until, open.tag).map {
-                TagBreakdownState(
-                    tag = open.tag,
-                    period = shown.selection.period,
-                    span = shown.span,
-                    from = from,
-                    until = until,
-                    breakdown = CategoryBreakdown.of(it)
+            combine(load(from, until), firstYear) { loaded, first ->
+                val period = shown.selection.period
+                build(
+                    CardPeriod(
+                        period,
+                        shown.span,
+                        from,
+                        until,
+                        shown.selection.back,
+                        choices(period, shown.today, first)
+                    ),
+                    loaded
                 )
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+
+    /** The category donut. */
+    val donut: StateFlow<DonutState?> =
+        cardState(PeriodCard.CATEGORIES, transactions::observeCategorySpending) { p, spent ->
+            DonutState(
+                p.period,
+                p.span,
+                p.from,
+                p.until,
+                CategoryBreakdown.of(spent),
+                p.back,
+                p.choices
+            )
+        }
+
+    /** The tag card, with its own period. */
+    val tags: StateFlow<TagsState?> =
+        cardState(PeriodCard.TAGS, transactions::observeTagSpending) { p, spent ->
+            TagsState(p.period, p.span, p.from, p.until, spent, p.back, p.choices)
+        }
+
+    /** The account card, with its own period. */
+    val accounts: StateFlow<AccountsState?> =
+        cardState(PeriodCard.ACCOUNTS, transactions::observeAccountSpending) { p, spent ->
+            AccountsState(p.period, p.span, p.from, p.until, spent, p.back, p.choices)
+        }
+
+    /**
+     * The open tag's or account's breakdown, following its card's period; null when none is
+     * open.
+     */
+    val breakdown: StateFlow<BreakdownState?> = openBreakdown
+        .flatMapLatest { open ->
+            if (open == null) return@flatMapLatest flowOf(null)
+            shownCards.getValue(open.card).flatMapLatest { shown ->
+                val from = shown.span.from(zone)
+                val until = shown.span.until(zone)
+                val spending = when (open) {
+                    is BreakdownOf.OfTag ->
+                        transactions.observeCategorySpendingForTag(from, until, open.tag)
+                    is BreakdownOf.OfAccount ->
+                        transactions.observeCategorySpendingForAccount(from, until, open.account)
+                }
+                spending.map {
+                    BreakdownState(
+                        of = open,
+                        period = shown.selection.period,
+                        span = shown.span,
+                        from = from,
+                        until = until,
+                        breakdown = CategoryBreakdown.of(it)
+                    )
+                }
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     /** Opens [tag]'s breakdown, or Untagged's for null. */
     fun openTag(tag: Tag?) {
-        openTag.value = OpenTag(tag)
+        openBreakdown.value = BreakdownOf.OfTag(tag)
     }
 
-    fun closeTag() {
-        openTag.value = null
+    /** Opens [account]'s breakdown, or No account's for null. */
+    fun openAccount(account: Account?) {
+        openBreakdown.value = BreakdownOf.OfAccount(account)
+    }
+
+    fun closeBreakdown() {
+        openBreakdown.value = null
     }
 
     /** The last 24 months, or every year since the first transaction; weeks have no list. */

@@ -48,6 +48,8 @@ data class TransactionFilter(
     /** Only transactions with no tag at all; used instead of [tagId]. */
     val untagged: Boolean = false,
     val accountId: Long? = null,
+    /** Only transactions with no account; used instead of [accountId]. */
+    val noAccount: Boolean = false,
     /** Inclusive start, in epoch milliseconds. The range uses the counts-in month (#93). */
     val from: Long? = null,
     /** Exclusive end, in epoch milliseconds. */
@@ -59,6 +61,7 @@ data class TransactionFilter(
             tagId != null ||
             untagged ||
             accountId != null ||
+            noAccount ||
             from != null ||
             until != null
 }
@@ -95,6 +98,12 @@ data class CategorySpend(val category: Category, val spentPaise: Long)
  * transactions. A null [tag] is Untagged: spending with no tag at all.
  */
 data class TagSpend(val tag: Tag?, val spentPaise: Long, val count: Int)
+
+/**
+ * How much went through [account] over a period: its expenses minus its refunds. A null
+ * [account] is No account: spending with no account set.
+ */
+data class AccountSpend(val account: Account?, val spentPaise: Long)
 
 /**
  * Spending by category, ready for a donut chart: the biggest categories as [slices], the rest

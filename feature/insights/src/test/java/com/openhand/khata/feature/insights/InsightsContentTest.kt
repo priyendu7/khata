@@ -14,6 +14,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
+import com.openhand.khata.core.model.Account
+import com.openhand.khata.core.model.AccountSpend
+import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.CategoryBreakdown
 import com.openhand.khata.core.model.CategoryChange
@@ -95,13 +98,17 @@ class InsightsContentTest {
     private val tagPeriods = mutableListOf<ChartPeriod>()
     private val filters = mutableListOf<TransactionFilter>()
     private var closed = 0
+    private val openedAccounts = mutableListOf<Account?>()
+    private val accountPeriods = mutableListOf<ChartPeriod>()
+    private val accountSteps = mutableListOf<Int>()
 
     private fun show(
         state: DonutState?,
         heatmap: HeatmapState? = null,
         monthly: MonthlyState? = null,
         tags: TagsState? = null,
-        tagBreakdown: TagBreakdownState? = null
+        accounts: AccountsState? = null,
+        breakdown: BreakdownState? = null
     ) = compose.setContent {
         InsightsContent(
             donut = state,
@@ -115,13 +122,19 @@ class InsightsContentTest {
             onSelectMonths = { monthCounts += it },
             onOpenMonth = { months += it },
             tags = tags,
-            tagBreakdown = tagBreakdown,
-            tagActions = TagActions(
+            accounts = accounts,
+            breakdown = breakdown,
+            tagActions = CardActions(
                 onSelectPeriod = { tagPeriods += it },
-                onOpenTag = { openedTags += it },
-                onCloseTag = { closed++ },
-                onOpenTransactions = { filters += it }
-            )
+                onOpen = { openedTags += it }
+            ),
+            accountActions = CardActions(
+                onSelectPeriod = { accountPeriods += it },
+                onStepPeriod = { accountSteps += it },
+                onOpen = { openedAccounts += it }
+            ),
+            onCloseBreakdown = { closed++ },
+            onOpenTransactions = { filters += it }
         )
     }
 
@@ -360,8 +373,8 @@ class InsightsContentTest {
 
     @Test
     fun theTagSheetShowsItsCategoriesAndOpensTheirTransactions() {
-        val sheet = TagBreakdownState(
-            tag = goa,
+        val sheet = BreakdownState(
+            of = BreakdownOf.OfTag(goa),
             period = ChartPeriod.MONTH,
             span = september,
             from = 100,
@@ -370,7 +383,7 @@ class InsightsContentTest {
                 listOf(CategorySpend(rent, 12_000_00), CategorySpend(food, 3_000_00))
             )
         )
-        show(null, tags = tags(tagSpending), tagBreakdown = sheet)
+        show(null, tags = tags(tagSpending), breakdown = sheet)
 
         compose.onNodeWithText("Goa trip · September 2026").assertIsDisplayed()
         compose.onNodeWithText("₹15,000 spent").assertIsDisplayed()
@@ -387,19 +400,138 @@ class InsightsContentTest {
 
     @Test
     fun theUntaggedSheetOpensUntaggedTransactions() {
-        val sheet = TagBreakdownState(
-            tag = null,
+        val sheet = BreakdownState(
+            of = BreakdownOf.OfTag(null),
             period = ChartPeriod.MONTH,
             span = september,
             from = 100,
             until = 200,
             breakdown = CategoryBreakdown.of(listOf(CategorySpend(food, 900_00)))
         )
-        show(null, tagBreakdown = sheet)
+        show(null, breakdown = sheet)
 
         compose.onNodeWithText("Untagged · September 2026").assertIsDisplayed()
         compose.onNodeWithText("See transactions").performScrollTo().performClick()
         assertEquals(listOf(TransactionFilter(untagged = true, from = 100, until = 200)), filters)
+    }
+
+    private val card = Account(1, "HDFC Card", AccountType.CREDIT_CARD, "HDFC", "5678")
+    private val savings = Account(2, "Savings", AccountType.BANK, "SBI", null)
+    private val wallet = Account(3, "Paytm", AccountType.WALLET, null, null)
+
+    private fun accounts(spending: List<AccountSpend>) = AccountsState(
+        ChartPeriod.MONTH,
+        september,
+        from = 100,
+        until = 200,
+        spending = spending
+    )
+
+    private val accountSpending = listOf(
+        AccountSpend(card, 6_000_00),
+        AccountSpend(null, 3_000_00),
+        AccountSpend(savings, 1_000_00),
+        AccountSpend(wallet, -200_00)
+    )
+
+    @Test
+    fun accountSlicesAndLegendShowNoAccountAndTheRefundedOneLast() {
+        show(null, accounts = accounts(accountSpending))
+
+        compose.onNodeWithText("Spending by account").assertIsDisplayed()
+        // The middle is the period's spending: every account, refunds included.
+        compose.onNodeWithText("₹9,800").assertIsDisplayed()
+        compose.onNodeWithText("HDFC Card ••5678").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("60%").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("No account").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("30%").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Savings · SBI").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("More refunded than spent").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("-₹200").performScrollTo().assertIsDisplayed()
+        assertTrue(top("Savings · SBI") < top("Paytm"))
+        compose.onNodeWithContentDescription(
+            "No account, ₹3,000, 30% of spending",
+            substring = true
+        ).assertExists()
+    }
+
+    @Test
+    fun tappingAnAccountOpensItAndTheAccountCardHasItsOwnPeriods() {
+        show(null, accounts = accounts(accountSpending))
+
+        compose.onNodeWithText("Week").performClick()
+        compose.onNodeWithContentDescription("Previous month").performClick()
+        assertEquals(listOf(ChartPeriod.WEEK), accountPeriods)
+        assertEquals(listOf(-1), accountSteps)
+        assertEquals(emptyList<ChartPeriod>(), selected)
+
+        compose.onNodeWithText("HDFC Card ••5678").performScrollTo().performClick()
+        compose.onNodeWithText("No account").performScrollTo().performClick()
+        compose.onNodeWithText("Paytm").performScrollTo().performClick()
+        assertEquals(listOf(card, null, wallet), openedAccounts)
+    }
+
+    @Test
+    fun noAccountSpendingSaysSo() {
+        show(null, accounts = accounts(emptyList()))
+
+        compose.onNodeWithText("Spending by account").assertIsDisplayed()
+        compose.onNodeWithText("Nothing spent in this period").assertIsDisplayed()
+    }
+
+    @Test
+    fun theAccountSheetShowsItsCategoriesAndOpensItsTransactions() {
+        val sheet = BreakdownState(
+            of = BreakdownOf.OfAccount(card),
+            period = ChartPeriod.MONTH,
+            span = september,
+            from = 100,
+            until = 200,
+            breakdown = CategoryBreakdown.of(
+                listOf(CategorySpend(rent, 5_000_00), CategorySpend(food, 1_000_00))
+            )
+        )
+        show(null, accounts = accounts(accountSpending), breakdown = sheet)
+
+        compose.onNodeWithText("HDFC Card ••5678 · September 2026").assertIsDisplayed()
+        compose.onNodeWithText("₹6,000 spent").assertIsDisplayed()
+        compose.onNodeWithText("Food").performScrollTo().performClick()
+        compose.onNodeWithText("See transactions").performScrollTo().performClick()
+        assertEquals(
+            listOf(
+                TransactionFilter(
+                    categoryId = food.id,
+                    accountId = card.id,
+                    from = 100,
+                    until = 200
+                ),
+                TransactionFilter(accountId = card.id, from = 100, until = 200)
+            ),
+            filters
+        )
+    }
+
+    @Test
+    fun theNoAccountSheetOpensTransactionsWithoutAnAccount() {
+        val sheet = BreakdownState(
+            of = BreakdownOf.OfAccount(null),
+            period = ChartPeriod.MONTH,
+            span = september,
+            from = 100,
+            until = 200,
+            breakdown = CategoryBreakdown.of(listOf(CategorySpend(food, 3_000_00)))
+        )
+        show(null, breakdown = sheet)
+
+        compose.onNodeWithText("No account · September 2026").assertIsDisplayed()
+        compose.onNodeWithText("See transactions").performScrollTo().performClick()
+        assertEquals(listOf(TransactionFilter(noAccount = true, from = 100, until = 200)), filters)
+    }
+
+    @Test
+    fun anAccountKeepsItsColorAndColorsDiffer() {
+        assertEquals(accountColor(card.id), accountColor(card.id))
+        assertTrue(accountColor(card.id) != accountColor(savings.id))
     }
 
     @Test
@@ -410,5 +542,14 @@ class InsightsContentTest {
         compose.onNodeWithText("श्रेणी के हिसाब से खर्च").assertIsDisplayed()
         compose.onNodeWithText("महीना").assertIsDisplayed()
         compose.onNodeWithText("अन्य").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "hi")
+    fun showsTheAccountCardInHindi() {
+        show(null, accounts = accounts(accountSpending))
+
+        compose.onNodeWithText("खाते के हिसाब से खर्च").assertIsDisplayed()
+        compose.onNodeWithText("कोई खाता नहीं").performScrollTo().assertIsDisplayed()
     }
 }

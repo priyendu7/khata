@@ -35,9 +35,12 @@
         <item quantity="one">%d लेन-देन</item>
         <item quantity="other">%d लेन-देन</item>
     </plurals>
-    <string name="insights_tag_title">%1$s · %2$s</string>
-    <string name="insights_tag_total">%1$s खर्च</string>
+    <string name="insights_breakdown_title">%1$s · %2$s</string>
+    <string name="insights_breakdown_total">%1$s खर्च</string>
     <string name="insights_see_transactions">लेन-देन देखें</string>
+    <string name="insights_by_account">खाते के हिसाब से खर्च</string>
+    <string name="insights_no_account">कोई खाता नहीं</string>
+    <string name="insights_account_last4">%1$s ••%2$s</string>
     <string name="insights_income">आय</string>
     <string name="insights_heatmap_title">रोज़ का खर्च</string>
     <string name="insights_less">कम</string>

@@ -36,10 +36,16 @@
         <item quantity="one">%d transaction</item>
         <item quantity="other">%d transactions</item>
     </plurals>
-    <!-- The sheet's title: a tag (or Untagged), then its period, e.g. "Goa trip · October 2026". -->
-    <string name="insights_tag_title">%1$s · %2$s</string>
-    <string name="insights_tag_total">%1$s spent</string>
+    <!-- The breakdown sheet's title: a tag or account, then its period, e.g. "Goa trip · October 2026". -->
+    <string name="insights_breakdown_title">%1$s · %2$s</string>
+    <string name="insights_breakdown_total">%1$s spent</string>
     <string name="insights_see_transactions">See transactions</string>
+    <!-- Spending by account card. -->
+    <string name="insights_by_account">Spending by account</string>
+    <!-- Spending with no account set, such as manual or CSV entries. -->
+    <string name="insights_no_account">No account</string>
+    <!-- An account and the last 4 digits of its card or account number, e.g. "HDFC Card ••5678". -->
+    <string name="insights_account_last4">%1$s ••%2$s</string>
     <string name="insights_heatmap_title">Spending by day</string>
     <string name="insights_less">Less</string>
     <string name="insights_more">More</string>

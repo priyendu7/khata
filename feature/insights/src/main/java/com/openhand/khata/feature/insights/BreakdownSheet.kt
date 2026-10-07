@@ -16,16 +16,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.Money
+import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.ui.R as UiR
 
 /**
- * One tag's spending by category for the tag card's period: the same donut and legend as the
- * category card. Tapping a category, or See transactions, opens the list for the tag.
+ * One tag's or account's spending by category for its card's period: the same donut and legend
+ * as the category card. Tapping a category, or See transactions, opens the list for it.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun TagBreakdownSheet(state: TagBreakdownState, actions: TagActions) {
-    ModalBottomSheet(onDismissRequest = actions.onCloseTag) {
+internal fun BreakdownSheet(
+    state: BreakdownState,
+    onClose: () -> Unit,
+    onOpenTransactions: (TransactionFilter) -> Unit
+) {
+    ModalBottomSheet(onDismissRequest = onClose) {
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
@@ -35,15 +40,15 @@ internal fun TagBreakdownSheet(state: TagBreakdownState, actions: TagActions) {
         ) {
             Text(
                 stringResource(
-                    R.string.insights_tag_title,
-                    state.tag?.name ?: stringResource(UiR.string.tag_untagged),
+                    R.string.insights_breakdown_title,
+                    state.of.name(),
                     spanLabel(state.period, state.span)
                 ),
                 style = MaterialTheme.typography.titleLarge
             )
             Text(
                 stringResource(
-                    R.string.insights_tag_total,
+                    R.string.insights_breakdown_total,
                     Money.format(state.breakdown.totalPaise)
                 ),
                 style = MaterialTheme.typography.titleMedium,
@@ -55,16 +60,20 @@ internal fun TagBreakdownSheet(state: TagBreakdownState, actions: TagActions) {
                     stringResource(R.string.insights_nothing_spent_body)
                 )
             } else {
-                CategoryBreakdownChart(state.breakdown) {
-                    actions.onOpenTransactions(state.filter(it))
-                }
+                CategoryBreakdownChart(state.breakdown) { onOpenTransactions(state.filter(it)) }
             }
             FilledTonalButton(
-                onClick = { actions.onOpenTransactions(state.filter()) },
+                onClick = { onOpenTransactions(state.filter()) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.insights_see_transactions))
             }
         }
     }
+}
+
+@Composable
+private fun BreakdownOf.name(): String = when (this) {
+    is BreakdownOf.OfTag -> tag?.name ?: stringResource(UiR.string.tag_untagged)
+    is BreakdownOf.OfAccount -> accountLabel(account)
 }
