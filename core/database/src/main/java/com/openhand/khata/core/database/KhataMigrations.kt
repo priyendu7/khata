@@ -70,6 +70,17 @@ object KhataMigrations {
         }
     }
 
+    /** 5 → 6: the month a transaction counts in, when it isn't its date's month (#93). */
+    val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `transactions` ADD COLUMN `counts_at` INTEGER")
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_transactions_counts_at` " +
+                    "ON `transactions` (`counts_at`)"
+            )
+        }
+    }
+
     val ALL: Array<Migration> =
-        arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+        arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
 }

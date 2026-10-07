@@ -166,6 +166,7 @@ private fun problemText(problem: RowProblem): Int = when (problem) {
     RowProblem.TIME -> R.string.problem_time
     RowProblem.AMOUNT -> R.string.problem_amount
     RowProblem.DIRECTION -> R.string.problem_direction
+    RowProblem.COUNTS_IN -> R.string.problem_counts_in
 }
 
 private const val PREVIEW_ROWS = 10

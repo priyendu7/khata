@@ -6,6 +6,7 @@ import com.openhand.khata.core.database.entity.PayeeEntity
 import com.openhand.khata.core.database.entity.TransactionEntity
 import com.openhand.khata.core.model.AmountEntry
 import com.openhand.khata.core.model.CategorySpend
+import com.openhand.khata.core.model.CountsIn
 import com.openhand.khata.core.model.DefaultCategory
 import com.openhand.khata.core.model.Totals
 import com.openhand.khata.core.model.Transaction
@@ -13,6 +14,7 @@ import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.model.TransactionListItem
 import com.openhand.khata.core.model.TransactionSource
 import dagger.Lazy
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -20,8 +22,14 @@ import kotlinx.coroutines.flow.map
 
 @Singleton
 class TransactionRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
-    /** The transactions matching [filter], newest first, updated whenever the data changes. */
-    fun observe(filter: TransactionFilter = TransactionFilter()): Flow<List<TransactionListItem>> {
+    /**
+     * The transactions matching [filter], newest first by their real date, updated whenever the
+     * data changes. The date range uses the month each one counts in.
+     */
+    fun observe(
+        filter: TransactionFilter = TransactionFilter(),
+        zone: ZoneId = ZoneId.systemDefault()
+    ): Flow<List<TransactionListItem>> {
         val query = filter.query.trim().ifEmpty { null }?.let(::escapeLike)
         return db.observe {
             it.transactionDao().observeList(
@@ -32,7 +40,7 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
                 from = filter.from,
                 until = filter.until
             )
-        }.map { rows -> rows.map { it.toModel() } }
+        }.map { rows -> rows.map { it.toModel(zone) } }
     }
 
     /** Whether there are any transactions at all, updated as they're added or deleted. */
@@ -70,33 +78,40 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
         }
 
     /** The transaction with [id] as the edit screen shows it, or null if it's gone. */
-    suspend fun get(id: Long): Transaction? = db.io { database ->
-        val dao = database.transactionDao()
-        val entity = dao.getById(id) ?: return@io null
-        Transaction(
-            id = entity.id,
-            amountPaise = entity.amountPaise,
-            direction = entity.direction,
-            timestamp = entity.timestamp,
-            accountId = entity.accountId,
-            payeeName = entity.payeeId?.let { database.payeeDao().getById(it)?.displayName },
-            categoryId = entity.categoryId,
-            tags = dao.tagNames(id),
-            note = entity.note
-        )
-    }
+    suspend fun get(id: Long, zone: ZoneId = ZoneId.systemDefault()): Transaction? =
+        db.io { database ->
+            val dao = database.transactionDao()
+            val entity = dao.getById(id) ?: return@io null
+            Transaction(
+                id = entity.id,
+                amountPaise = entity.amountPaise,
+                direction = entity.direction,
+                timestamp = entity.timestamp,
+                accountId = entity.accountId,
+                payeeName = entity.payeeId?.let { database.payeeDao().getById(it)?.displayName },
+                categoryId = entity.categoryId,
+                tags = dao.tagNames(id),
+                note = entity.note,
+                countsIn = CountsIn.fromMillis(entity.countsAt, zone)
+            )
+        }
 
     /**
      * Adds a new transaction (id 0) or updates one, and returns its id. The payee is matched by
      * name or saved as a new one, tags are created as needed, and no category means Uncategorized.
-     * Fields the screen doesn't show (source, reference number, SMS text) are kept on update.
+     * Fields the screen doesn't show (source, reference number, SMS text) are kept on update. A
+     * counts-in month that is the date's own month is saved as "same as date", in [zone].
      *
      * With [rememberPayeeDefaults], a payee that has no defaults yet takes this transaction's
      * category and tags as its defaults, and its Uncategorized transactions take the category. A
      * payee that already has some keeps them: a different category here overrides them for this
      * transaction only (PRD feature 3).
      */
-    suspend fun save(transaction: Transaction, rememberPayeeDefaults: Boolean = false): Long {
+    suspend fun save(
+        transaction: Transaction,
+        rememberPayeeDefaults: Boolean = false,
+        zone: ZoneId = ZoneId.systemDefault()
+    ): Long {
         require(transaction.amountPaise > 0) { "Amount must be more than zero" }
         val payeeName = transaction.payeeName?.trim()?.ifEmpty { null }
         val note = transaction.note?.trim()?.ifEmpty { null }
@@ -130,7 +145,8 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
                 source = existing?.source ?: TransactionSource.MANUAL,
                 rawSms = existing?.rawSms,
                 // Saving from the edit screen means the user has looked at it.
-                needsReview = false
+                needsReview = false,
+                countsAt = CountsIn.toMillis(transaction.countsIn, transaction.timestamp, zone)
             )
             dao.saveWithTags(entity, tagIds)
         }
@@ -160,7 +176,7 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
     }
 }
 
-private fun TransactionRow.toModel() = TransactionListItem(
+private fun TransactionRow.toModel(zone: ZoneId) = TransactionListItem(
     id = id,
     amountPaise = amountPaise,
     direction = direction,
@@ -169,5 +185,6 @@ private fun TransactionRow.toModel() = TransactionListItem(
     note = note,
     accountName = accountName,
     category = category.toModel(),
-    tags = tags?.split(TransactionRow.TAG_SEPARATOR)?.sortedBy { it.lowercase() }.orEmpty()
+    tags = tags?.split(TransactionRow.TAG_SEPARATOR)?.sortedBy { it.lowercase() }.orEmpty(),
+    countsIn = CountsIn.fromMillis(countsAt, zone)
 )

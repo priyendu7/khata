@@ -40,6 +40,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Category
+import com.openhand.khata.core.model.CountsIn
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.ui.CategoryBadge
 import com.openhand.khata.core.ui.CategoryEditor
@@ -56,6 +57,7 @@ import com.openhand.khata.core.ui.categoryName
 import com.openhand.khata.core.ui.defaultCategoryNames
 import com.openhand.khata.core.ui.focusOnAppear
 import com.openhand.khata.core.ui.newCategory
+import java.time.YearMonth
 
 /** Add (transaction id 0) or edit a transaction; [onDone] closes the screen. */
 @Composable
@@ -89,7 +91,7 @@ fun TransactionEditorScreen(
     )
 }
 
-private enum class EditorDialog { DATE, TIME, CATEGORY, NEW_CATEGORY, ACCOUNT, DELETE }
+private enum class EditorDialog { DATE, TIME, COUNTS_IN, CATEGORY, NEW_CATEGORY, ACCOUNT, DELETE }
 
 /** The editor without its ViewModel, so UI tests can drive it directly. */
 @Composable
@@ -146,6 +148,12 @@ internal fun TransactionEditorContent(
                     modifier = Modifier.weight(1f)
                 )
             }
+            PickerField(
+                label = stringResource(R.string.field_counts_in),
+                value = form.countsIn?.let { monthLabel(it) }
+                    ?: stringResource(R.string.counts_in_same),
+                onClick = { dialog = EditorDialog.COUNTS_IN }
+            )
             OutlinedTextField(
                 value = form.payee,
                 onValueChange = { onChange(form.copy(payee = it)) },
@@ -232,8 +240,9 @@ private fun EditorDialogs(
     }
     when (dialog) {
         null -> Unit
-        EditorDialog.DATE -> DateDialog(form.date, { pick(form.copy(date = it)) }, close)
+        EditorDialog.DATE -> DateDialog(form.date, { pick(form.withDate(it)) }, close)
         EditorDialog.TIME -> TimeDialog(form.time, { pick(form.copy(time = it)) }, close)
+        EditorDialog.COUNTS_IN -> CountsInDialog(form, ::pick, close)
         EditorDialog.CATEGORY -> ChoiceDialog(
             title = stringResource(R.string.field_category),
             choices = categories.sortedBy { it.isUncategorized }.map {
@@ -282,6 +291,25 @@ private fun EditorDialogs(
             }
         )
     }
+}
+
+/** The month before the date, the date's own month ("same as date") and the month after. */
+@Composable
+private fun CountsInDialog(form: EditorForm, pick: (EditorForm) -> Unit, close: () -> Unit) {
+    ChoiceDialog(
+        title = stringResource(R.string.field_counts_in),
+        choices = CountsIn.choices(form.dateMonth).map { month ->
+            val label = monthLabel(month)
+            if (month == form.dateMonth) {
+                Choice<YearMonth?>(null, stringResource(R.string.counts_in_same_month, label))
+            } else {
+                Choice(month, label)
+            }
+        },
+        selected = form.countsIn,
+        onSelect = { pick(form.withCountsIn(it)) },
+        onDismiss = close
+    )
 }
 
 /**

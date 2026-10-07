@@ -1,5 +1,7 @@
 package com.openhand.khata.core.model
 
+import java.time.YearMonth
+
 /** A transaction as the add/edit screen reads and writes it. */
 data class Transaction(
     val id: Long = 0,
@@ -14,7 +16,9 @@ data class Transaction(
     /** Null means Uncategorized. */
     val categoryId: Long? = null,
     val tags: List<String> = emptyList(),
-    val note: String? = null
+    val note: String? = null,
+    /** The month totals count it in, or null for its date's month; see [CountsIn]. */
+    val countsIn: YearMonth? = null
 )
 
 /** One row of the transactions list, with everything it shows already joined in. */
@@ -27,7 +31,9 @@ data class TransactionListItem(
     val note: String?,
     val accountName: String?,
     val category: Category,
-    val tags: List<String>
+    val tags: List<String>,
+    /** Set only when it counts in another month than its date's; see [CountsIn]. */
+    val countsIn: YearMonth? = null
 )
 
 /**
@@ -40,7 +46,7 @@ data class TransactionFilter(
     val categoryId: Long? = null,
     val tagId: Long? = null,
     val accountId: Long? = null,
-    /** Inclusive start, in epoch milliseconds. */
+    /** Inclusive start, in epoch milliseconds. The range uses the counts-in month (#93). */
     val from: Long? = null,
     /** Exclusive end, in epoch milliseconds. */
     val until: Long? = null

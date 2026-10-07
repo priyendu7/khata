@@ -1,5 +1,6 @@
 package com.openhand.khata.feature.transactions
 
+import com.openhand.khata.core.model.CountsIn
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.Payee
@@ -7,6 +8,7 @@ import com.openhand.khata.core.model.Transaction
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
@@ -32,8 +34,20 @@ data class EditorForm(
     /** The saved payee [payee] refers to, or null for a new one. Its defaults are filled in. */
     val knownPayee: Payee? = null,
     /** Save this category and tags as the payee's defaults; offered while it has none. */
-    val rememberPayee: Boolean = true
+    val rememberPayee: Boolean = true,
+    /** The month totals count it in; null is "same as date" (#93). */
+    val countsIn: YearMonth? = null
 ) {
+    val dateMonth: YearMonth get() = YearMonth.from(date)
+
+    /** Moves to [date], keeping a counts-in month only while it's still next to the new date's. */
+    fun withDate(date: LocalDate): EditorForm =
+        copy(date = date, countsIn = CountsIn.keepFor(countsIn, YearMonth.from(date)))
+
+    /** Picking the date's own month means "same as date". */
+    fun withCountsIn(month: YearMonth?): EditorForm =
+        copy(countsIn = month?.takeIf { it != dateMonth })
+
     val amountError: AmountError?
         get() {
             val paise = Money.parsePaise(amount)
@@ -88,7 +102,8 @@ data class EditorForm(
         payeeName = payee,
         categoryId = categoryId,
         tags = tags,
-        note = note
+        note = note,
+        countsIn = countsIn
     )
 
     companion object {
@@ -109,7 +124,8 @@ data class EditorForm(
                 payee = transaction.payeeName.orEmpty(),
                 categoryId = transaction.categoryId,
                 tags = transaction.tags,
-                note = transaction.note.orEmpty()
+                note = transaction.note.orEmpty(),
+                countsIn = transaction.countsIn
             )
         }
 

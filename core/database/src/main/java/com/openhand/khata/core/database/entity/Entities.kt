@@ -125,6 +125,7 @@ data class PayeeDefaultTagEntity(
     ],
     indices = [
         Index("timestamp"),
+        Index("counts_at"),
         Index("account_id"),
         Index("payee_id"),
         Index("category_id"),
@@ -151,7 +152,12 @@ data class TransactionEntity(
     val source: TransactionSource,
     /** Original SMS text, kept only for SMS-sourced transactions. */
     @ColumnInfo(name = "raw_sms") val rawSms: String?,
-    @ColumnInfo(name = "needs_review") val needsReview: Boolean = false
+    @ColumnInfo(name = "needs_review") val needsReview: Boolean = false,
+    /**
+     * Local midnight on the 1st of the month the user counts this in (#93), or null for the
+     * month of [timestamp]. Totals and charts use it; the list's order and duplicate checks don't.
+     */
+    @ColumnInfo(name = "counts_at") val countsAt: Long? = null
 )
 
 @Entity(

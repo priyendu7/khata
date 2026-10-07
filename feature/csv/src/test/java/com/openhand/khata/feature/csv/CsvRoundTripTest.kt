@@ -18,6 +18,7 @@ import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Transaction
 import dagger.Lazy
 import java.time.LocalDateTime
+import java.time.YearMonth
 import java.time.ZoneId
 import java.util.Locale
 import kotlinx.coroutines.flow.first
@@ -99,7 +100,8 @@ class CsvRoundTripTest {
                 amountPaise = 8_500_000,
                 direction = Direction.CREDIT,
                 timestamp = at("2026-09-30T09:00:00"),
-                note = "Salary"
+                note = "Salary",
+                countsIn = YearMonth.of(2026, 10)
             ),
             Transaction(
                 amountPaise = 1_200_000,
@@ -114,11 +116,12 @@ class CsvRoundTripTest {
                 timestamp = at("2026-09-20T07:45:00"),
                 categoryId = fuel
             )
-        ).forEach { transactions.save(it) }
+        ).forEach { transactions.save(it, zone = zone) }
     }
 
     private suspend fun exportText(db: KhataDatabase, names: CategoryNames): String {
-        val records = BackupRepository(Lazy { db }).export(categoryName = names::nameOf)
+        val backup = BackupRepository(Lazy { db })
+        val records = backup.export(zone = zone, categoryName = names::nameOf)
         return KhataCsvFormat.write(records, zone)
     }
 
@@ -156,6 +159,10 @@ class CsvRoundTripTest {
         assertEquals(
             listOf("office", "snacks"),
             target.tagDao().observeAll().first().map { it.name }
+        )
+        assertEquals(
+            listOf(until),
+            target.transactionDao().observeAll().first().mapNotNull { it.countsAt }
         )
     }
 

@@ -108,7 +108,7 @@ class TransactionEditorViewModel @Inject constructor(
     init {
         if (!isNew) {
             viewModelScope.launch {
-                val transaction = transactions.get(transactionId)
+                val transaction = transactions.get(transactionId, zone)
                 if (transaction == null) {
                     _done.value = true
                 } else {
@@ -161,7 +161,8 @@ class TransactionEditorViewModel @Inject constructor(
         runOnce {
             transactions.save(
                 form.toTransaction(transactionId, zone),
-                rememberPayeeDefaults = form.rememberPayee
+                rememberPayeeDefaults = form.rememberPayee,
+                zone = zone
             )
             // Added by hand from the review inbox: that SMS has been dealt with.
             if (fromUnparsed != NO_PREFILL) unparsed.delete(fromUnparsed)
