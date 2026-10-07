@@ -2,11 +2,13 @@ package com.openhand.khata.feature.categories
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,9 +22,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.ui.CategoryBadge
-import com.openhand.khata.core.ui.CategoryIcons
+import com.openhand.khata.core.ui.CategoryEditor
+import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.core.ui.newCategory
 
 private const val NEW = 0L
 private const val NONE = -1L
@@ -37,7 +41,7 @@ fun CategoriesScreen(onBack: () -> Unit, viewModel: CategoriesViewModel = hiltVi
         title = stringResource(R.string.categories_title),
         onBack = onBack,
         onAdd = { editingId = NEW },
-        addLabel = stringResource(R.string.categories_add)
+        addLabel = stringResource(UiR.string.categories_add)
     ) { padding ->
         val categories = all.orEmpty()
         val (archived, active) = categories.partition { it.archived }
@@ -59,23 +63,20 @@ fun CategoriesScreen(onBack: () -> Unit, viewModel: CategoriesViewModel = hiltVi
 
     if (editingId != NONE) {
         val category = all.orEmpty().firstOrNull { it.id == editingId }
-            ?: Category(
-                name = null,
-                color = com.openhand.khata.core.ui.CategoryColors.first(),
-                icon = CategoryIcons.all.keys.first()
-            )
+            ?: newCategory(all.orEmpty())
         CategoryEditor(
             category = category,
             onSave = {
                 viewModel.save(it)
                 editingId = NONE
             },
-            onArchive = { archive ->
+            onDismiss = { editingId = NONE }
+        ) {
+            ArchiveSection(category) { archive ->
                 viewModel.setArchived(category, archive)
                 editingId = NONE
-            },
-            onDismiss = { editingId = NONE }
-        )
+            }
+        }
     }
 }
 
@@ -86,4 +87,32 @@ private fun CategoryRow(category: Category, onClick: () -> Unit) {
         headlineContent = { Text(categoryName(category.name, category.seedKey)) },
         modifier = Modifier.clickable(onClick = onClick)
     )
+}
+
+/** Archive or unarchive, with a note on what that means; Uncategorized only gets the note. */
+@Composable
+private fun ArchiveSection(category: Category, onArchive: (Boolean) -> Unit) {
+    val note = when {
+        category.isUncategorized -> R.string.categories_uncategorized_help
+        !category.archived -> R.string.categories_archive_help
+        else -> null
+    }
+    if (category.id != 0L && !category.isUncategorized) {
+        OutlinedButton(onClick = {
+            onArchive(!category.archived)
+        }, modifier = Modifier.fillMaxWidth()) {
+            val label = when {
+                category.archived -> R.string.categories_unarchive
+                else -> R.string.categories_archive
+            }
+            Text(stringResource(label))
+        }
+    }
+    if (note != null && category.id != 0L) {
+        Text(
+            stringResource(note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }

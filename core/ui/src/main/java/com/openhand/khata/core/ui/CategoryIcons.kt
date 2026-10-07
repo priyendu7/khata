@@ -54,8 +54,12 @@ object CategoryIcons {
         "snacks" to "🍿",
         "salary" to "💰",
         "cash" to "💵",
-        "savings" to "🏦"
+        "savings" to "🏦",
+        "label" to "🏷️"
     )
+
+    /** What a category added from a picker starts with; the user can change it. */
+    const val NEW_CATEGORY_ICON = "label"
 
     fun emoji(key: String): String = all[key] ?: all.getValue("uncategorized")
 }

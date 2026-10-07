@@ -55,7 +55,7 @@ const val NO_PREFILL = -1L
 class TransactionEditorViewModel @Inject constructor(
     savedState: SavedStateHandle,
     private val transactions: TransactionRepository,
-    categories: CategoryRepository,
+    private val categoryRepository: CategoryRepository,
     accounts: AccountRepository,
     private val tags: TagRepository,
     private val payees: PayeeRepository,
@@ -84,7 +84,7 @@ class TransactionEditorViewModel @Inject constructor(
 
     /** Active categories, plus the selected one if it has since been archived. */
     val categories: StateFlow<List<Category>> = combine(
-        categories.observeAll(),
+        categoryRepository.observeAll(),
         _form.map { it?.categoryId }.distinctUntilChanged()
     ) { all, selected -> all.filter { !it.archived || it.id == selected } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
@@ -138,6 +138,18 @@ class TransactionEditorViewModel @Inject constructor(
 
     fun onTagQueryChange(query: String) {
         tagQuery.value = query
+    }
+
+    /**
+     * Adds a category from the picker (or finds the one already called that) and selects it. It
+     * stays even if this transaction is then discarded, as when added from Settings.
+     */
+    fun addCategory(category: Category, defaultNames: Map<String, String>) {
+        viewModelScope.launch {
+            val picked = categoryRepository.addOrFind(category, defaultNames)
+            // The form's Uncategorized is no category at all.
+            _form.update { it?.copy(categoryId = picked.id.takeUnless { picked.isUncategorized }) }
+        }
     }
 
     fun save() {

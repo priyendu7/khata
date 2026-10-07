@@ -31,6 +31,7 @@ import com.openhand.khata.core.ui.EmptyState
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.core.ui.defaultCategoryNames
 
 /** Every saved payee with its defaults; tap one to edit it or merge it into another. */
 @Composable
@@ -38,12 +39,16 @@ fun PayeesScreen(onBack: () -> Unit, viewModel: PayeesViewModel = hiltViewModel(
     val all by viewModel.all.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val suggestions by viewModel.tagSuggestions.collectAsStateWithLifecycle()
+    val defaultNames = defaultCategoryNames()
     PayeesContent(
         payees = all,
         categories = categories,
         tagSuggestions = suggestions,
         onTagQueryChange = viewModel::onTagQueryChange,
         onSave = viewModel::save,
+        onAddCategory = { category, onAdded ->
+            viewModel.addCategory(category, defaultNames, onAdded)
+        },
         onMerge = viewModel::merge,
         onBack = onBack
     )
@@ -59,6 +64,7 @@ internal fun PayeesContent(
     tagSuggestions: List<String>,
     onTagQueryChange: (String) -> Unit,
     onSave: (Payee) -> Unit,
+    onAddCategory: (Category, onAdded: (Category) -> Unit) -> Unit,
     onMerge: (from: Payee, into: Payee) -> Unit,
     onBack: () -> Unit
 ) {
@@ -116,6 +122,7 @@ internal fun PayeesContent(
             categories = categories,
             tagSuggestions = tagSuggestions,
             onTagQueryChange = onTagQueryChange,
+            onAddCategory = onAddCategory,
             onSave = {
                 onSave(it)
                 close()

@@ -1,4 +1,4 @@
-package com.openhand.khata.feature.categories
+package com.openhand.khata.core.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -19,7 +20,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,20 +43,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.openhand.khata.core.model.Category
-import com.openhand.khata.core.ui.CategoryBadge
-import com.openhand.khata.core.ui.CategoryColors
-import com.openhand.khata.core.ui.CategoryIcons
-import com.openhand.khata.core.ui.R as UiR
-import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.core.model.DefaultCategory
 
-/** Full-screen editor: name, colour, icon, and archive (not for Uncategorized). */
+/**
+ * Full-screen category form: name, colour and icon. Settings adds archiving in [extra]; the
+ * transaction and payee pickers use it as is to add a category without leaving the editor.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun CategoryEditor(
+fun CategoryEditor(
     category: Category,
     onSave: (Category) -> Unit,
-    onArchive: (Boolean) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    extra: @Composable ColumnScope.() -> Unit = {}
 ) {
     var name by rememberSaveable { mutableStateOf(category.name.orEmpty()) }
     var color by rememberSaveable { mutableIntStateOf(category.color) }
@@ -96,7 +95,9 @@ internal fun CategoryEditor(
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(if (isNew) Modifier.focusOnAppear(Unit) else Modifier)
                 )
                 if (isDefault && name.isNotBlank()) {
                     TextButton(onClick = {
@@ -156,41 +157,13 @@ internal fun CategoryEditor(
                     enabled = name.isNotBlank() || isDefault,
                     onClick = { onSave(category.copy(name = name, color = color, icon = icon)) },
                     modifier = Modifier.fillMaxWidth()
-                ) { Text(stringResource(UiR.string.save)) }
-                ArchiveSection(category, onArchive)
+                ) { Text(stringResource(R.string.save)) }
+                extra()
                 TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(UiR.string.cancel))
+                    Text(stringResource(R.string.cancel))
                 }
             }
         }
-    }
-}
-
-/** Archive or unarchive, with a note on what that means; Uncategorized only gets the note. */
-@Composable
-private fun ArchiveSection(category: Category, onArchive: (Boolean) -> Unit) {
-    val note = when {
-        category.isUncategorized -> R.string.categories_uncategorized_help
-        !category.archived -> R.string.categories_archive_help
-        else -> null
-    }
-    if (category.id != 0L && !category.isUncategorized) {
-        OutlinedButton(onClick = {
-            onArchive(!category.archived)
-        }, modifier = Modifier.fillMaxWidth()) {
-            val label = when {
-                category.archived -> R.string.categories_unarchive
-                else -> R.string.categories_archive
-            }
-            Text(stringResource(label))
-        }
-    }
-    if (note != null && category.id != 0L) {
-        Text(
-            stringResource(note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 
@@ -210,3 +183,19 @@ private fun ColourSwatch(color: Int, selected: Boolean, onClick: () -> Unit) {
             .clickable(onClick = onClick)
     )
 }
+
+/**
+ * A new category to start the form with: the first colour no category uses yet and a plain label
+ * icon, so only the name is needed.
+ */
+fun newCategory(existing: List<Category>): Category = Category(
+    name = null,
+    color = CategoryColors.firstOrNull { colour -> existing.none { it.color == colour } }
+        ?: CategoryColors[existing.size % CategoryColors.size],
+    icon = CategoryIcons.NEW_CATEGORY_ICON
+)
+
+/** Each default category's seed key and its name in the current language. */
+@Composable
+fun defaultCategoryNames(): Map<String, String> =
+    DefaultCategory.entries.associate { it.key to stringResource(it.nameRes()) }
