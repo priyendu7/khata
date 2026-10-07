@@ -10,6 +10,7 @@ import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Transaction
+import com.openhand.khata.core.model.TransactionFilter
 import dagger.Lazy
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -17,6 +18,7 @@ import java.time.YearMonth
 import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -24,13 +26,14 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Switching the donut's period, on a real in-memory database. */
+/** Switching the donut's and tag card's periods, on a real in-memory database. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -56,12 +59,18 @@ class InsightsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private suspend fun spend(on: LocalDate, paise: Long, category: String) = transactions.save(
+    private suspend fun spend(
+        on: LocalDate,
+        paise: Long,
+        category: String,
+        tags: List<String> = emptyList()
+    ) = transactions.save(
         Transaction(
             amountPaise = paise,
             direction = Direction.DEBIT,
             timestamp = on.atTime(12, 0).atZone(zone).toInstant().toEpochMilli(),
-            categoryId = db.categoryDao().getBySeedKey(category)!!.id
+            categoryId = db.categoryDao().getBySeedKey(category)!!.id,
+            tags = tags
         )
     )
 
@@ -235,6 +244,87 @@ class InsightsViewModelTest {
     }
 
     @Test
+    fun theTagCardsPeriodIsIndependentOfTheCategoryCards() = runTest {
+        spend(today, 100_00, "food", listOf("Office lunch"))
+        spend(LocalDate.of(2026, 8, 10), 300_00, "travel", listOf("Goa trip"))
+
+        val viewModel = viewModel()
+        viewModel.donut.test {
+            awaitNotNull()
+            viewModel.tags.test {
+                var tags = awaitUntil { it.period == ChartPeriod.MONTH }
+                assertEquals(listOf("Office lunch"), tags.spending.map { it.tag?.name })
+
+                viewModel.stepPeriod(-1, PeriodCard.TAGS)
+                tags = awaitUntil { it.back == 1 }
+                assertEquals(LocalDate.of(2026, 8, 1), tags.span.first)
+                assertEquals(listOf(300_00L), tags.spending.map { it.spentPaise })
+
+                viewModel.selectPeriod(ChartPeriod.YEAR, PeriodCard.TAGS)
+                tags = awaitUntil { it.period == ChartPeriod.YEAR }
+                assertEquals(listOf("Goa trip", "Office lunch"), tags.spending.map { it.tag?.name })
+
+                viewModel.selectRange(today, today, PeriodCard.TAGS)
+                assertEquals(
+                    DateSpan(today, today),
+                    awaitUntil {
+                        it.period == ChartPeriod.CUSTOM
+                    }.span
+                )
+                cancelAndIgnoreRemainingEvents()
+            }
+            // The category card never moved.
+            val donut = viewModel.donut.value!!
+            assertEquals(ChartPeriod.MONTH, donut.period)
+            assertEquals(0, donut.back)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun openingATagGivesItsBreakdownForTheShownPeriod() = runTest {
+        spend(LocalDate.of(2026, 8, 10), 1_000_00, "travel", listOf("Goa trip"))
+        spend(LocalDate.of(2026, 8, 11), 400_00, "food", listOf("Goa trip", "Work"))
+        spend(LocalDate.of(2026, 8, 12), 50_00, "food")
+        spend(today, 200_00, "food", listOf("Goa trip"))
+
+        val viewModel = viewModel()
+        viewModel.tagBreakdown.test {
+            assertNull(awaitItem())
+            viewModel.stepPeriod(-1, PeriodCard.TAGS)
+            val goa = viewModel.tags.first { it?.back == 1 }!!.spending.first().tag
+            assertEquals("Goa trip", goa?.name)
+
+            viewModel.openTag(goa)
+            var state = awaitUntil { it.tag == goa }
+            assertEquals(DateSpan(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31)), state.span)
+            assertEquals(1_400_00L, state.breakdown.totalPaise)
+            assertEquals(
+                listOf("travel", "food"),
+                state.breakdown.slices.map { it.category.seedKey }
+            )
+            assertEquals(
+                TransactionFilter(
+                    categoryId = 7,
+                    tagId = goa!!.id,
+                    from = state.from,
+                    until = state.until
+                ),
+                state.filter(7)
+            )
+
+            viewModel.openTag(null)
+            state = awaitUntil { it.tag == null }
+            assertEquals(50_00L, state.breakdown.totalPaise)
+            assertEquals(true, state.filter().untagged)
+
+            viewModel.closeTag()
+            assertNull(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun rangesAreLocalDaysAndMonths() {
         val viewModel = viewModel()
         val day = viewModel.rangeOf(today)
@@ -242,6 +332,15 @@ class InsightsViewModelTest {
         val (from, until) = viewModel.rangeOf(YearMonth.of(2026, 2))
         assertEquals(LocalDate.of(2026, 2, 1).atStartOfDay(zone).toInstant().toEpochMilli(), from)
         assertEquals(LocalDate.of(2026, 3, 1).atStartOfDay(zone).toInstant().toEpochMilli(), until)
+    }
+
+    private suspend fun <T : Any> app.cash.turbine.ReceiveTurbine<T?>.awaitUntil(
+        check: (T) -> Boolean
+    ): T {
+        while (true) {
+            val item = awaitItem()
+            if (item != null && check(item)) return item
+        }
     }
 
     private suspend fun app.cash.turbine.ReceiveTurbine<DonutState?>.awaitNotNull(): DonutState {

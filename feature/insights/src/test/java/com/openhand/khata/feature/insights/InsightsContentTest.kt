@@ -22,10 +22,14 @@ import com.openhand.khata.core.model.Change
 import com.openhand.khata.core.model.HeatLevels
 import com.openhand.khata.core.model.MonthBar
 import com.openhand.khata.core.model.MonthlyComparison
+import com.openhand.khata.core.model.Tag
+import com.openhand.khata.core.model.TagSpend
+import com.openhand.khata.core.model.TransactionFilter
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,10 +91,17 @@ class InsightsContentTest {
     private val months = mutableListOf<YearMonth>()
     private val monthCounts = mutableListOf<Int>()
 
+    private val openedTags = mutableListOf<Tag?>()
+    private val tagPeriods = mutableListOf<ChartPeriod>()
+    private val filters = mutableListOf<TransactionFilter>()
+    private var closed = 0
+
     private fun show(
         state: DonutState?,
         heatmap: HeatmapState? = null,
-        monthly: MonthlyState? = null
+        monthly: MonthlyState? = null,
+        tags: TagsState? = null,
+        tagBreakdown: TagBreakdownState? = null
     ) = compose.setContent {
         InsightsContent(
             donut = state,
@@ -102,9 +113,40 @@ class InsightsContentTest {
             onOpenCategory = { opened += it },
             onOpenDay = { days += it },
             onSelectMonths = { monthCounts += it },
-            onOpenMonth = { months += it }
+            onOpenMonth = { months += it },
+            tags = tags,
+            tagBreakdown = tagBreakdown,
+            tagActions = TagActions(
+                onSelectPeriod = { tagPeriods += it },
+                onOpenTag = { openedTags += it },
+                onCloseTag = { closed++ },
+                onOpenTransactions = { filters += it }
+            )
         )
     }
+
+    private val goa = Tag(1, "Goa trip")
+    private val work = Tag(2, "Work")
+    private val returns = Tag(3, "Returns")
+
+    private fun tags(spending: List<TagSpend>) = TagsState(
+        ChartPeriod.MONTH,
+        september,
+        from = 100,
+        until = 200,
+        spending = spending
+    )
+
+    private val tagSpending = listOf(
+        TagSpend(goa, 15_000_00, 4),
+        TagSpend(work, 2_000_00, 1),
+        TagSpend(returns, -300_00, 1),
+        TagSpend(null, 900_00, 3)
+    )
+
+    /** Where a row starts, even when it's scrolled out of view. */
+    private fun top(text: String) =
+        compose.onNodeWithText(text).fetchSemanticsNode().positionInRoot.y
 
     private val today = LocalDate.of(2026, 9, 27)
 
@@ -277,6 +319,87 @@ class InsightsContentTest {
 
         compose.onNodeWithText("Nothing spent in this period").assertIsDisplayed()
         compose.onNodeWithText("Other").assertDoesNotExist()
+    }
+
+    @Test
+    fun tagBarsGoBiggestFirstWithUntaggedLastAndTheNote() {
+        show(null, tags = tags(tagSpending))
+
+        compose.onNodeWithText("Spending by tag").assertIsDisplayed()
+        compose.onNodeWithText("4 transactions").assertIsDisplayed()
+        compose.onAllNodesWithText("1 transaction").assertCountEquals(2)
+        compose.onNodeWithText("-₹300").assertExists()
+        assertTrue(top("Goa trip") < top("Work"))
+        assertTrue(top("Work") < top("Returns"))
+        assertTrue(top("Returns") < top("Untagged"))
+        compose.onNodeWithText("A transaction with several tags counts in each.")
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun tappingATagOpensItAndTheTagCardHasItsOwnPeriods() {
+        show(null, tags = tags(tagSpending))
+
+        compose.onNodeWithText("Year").performClick()
+        assertEquals(listOf(ChartPeriod.YEAR), tagPeriods)
+
+        compose.onNodeWithText("Work").performScrollTo().performClick()
+        compose.onNodeWithText("Untagged").performScrollTo().performClick()
+        assertEquals(listOf(work, null), openedTags)
+    }
+
+    @Test
+    fun noTagSpendingSaysSo() {
+        show(null, tags = tags(emptyList()))
+
+        compose.onNodeWithText("Nothing spent in this period").assertIsDisplayed()
+        compose.onNodeWithText("A transaction with several tags counts in each.")
+            .assertDoesNotExist()
+    }
+
+    @Test
+    fun theTagSheetShowsItsCategoriesAndOpensTheirTransactions() {
+        val sheet = TagBreakdownState(
+            tag = goa,
+            period = ChartPeriod.MONTH,
+            span = september,
+            from = 100,
+            until = 200,
+            breakdown = CategoryBreakdown.of(
+                listOf(CategorySpend(rent, 12_000_00), CategorySpend(food, 3_000_00))
+            )
+        )
+        show(null, tags = tags(tagSpending), tagBreakdown = sheet)
+
+        compose.onNodeWithText("Goa trip · September 2026").assertIsDisplayed()
+        compose.onNodeWithText("₹15,000 spent").assertIsDisplayed()
+        compose.onNodeWithText("Food").performScrollTo().performClick()
+        compose.onNodeWithText("See transactions").performScrollTo().performClick()
+        assertEquals(
+            listOf(
+                TransactionFilter(categoryId = food.id, tagId = goa.id, from = 100, until = 200),
+                TransactionFilter(tagId = goa.id, from = 100, until = 200)
+            ),
+            filters
+        )
+    }
+
+    @Test
+    fun theUntaggedSheetOpensUntaggedTransactions() {
+        val sheet = TagBreakdownState(
+            tag = null,
+            period = ChartPeriod.MONTH,
+            span = september,
+            from = 100,
+            until = 200,
+            breakdown = CategoryBreakdown.of(listOf(CategorySpend(food, 900_00)))
+        )
+        show(null, tagBreakdown = sheet)
+
+        compose.onNodeWithText("Untagged · September 2026").assertIsDisplayed()
+        compose.onNodeWithText("See transactions").performScrollTo().performClick()
+        assertEquals(listOf(TransactionFilter(untagged = true, from = 100, until = 200)), filters)
     }
 
     @Test

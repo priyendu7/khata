@@ -50,7 +50,7 @@ internal fun DonutCard(
 }
 
 @Composable
-private fun PeriodChips(selected: ChartPeriod, onSelect: (ChartPeriod) -> Unit) {
+internal fun PeriodChips(selected: ChartPeriod, onSelect: (ChartPeriod) -> Unit) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
@@ -83,7 +83,7 @@ private data class LegendEntry(
 )
 
 @Composable
-private fun CategoryBreakdownChart(breakdown: CategoryBreakdown, onOpenCategory: (Long?) -> Unit) {
+internal fun CategoryBreakdownChart(breakdown: CategoryBreakdown, onOpenCategory: (Long?) -> Unit) {
     val theme = chartTheme()
     val charted = breakdown.chartedPaise
     val slices = breakdown.slices.map { it.toEntry(theme, charted) } +

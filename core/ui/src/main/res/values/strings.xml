@@ -27,6 +27,8 @@
     <string name="field_tags_hint">Type a tag, then press Enter</string>
     <string name="tag_add">Add tag</string>
     <string name="tag_remove">Remove %1$s</string>
+    <!-- Spending, or a filter, for transactions with no tag at all. -->
+    <string name="tag_untagged">Untagged</string>
 
     <!-- The category form (CategoryEditor), shared by Settings and the pickers. -->
     <string name="categories_add">Add category</string>
