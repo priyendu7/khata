@@ -27,4 +27,13 @@
     <string name="field_tags_hint">Type a tag, then press Enter</string>
     <string name="tag_add">Add tag</string>
     <string name="tag_remove">Remove %1$s</string>
+
+    <!-- The category form (CategoryEditor), shared by Settings and the pickers. -->
+    <string name="categories_add">Add category</string>
+    <string name="categories_edit">Edit category</string>
+    <string name="categories_name">Name</string>
+    <string name="categories_use_default_name">Use the default name (%1$s)</string>
+    <string name="categories_colour">Colour</string>
+    <string name="categories_icon">Icon</string>
+    <string name="category_new">New category</string>
 </resources>

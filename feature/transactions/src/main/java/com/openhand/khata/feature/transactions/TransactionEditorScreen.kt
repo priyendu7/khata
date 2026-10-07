@@ -42,16 +42,20 @@ import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.ui.CategoryBadge
+import com.openhand.khata.core.ui.CategoryEditor
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
 import com.openhand.khata.core.ui.DateDialog
+import com.openhand.khata.core.ui.NewCategoryRow
 import com.openhand.khata.core.ui.PickerField
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.TagInput
 import com.openhand.khata.core.ui.TimeDialog
 import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.core.ui.defaultCategoryNames
 import com.openhand.khata.core.ui.focusOnAppear
+import com.openhand.khata.core.ui.newCategory
 
 /** Add (transaction id 0) or edit a transaction; [onDone] closes the screen. */
 @Composable
@@ -65,6 +69,7 @@ fun TransactionEditorScreen(
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val suggestions by viewModel.tagSuggestions.collectAsStateWithLifecycle()
+    val defaultNames = defaultCategoryNames()
 
     LaunchedEffect(done) { if (done) onDone() }
 
@@ -77,13 +82,14 @@ fun TransactionEditorScreen(
         tagSuggestions = suggestions,
         onChange = viewModel::update,
         onTagQueryChange = viewModel::onTagQueryChange,
+        onAddCategory = { viewModel.addCategory(it, defaultNames) },
         onSave = viewModel::save,
         onDelete = viewModel::delete,
         onBack = onDone
     )
 }
 
-private enum class EditorDialog { DATE, TIME, CATEGORY, ACCOUNT, DELETE }
+private enum class EditorDialog { DATE, TIME, CATEGORY, NEW_CATEGORY, ACCOUNT, DELETE }
 
 /** The editor without its ViewModel, so UI tests can drive it directly. */
 @Composable
@@ -96,6 +102,7 @@ internal fun TransactionEditorContent(
     tagSuggestions: List<String>,
     onChange: (EditorForm) -> Unit,
     onTagQueryChange: (String) -> Unit,
+    onAddCategory: (Category) -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
     onBack: () -> Unit
@@ -194,7 +201,16 @@ internal fun TransactionEditorContent(
                 }
             }
         }
-        EditorDialogs(dialog, form, categories, accounts, onChange, onDelete) { dialog = null }
+        EditorDialogs(
+            dialog = dialog,
+            form = form,
+            categories = categories,
+            accounts = accounts,
+            onChange = onChange,
+            onAddCategory = onAddCategory,
+            onDelete = onDelete,
+            show = { dialog = it }
+        )
     }
 }
 
@@ -205,9 +221,11 @@ private fun EditorDialogs(
     categories: List<Category>,
     accounts: List<Account>,
     onChange: (EditorForm) -> Unit,
+    onAddCategory: (Category) -> Unit,
     onDelete: () -> Unit,
-    close: () -> Unit
+    show: (EditorDialog?) -> Unit
 ) {
+    val close = { show(null) }
     fun pick(new: EditorForm) {
         onChange(new)
         close()
@@ -229,7 +247,17 @@ private fun EditorDialogs(
                 categories.any { it.id == id && it.isUncategorized }
             },
             onSelect = { pick(form.copy(categoryId = it)) },
-            onDismiss = close
+            onDismiss = close,
+            footer = { NewCategoryRow { show(EditorDialog.NEW_CATEGORY) } }
+        )
+        // Cancelling goes back to the picker; saving selects the new category.
+        EditorDialog.NEW_CATEGORY -> CategoryEditor(
+            category = newCategory(categories),
+            onSave = {
+                onAddCategory(it)
+                close()
+            },
+            onDismiss = { show(EditorDialog.CATEGORY) }
         )
         EditorDialog.ACCOUNT -> ChoiceDialog(
             title = stringResource(R.string.field_account),

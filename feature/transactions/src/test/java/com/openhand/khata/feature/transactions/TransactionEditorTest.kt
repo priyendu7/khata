@@ -7,6 +7,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -70,11 +72,12 @@ class TransactionEditorTest {
         compose.setContent {
             var form by remember { mutableStateOf(start) }
             var showErrors by remember { mutableStateOf(false) }
+            var categories by remember { mutableStateOf(listOf(food, groceries, uncategorized)) }
             TransactionEditorContent(
                 isNew = isNew,
                 form = form,
                 showErrors = showErrors,
-                categories = listOf(food, groceries, uncategorized),
+                categories = categories,
                 accounts = listOf(cash),
                 tagSuggestions = listOf("office"),
                 onChange = { new ->
@@ -85,6 +88,13 @@ class TransactionEditorTest {
                     }
                 },
                 onTagQueryChange = {},
+                // Like the ViewModel: a new name is added and selected (an existing one is the
+                // repository's job, tested there).
+                onAddCategory = { new ->
+                    val added = new.copy(id = categories.maxOf { it.id } + 1)
+                    categories = categories + added
+                    form = form.copy(categoryId = added.id)
+                },
                 onSave = {
                     if (form.amountError != null) {
                         showErrors = true
@@ -233,5 +243,31 @@ class TransactionEditorTest {
 
         assertEquals("Ramesh", saved!!.payeeName)
         assertEquals(false, remembered)
+    }
+
+    @Test
+    fun addsACategoryFromThePickerAndKeepsTheRestOfTheForm() {
+        show(
+            blank.copy(amount = "99", payee = "Vet", note = "Checkup", tags = listOf("dog")),
+            isNew = true
+        )
+
+        compose.onNodeWithText("Category").performScrollTo().performClick()
+        compose.onNodeWithText("New category").performClick()
+        // Cancelling goes back to the picker with nothing added.
+        compose.onNodeWithText("Cancel").performScrollTo().performClick()
+        compose.onNodeWithText("New category").performClick()
+        compose.onNodeWithText("Name").performTextInput("Pets")
+        // The form's Save, not the editor's behind it.
+        compose.onAllNodesWithText("Save").onLast().performScrollTo().performClick()
+
+        compose.onNodeWithText("Pets").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Save").performClick()
+        val transaction = saved!!
+        assertEquals(11L, transaction.categoryId)
+        assertEquals(9_900L, transaction.amountPaise)
+        assertEquals("Vet", transaction.payeeName)
+        assertEquals("Checkup", transaction.note)
+        assertEquals(listOf("dog"), transaction.tags)
     }
 }

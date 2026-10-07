@@ -74,4 +74,28 @@ class CategoryRepositoryTest : RepositoryTest() {
         assertTrue(uncategorized.isUncategorized)
         assertEquals(DefaultCategory.entries.size, categories.observeActive().first().size)
     }
+
+    @Test
+    fun addingANameThatExistsPicksTheExistingCategory() = runTest {
+        val hindi = mapOf("food" to "भोजन", "groceries" to "किराना")
+        val fuel = categories.addOrFind(
+            Category(name = " Fuel ", color = 0, icon = "fuel"),
+            hindi
+        )
+        val countAfterFuel = categories.observeAll().first().size
+
+        // Any case, and a default category by its name in the current language.
+        val upper = categories.addOrFind(Category(name = "FUEL", color = 1, icon = "x"), hindi)
+        assertEquals(fuel.id, upper.id)
+        val food = categories.addOrFind(Category(name = "भोजन", color = 1, icon = "x"), hindi)
+        assertEquals("food", food.seedKey)
+        assertEquals(countAfterFuel, categories.observeAll().first().size)
+
+        // An archived match comes back rather than being duplicated.
+        categories.setArchived(fuel.id, true)
+        val again = categories.addOrFind(Category(name = "fuel", color = 1, icon = "x"), hindi)
+        assertEquals(fuel.id, again.id)
+        assertFalse(categories.observeAll().first().first { it.id == fuel.id }.archived)
+        assertEquals(countAfterFuel, categories.observeAll().first().size)
+    }
 }

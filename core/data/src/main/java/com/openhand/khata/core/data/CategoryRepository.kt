@@ -39,6 +39,33 @@ class CategoryRepository @Inject constructor(private val db: Lazy<KhataDatabase>
         }
     }
 
+    /**
+     * Adds a new category from a picker, unless one is already called that (ignoring case): then
+     * that one is returned instead, brought back if archived, so picking never makes duplicates.
+     * [defaultNames] maps each default category's seed key to its name in the current language,
+     * since a default category with no name of its own is shown by that name.
+     */
+    suspend fun addOrFind(category: Category, defaultNames: Map<String, String>): Category {
+        val name = category.name?.trim().orEmpty()
+        require(name.isNotEmpty()) { "Category name is empty" }
+        return db.io { database ->
+            val dao = database.categoryDao()
+            val existing = dao.getAll().map { it.toModel() }.firstOrNull {
+                (it.name ?: defaultNames[it.seedKey]).equals(name, ignoreCase = true)
+            }
+            when {
+                existing == null -> {
+                    val new = category.copy(id = 0, name = name, seedKey = null, archived = false)
+                    new.copy(id = dao.insert(new.toEntity()))
+                }
+                existing.archived -> existing.copy(archived = false).also {
+                    dao.update(it.toEntity())
+                }
+                else -> existing
+            }
+        }
+    }
+
     /** Hides a category from pickers; transactions that use it keep it. */
     suspend fun setArchived(categoryId: Long, archived: Boolean) {
         db.io { database ->

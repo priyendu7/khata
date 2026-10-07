@@ -50,6 +50,7 @@ class PayeesScreenTest {
                 tagSuggestions = emptyList(),
                 onTagQueryChange = {},
                 onSave = { saved = it },
+                onAddCategory = { _, _ -> },
                 onMerge = { from, into -> merged = from to into },
                 onBack = {}
             )
@@ -111,6 +112,7 @@ class PayeesScreenTest {
                 tagSuggestions = emptyList(),
                 onTagQueryChange = {},
                 onSave = {},
+                onAddCategory = { _, _ -> },
                 onMerge = { _, _ -> },
                 onBack = {}
             )

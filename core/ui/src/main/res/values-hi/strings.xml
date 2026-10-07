@@ -27,4 +27,13 @@
     <string name="field_tags_hint">टैग लिखें, फिर Enter दबाएँ</string>
     <string name="tag_add">टैग जोड़ें</string>
     <string name="tag_remove">%1$s हटाएँ</string>
+
+    <!-- The category form (CategoryEditor), shared by Settings and the pickers. -->
+    <string name="categories_add">श्रेणी जोड़ें</string>
+    <string name="categories_edit">श्रेणी बदलें</string>
+    <string name="categories_name">नाम</string>
+    <string name="categories_use_default_name">मूल नाम इस्तेमाल करें (%1$s)</string>
+    <string name="categories_colour">रंग</string>
+    <string name="categories_icon">आइकन</string>
+    <string name="category_new">नई श्रेणी</string>
 </resources>

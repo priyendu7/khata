@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class PayeesViewModel @Inject constructor(
     private val payees: PayeeRepository,
-    categories: CategoryRepository,
+    private val categoryRepository: CategoryRepository,
     private val tags: TagRepository
 ) : ViewModel() {
     /** Null until loaded. */
@@ -32,7 +32,7 @@ class PayeesViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     /** Archived ones included, so a payee whose default was archived still shows its name. */
-    val categories: StateFlow<List<Category>> = categories.observeAll()
+    val categories: StateFlow<List<Category>> = categoryRepository.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
 
     private val tagQuery = MutableStateFlow("")
@@ -48,6 +48,15 @@ class PayeesViewModel @Inject constructor(
 
     fun save(payee: Payee) {
         viewModelScope.launch { payees.save(payee) }
+    }
+
+    /** Adds a category from the picker, or finds the one already called that; [onAdded] gets it. */
+    fun addCategory(
+        category: Category,
+        defaultNames: Map<String, String>,
+        onAdded: (Category) -> Unit
+    ) {
+        viewModelScope.launch { onAdded(categoryRepository.addOrFind(category, defaultNames)) }
     }
 
     fun merge(from: Payee, into: Payee) {

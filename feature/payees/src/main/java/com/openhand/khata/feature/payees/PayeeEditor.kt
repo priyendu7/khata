@@ -34,13 +34,16 @@ import androidx.compose.ui.window.DialogProperties
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.Payee
 import com.openhand.khata.core.ui.CategoryBadge
+import com.openhand.khata.core.ui.CategoryEditor
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
+import com.openhand.khata.core.ui.NewCategoryRow
 import com.openhand.khata.core.ui.PickerField
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.TagInput
 import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.core.ui.newCategory
 
 private val TagsSaver = Saver<List<String>, ArrayList<String>>(
     save = { ArrayList(it) },
@@ -57,6 +60,7 @@ internal fun PayeeEditor(
     categories: List<Category>,
     tagSuggestions: List<String>,
     onTagQueryChange: (String) -> Unit,
+    onAddCategory: (Category, onAdded: (Category) -> Unit) -> Unit,
     onSave: (Payee) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -65,6 +69,7 @@ internal fun PayeeEditor(
     var tags by rememberSaveable(stateSaver = TagsSaver) { mutableStateOf(payee.defaultTags) }
     var ownAccount by rememberSaveable { mutableStateOf(payee.ownAccount) }
     var picking by rememberSaveable { mutableStateOf(false) }
+    var adding by rememberSaveable { mutableStateOf(false) }
     // Uncategorized isn't a default: with no default, transactions keep whatever they have.
     val choices = categories.filter {
         !it.isUncategorized && (!it.archived || it.id == categoryId)
@@ -165,7 +170,29 @@ internal fun PayeeEditor(
                 categoryId = it
                 close()
             },
-            onDismiss = close
+            onDismiss = close,
+            footer = {
+                NewCategoryRow {
+                    close()
+                    adding = true
+                }
+            }
+        )
+    }
+    if (adding) {
+        // Cancelling goes back to the picker; saving selects the new category.
+        CategoryEditor(
+            category = newCategory(categories),
+            onSave = { new ->
+                adding = false
+                onAddCategory(new) { added ->
+                    categoryId = added.id.takeUnless { added.isUncategorized }
+                }
+            },
+            onDismiss = {
+                adding = false
+                picking = true
+            }
         )
     }
 }

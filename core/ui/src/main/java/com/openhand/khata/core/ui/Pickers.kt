@@ -1,5 +1,6 @@
 package com.openhand.khata.core.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -61,14 +62,18 @@ fun PickerField(
 /** One option in a [ChoiceDialog]. */
 class Choice<T>(val value: T, val label: String, val leading: (@Composable () -> Unit)? = null)
 
-/** A list of options with the current one ticked; picking one closes the dialog. */
+/**
+ * A list of options with the current one ticked; picking one closes the dialog. [footer] goes
+ * after the options, e.g. [NewCategoryRow].
+ */
 @Composable
 fun <T> ChoiceDialog(
     title: String,
     choices: List<Choice<T>>,
     selected: T,
     onSelect: (T) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    footer: (@Composable () -> Unit)? = null
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -93,10 +98,32 @@ fun <T> ChoiceDialog(
                         Text(choice.label)
                     }
                 }
+                footer?.let { item { it() } }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     )
+}
+
+/** The last row of a category picker: opens [CategoryEditor] to add one there and then. */
+@Composable
+fun NewCategoryRow(onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(vertical = 12.dp)
+    ) {
+        Icon(
+            painterResource(R.drawable.ic_add),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 12.dp)
+        )
+        Text(stringResource(R.string.category_new), color = MaterialTheme.colorScheme.primary)
+    }
 }

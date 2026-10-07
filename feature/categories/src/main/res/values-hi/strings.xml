@@ -2,12 +2,6 @@
 <resources>
     <!-- Hindi strings. Every string in values/strings.xml needs a Hindi version here. -->
     <string name="categories_title">श्रेणियाँ</string>
-    <string name="categories_add">श्रेणी जोड़ें</string>
-    <string name="categories_edit">श्रेणी बदलें</string>
-    <string name="categories_name">नाम</string>
-    <string name="categories_use_default_name">मूल नाम इस्तेमाल करें (%1$s)</string>
-    <string name="categories_colour">रंग</string>
-    <string name="categories_icon">आइकन</string>
     <string name="categories_archive">संग्रहित करें</string>
     <string name="categories_unarchive">संग्रह से वापस लाएँ</string>
     <string name="categories_archive_help">संग्रहित श्रेणियाँ चुनने की सूची से हट जाती हैं। जिन लेन-देन में वे हैं, उनमें बनी रहती हैं।</string>
