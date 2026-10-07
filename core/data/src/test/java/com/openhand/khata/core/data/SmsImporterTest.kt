@@ -4,10 +4,13 @@ import com.openhand.khata.core.database.entity.AccountEntity
 import com.openhand.khata.core.database.entity.PayeeEntity
 import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.Event
 import com.openhand.khata.core.model.SmsTransaction
 import com.openhand.khata.core.model.Totals
 import com.openhand.khata.core.model.Transaction
 import com.openhand.khata.core.model.TransactionSource
+import java.time.Instant
+import java.time.ZoneId
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -99,6 +102,28 @@ class SmsImporterTest : RepositoryTest() {
         assertEquals(food, entity.categoryId)
         assertEquals(work, db.transactionDao().tagIds(result.transactionId))
         assertFalse(entity.needsReview)
+    }
+
+    @Test
+    fun anSmsDatedInsideAnEventGetsItsTagAsWellAsPayeeMemorys() = runTest {
+        val work = db.tagDao().getOrCreate(listOf("work"))
+        val payeeId = db.payeeDao().insert(
+            PayeeEntity(identifier = "CAFE", displayName = "Cafe", defaultCategoryId = null)
+        )
+        db.payeeDao().setDefaultTags(payeeId, work)
+        val zone = ZoneId.systemDefault()
+        val day = Instant.ofEpochMilli(AT).atZone(zone).toLocalDate()
+        EventRepository(lazyDb).save(Event(name = "Trip", start = day, end = day), zone)
+
+        val inside = saved(sms(payee = "CAFE"))
+        val after = saved(sms(at = AT + 2 * DAY, ref = "1", payee = "CAFE"))
+
+        assertEquals(listOf("Trip", "work"), db.transactionDao().tagNames(inside.transactionId))
+        assertEquals(listOf("work"), db.transactionDao().tagNames(after.transactionId))
+        assertEquals(
+            listOf("work", "Trip"),
+            importer.preview(sms(ref = "2", payee = "CAFE", amount = 1)).tags
+        )
     }
 
     @Test

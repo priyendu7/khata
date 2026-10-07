@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openhand.khata.core.data.AccountRepository
 import com.openhand.khata.core.data.CategoryRepository
+import com.openhand.khata.core.data.EventRepository
 import com.openhand.khata.core.data.PayeeRepository
 import com.openhand.khata.core.data.TagRepository
 import com.openhand.khata.core.data.TransactionRepository
@@ -26,9 +27,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -59,6 +62,7 @@ class TransactionEditorViewModel @Inject constructor(
     accounts: AccountRepository,
     private val tags: TagRepository,
     private val payees: PayeeRepository,
+    private val events: EventRepository,
     private val unparsed: UnparsedSmsRepository
 ) : ViewModel() {
     val transactionId: Long = savedState[TRANSACTION_ID_ARG] ?: 0L
@@ -114,7 +118,10 @@ class TransactionEditorViewModel @Inject constructor(
                 } else {
                     // The saved category and tags stay as they are; the payee only drives the hint.
                     val payee = transaction.payeeName?.let { payees.find(it) }
-                    _form.value = EditorForm.from(transaction, zone).copy(knownPayee = payee)
+                    // Known, so a new date swaps them, but not filled in again if removed.
+                    val form = EditorForm.from(transaction, zone)
+                    _form.value =
+                        form.copy(knownPayee = payee, eventTags = events.namesOn(form.date))
                 }
             }
         }
@@ -125,6 +132,16 @@ class TransactionEditorViewModel @Inject constructor(
                     // Skipped if the name changed again while the lookup ran.
                     _form.update { form ->
                         if (form?.payee == name) form.withKnownPayee(match) else form
+                    }
+                }
+        }
+        viewModelScope.launch {
+            // A saved transaction's own date was handled when it loaded.
+            _form.mapNotNull { it?.date }.distinctUntilChanged().drop(if (isNew) 0 else 1)
+                .mapLatest { date -> date to events.namesOn(date) }
+                .collect { (date, names) ->
+                    _form.update { form ->
+                        if (form?.date == date) form.withEventTags(names) else form
                     }
                 }
         }

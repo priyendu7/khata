@@ -228,12 +228,17 @@ interface TagDao {
     )
     suspend fun copyPayeeDefaultLinks(from: Long, into: Long)
 
+    /** Keeps [from]'s event, if [into] has none; otherwise it goes with [from] (cascade). */
+    @Query("UPDATE OR IGNORE events SET tag_id = :into WHERE tag_id = :from")
+    suspend fun moveEvent(from: Long, into: Long)
+
     /** Moves every use of [from] to [into] and deletes [from]; its old links go with it (cascade). */
     @Transaction
     suspend fun merge(from: Long, into: Long) {
         if (from == into) return
         copyTransactionLinks(from, into)
         copyPayeeDefaultLinks(from, into)
+        moveEvent(from, into)
         deleteById(from)
     }
 }

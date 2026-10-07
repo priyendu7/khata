@@ -20,6 +20,8 @@
     <string name="settings_categories_value">Add, rename, recolour and archive</string>
     <string name="settings_tags">Tags</string>
     <string name="settings_tags_value">Rename, merge and delete</string>
+    <string name="settings_events">Events</string>
+    <string name="settings_events_value">Tag every transaction on a trip or other dates</string>
     <string name="settings_payees">Payees</string>
     <string name="settings_payees_value">Names, default categories and tags; merge duplicates</string>
     <string name="settings_reminder">Backup reminder</string>
