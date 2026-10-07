@@ -28,6 +28,7 @@ import androidx.navigation.navArgument
 import com.openhand.khata.R
 import com.openhand.khata.feature.accounts.AccountsScreen
 import com.openhand.khata.feature.categories.CategoriesScreen
+import com.openhand.khata.feature.categories.EventsScreen
 import com.openhand.khata.feature.categories.TagsScreen
 import com.openhand.khata.feature.csv.BackupReminderNotifier
 import com.openhand.khata.feature.csv.ExportScreen
@@ -118,6 +119,7 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         composable(Route.ACCOUNTS) { AccountsScreen(onBack = back) }
         composable(Route.CATEGORIES) { CategoriesScreen(onBack = back) }
         composable(Route.TAGS) { TagsScreen(onBack = back) }
+        composable(Route.EVENTS) { EventsScreen(onBack = back) }
         composable(Route.PAYEES) { PayeesScreen(onBack = back) }
         composable(Route.EXPORT) { ExportScreen(onBack = back) }
         composable(Route.IMPORT) { ImportScreen(onBack = back) }
@@ -204,6 +206,7 @@ private object Route {
     const val ACCOUNTS = "accounts"
     const val CATEGORIES = "categories"
     const val TAGS = "tags"
+    const val EVENTS = "events"
     const val PAYEES = "payees"
     const val EXPORT = "export"
     const val IMPORT = "import"
@@ -260,6 +263,7 @@ private fun SettingsPage.route() = when (this) {
     SettingsPage.ACCOUNTS -> Route.ACCOUNTS
     SettingsPage.CATEGORIES -> Route.CATEGORIES
     SettingsPage.TAGS -> Route.TAGS
+    SettingsPage.EVENTS -> Route.EVENTS
     SettingsPage.PAYEES -> Route.PAYEES
     SettingsPage.EXPORT -> Route.EXPORT
     SettingsPage.IMPORT -> Route.IMPORT

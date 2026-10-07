@@ -135,6 +135,28 @@ class EditorFormTest {
     }
 
     @Test
+    fun changingTheDateSwapsTheEventTagsButKeepsTheUsersOwn() {
+        val onTrip = form.withEventTags(listOf("Goa trip")).withTag("work")
+        assertEquals(listOf("Goa trip", "work"), onTrip.tags)
+
+        val moved = onTrip.copy(date = LocalDate.of(2026, 10, 20)).withEventTags(listOf("Diwali"))
+        assertEquals(listOf("work", "Diwali"), moved.tags)
+
+        val removed = moved.withoutTag("Diwali")
+        // The same events arriving again don't put back a tag the user removed.
+        assertEquals(removed, removed.withEventTags(listOf("Diwali")))
+        assertEquals(listOf("work"), removed.withEventTags(emptyList()).tags)
+    }
+
+    @Test
+    fun anEventTagThatIsAlsoAPayeeDefaultStaysWhenTheDateMoves() {
+        val filled = form.copy(payee = "Swiggy").withKnownPayee(swiggy)
+            .withEventTags(listOf("online", "Goa trip"))
+
+        assertEquals(listOf("online"), filled.withEventTags(emptyList()).tags)
+    }
+
+    @Test
     fun offersToRememberOnlyANamedPayeeWithoutDefaults() {
         assertFalse(form.canRememberPayee)
         assertTrue(form.copy(payee = "Ramesh").canRememberPayee)

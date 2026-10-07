@@ -6,12 +6,14 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.openhand.khata.core.data.AccountRepository
 import com.openhand.khata.core.data.CategoryRepository
+import com.openhand.khata.core.data.EventRepository
 import com.openhand.khata.core.data.PayeeRepository
 import com.openhand.khata.core.data.TagRepository
 import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
+import com.openhand.khata.core.model.Event
 import dagger.Lazy
 import java.time.Instant
 import java.time.ZoneId
@@ -67,6 +69,7 @@ class AddFromSmsTest {
         AccountRepository(lazyDb),
         TagRepository(lazyDb),
         PayeeRepository(lazyDb),
+        EventRepository(lazyDb),
         unparsed
     )
 
@@ -93,6 +96,19 @@ class AddFromSmsTest {
 
         assertEquals(emptyList<Any>(), unparsed.observeAll().first())
         assertEquals(200_000L, db.transactionDao().observeAll().first().single().amountPaise)
+    }
+
+    @Test
+    fun aDateInsideAnEventFillsInItsTagAndAnotherDateTakesItOff() = runTest {
+        val zone = ZoneId.systemDefault()
+        val day = Instant.ofEpochMilli(at).atZone(zone).toLocalDate()
+        EventRepository(lazyDb).save(Event(name = "Trip", start = day, end = day), zone)
+        val vm = editor(mapOf(PREFILL_AT_ARG to at))
+
+        vm.form.first { it?.tags == listOf("Trip") }
+        vm.update(vm.form.value!!.withTag("work").withDate(day.plusDays(1)))
+
+        assertEquals(listOf("work"), vm.form.first { it?.eventTags?.isEmpty() == true }!!.tags)
     }
 
     @Test

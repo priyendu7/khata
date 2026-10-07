@@ -47,7 +47,17 @@ fun SettingsRoute(
 }
 
 /** Screens that Settings opens; :app maps them to navigation routes. */
-enum class SettingsPage { SMS_IMPORT, PARSERS, ACCOUNTS, CATEGORIES, TAGS, PAYEES, EXPORT, IMPORT }
+enum class SettingsPage {
+    SMS_IMPORT,
+    PARSERS,
+    ACCOUNTS,
+    CATEGORIES,
+    TAGS,
+    EVENTS,
+    PAYEES,
+    EXPORT,
+    IMPORT
+}
 
 @Composable
 fun SettingsScreen(
@@ -87,6 +97,12 @@ fun SettingsScreen(
         }
         Row(stringResource(R.string.settings_tags), stringResource(R.string.settings_tags_value)) {
             onOpen(SettingsPage.TAGS)
+        }
+        Row(
+            stringResource(R.string.settings_events),
+            stringResource(R.string.settings_events_value)
+        ) {
+            onOpen(SettingsPage.EVENTS)
         }
         Row(
             stringResource(R.string.settings_payees),

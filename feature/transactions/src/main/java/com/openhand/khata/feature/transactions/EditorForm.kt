@@ -36,7 +36,9 @@ data class EditorForm(
     /** Save this category and tags as the payee's defaults; offered while it has none. */
     val rememberPayee: Boolean = true,
     /** The month totals count it in; null is "same as date" (#93). */
-    val countsIn: YearMonth? = null
+    val countsIn: YearMonth? = null,
+    /** Names of the events on [date] (#73), whose tags are filled in like a payee's defaults. */
+    val eventTags: List<String> = emptyList()
 ) {
     val dateMonth: YearMonth get() = YearMonth.from(date)
 
@@ -90,6 +92,20 @@ data class EditorForm(
                 tags = ownTags
             )
         ) { form, tag -> form.withTag(tag) }
+    }
+
+    /**
+     * Switches to [names], the events on a new date. The old events' tags make way for the new
+     * ones', but tags the user added stay, and so do the payee's defaults.
+     */
+    fun withEventTags(names: List<String>): EditorForm {
+        if (names == eventTags) return this
+        val kept = knownPayee?.defaultTags.orEmpty()
+        val gone = eventTags.filterNot { old -> kept.any { it.equals(old, ignoreCase = true) } }
+        val ownTags = tags.filterNot { tag -> gone.any { it.equals(tag, ignoreCase = true) } }
+        return names.fold(copy(eventTags = names, tags = ownTags)) { form, tag ->
+            form.withTag(tag)
+        }
     }
 
     /** The transaction to save. Only call when [amountError] is null. */

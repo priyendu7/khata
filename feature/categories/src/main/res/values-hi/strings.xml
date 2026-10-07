@@ -26,4 +26,19 @@
         <item quantity="one">यह %d लेन-देन से हट जाएगा। लेन-देन बना रहेगा।</item>
         <item quantity="other">यह %d लेन-देन से हट जाएगा। लेन-देन बने रहेंगे।</item>
     </plurals>
+
+    <string name="events_title">इवेंट</string>
+    <string name="events_add">इवेंट जोड़ें</string>
+    <string name="events_edit">इवेंट बदलें</string>
+    <string name="events_empty_title">अभी कोई इवेंट नहीं</string>
+    <string name="events_empty_body">इवेंट तारीखों की एक नाम वाली अवधि है, जैसे कोई यात्रा। उन तारीखों के हर लेन-देन पर उसका नाम टैग के रूप में लगता है, ताकि पूरी यात्रा ढूँढी और जोड़ी जा सके।</string>
+    <string name="events_name">नाम</string>
+    <string name="events_name_hint">जैसे गोवा यात्रा</string>
+    <string name="events_name_taken">इस नाम का इवेंट पहले से है</string>
+    <string name="events_dates">तारीखें</string>
+    <string name="events_pick_dates">पहला और आखिरी दिन चुनें</string>
+    <string name="events_range">%1$s – %2$s</string>
+    <string name="events_help">इन दिनों के हर लेन-देन पर यह नाम टैग के रूप में लगेगा, बाद में आने वाले SMS पर भी। तारीखें या नाम बदलने पर टैग भी साथ जाता है।</string>
+    <string name="events_delete_title">%1$s हटाएँ?</string>
+    <string name="events_delete_body">इवेंट हट जाएगा, पर जिन लेन-देन पर पहले से %1$s टैग है, उन पर वह बना रहेगा, ताकि यात्रा का हिसाब बचा रहे।</string>
 </resources>

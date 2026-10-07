@@ -12,6 +12,7 @@ import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.SmsTransaction
 import com.openhand.khata.core.model.TransactionSource
 import dagger.Lazy
+import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,6 +25,8 @@ import javax.inject.Singleton
  * Transfers (PRD feature 1) are saved as such: a credit card bill payment ([CardBillPayment]),
  * money to or from a payee marked as the user's own account, and both sides of a move between
  * two of the user's accounts, which is spotted when the second side arrives and updates the first.
+ *
+ * A transaction dated inside an event (#73) gets the event's tag, as well as payee memory's.
  *
  * [preview] answers "what would import do?" for Settings > SMS import > Test a message. Both go
  * through [plan], so the answer can't disagree with a real import.
@@ -53,7 +56,7 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
             account = plan.account?.toModel(),
             payeeName = plan.payee?.displayName,
             category = memory?.categoryId?.let { database.categoryDao().getById(it) }?.toModel(),
-            tags = memory?.tagIds.orEmpty().mapNotNull { database.tagDao().getById(it)?.name },
+            tags = tagIds(database, sms, memory).mapNotNull { database.tagDao().getById(it)?.name },
             transfer = plan.transfer,
             needsReview = memory == null && plan.transfer == null
         )
@@ -174,7 +177,7 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
             // A transfer has no category to ask about.
             needsReview = memory == null && !transfer
         )
-        val id = database.transactionDao().saveWithTags(entity, memory?.tagIds.orEmpty())
+        val id = database.transactionDao().saveWithTags(entity, tagIds(database, sms, memory))
         return SmsImportResult.Saved(id, needsReview = entity.needsReview)
     }
 
@@ -210,6 +213,16 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
             from = at - TRANSFER_WINDOW,
             until = at + TRANSFER_WINDOW
         )
+    }
+
+    /** Payee memory's tags and those of the events on the SMS's day, in the device's time zone. */
+    private suspend fun tagIds(
+        database: KhataDatabase,
+        sms: SmsTransaction,
+        memory: PayeeMemory?
+    ): List<Long> {
+        val day = EventRepository.dayOf(sms.timestamp, ZoneId.systemDefault())
+        return (memory?.tagIds.orEmpty() + database.eventDao().tagIdsOn(day)).distinct()
     }
 
     private fun payeeIdentifier(text: String?): String? =

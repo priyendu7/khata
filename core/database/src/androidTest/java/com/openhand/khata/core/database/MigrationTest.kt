@@ -5,6 +5,7 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,6 +35,38 @@ class MigrationTest {
     fun version1SchemaMatchesTheExportedSchema() {
         helper.createDatabase(dbName, 1).close()
         helper.runMigrationsAndValidate(dbName, 1, true, *KhataMigrations.ALL).close()
+    }
+
+    @Test
+    fun version6To7AddsEventsAndKeepsTagsAndTransactions() {
+        helper.createDatabase(dbName, 6).use { db ->
+            db.execSQL("INSERT INTO tags (id, name) VALUES (1, 'Goa trip')")
+            db.execSQL(
+                "INSERT INTO categories (id, name, color, icon, archived) " +
+                    "VALUES (1, 'Food', 0, 'food', 0)"
+            )
+            db.execSQL(
+                "INSERT INTO transactions (id, amount_paise, direction, timestamp, " +
+                    "category_id, source, needs_review) " +
+                    "VALUES (1, 10000, 'debit', 1790000000000, 1, 'manual', 0)"
+            )
+            db.execSQL("INSERT INTO transaction_tags (transaction_id, tag_id) VALUES (1, 1)")
+        }
+
+        helper.runMigrationsAndValidate(dbName, 7, true, *KhataMigrations.ALL).use { db ->
+            db.execSQL("INSERT INTO events (tag_id, start_day, end_day) VALUES (1, 20728, 20730)")
+            db.query("SELECT COUNT(*) FROM transaction_tags").use { cursor ->
+                cursor.moveToFirst()
+                assertEquals(1, cursor.getInt(0))
+            }
+            // Deleting the tag deletes its event.
+            db.execSQL("PRAGMA foreign_keys = ON")
+            db.execSQL("DELETE FROM tags WHERE id = 1")
+            db.query("SELECT COUNT(*) FROM events").use { cursor ->
+                cursor.moveToFirst()
+                assertEquals(0, cursor.getInt(0))
+            }
+        }
     }
 
     @Test
