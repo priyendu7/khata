@@ -12,6 +12,14 @@
     <string name="insights_period_year">Year</string>
     <string name="insights_period_custom">Custom</string>
     <string name="insights_by_category">Spending by category</string>
+    <string name="insights_previous_week">Previous week</string>
+    <string name="insights_next_week">Next week</string>
+    <string name="insights_previous_month">Previous month</string>
+    <string name="insights_next_month">Next month</string>
+    <string name="insights_previous_year">Previous year</string>
+    <string name="insights_next_year">Next year</string>
+    <string name="insights_choose_month">Choose a month</string>
+    <string name="insights_choose_year">Choose a year</string>
     <string name="insights_spent">Spent</string>
     <string name="insights_other">Other</string>
     <string name="insights_share">%1$d%%</string>

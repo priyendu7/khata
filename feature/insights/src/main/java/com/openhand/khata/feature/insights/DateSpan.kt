@@ -17,23 +17,31 @@ data class DateSpan(val first: LocalDate, val last: LocalDate) {
     fun until(zone: ZoneId): Long = last.plusDays(1).startMillis(zone)
 
     companion object {
-        /** The week, month or year (so far and to come) that [today] falls in. */
-        fun of(period: ChartPeriod, today: LocalDate, firstDayOfWeek: DayOfWeek): DateSpan =
-            when (period) {
-                ChartPeriod.WEEK -> {
-                    val start = today.with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
-                    DateSpan(start, start.plusDays(DAYS_IN_WEEK - 1))
-                }
-                ChartPeriod.MONTH -> DateSpan(
-                    today.withDayOfMonth(1),
-                    today.with(TemporalAdjusters.lastDayOfMonth())
-                )
-                ChartPeriod.YEAR -> DateSpan(
-                    today.withDayOfYear(1),
-                    today.with(TemporalAdjusters.lastDayOfYear())
-                )
-                ChartPeriod.CUSTOM -> error("A custom period has its own dates")
+        /**
+         * The week, month or year (so far and to come) that [today] falls in, or the one [back]
+         * periods before it.
+         */
+        fun of(
+            period: ChartPeriod,
+            today: LocalDate,
+            firstDayOfWeek: DayOfWeek,
+            back: Int = 0
+        ): DateSpan = when (period) {
+            ChartPeriod.WEEK -> {
+                val start = today.minusWeeks(back.toLong())
+                    .with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
+                DateSpan(start, start.plusDays(DAYS_IN_WEEK - 1))
             }
+            ChartPeriod.MONTH -> {
+                val day = today.minusMonths(back.toLong())
+                DateSpan(day.withDayOfMonth(1), day.with(TemporalAdjusters.lastDayOfMonth()))
+            }
+            ChartPeriod.YEAR -> {
+                val day = today.minusYears(back.toLong())
+                DateSpan(day.withDayOfYear(1), day.with(TemporalAdjusters.lastDayOfYear()))
+            }
+            ChartPeriod.CUSTOM -> error("A custom period has its own dates")
+        }
 
         private const val DAYS_IN_WEEK = 7L
     }

@@ -3,6 +3,10 @@ package com.openhand.khata.feature.insights
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -46,8 +50,27 @@ class InsightsContentTest {
     private val shopping = category(7, "shopping")
     private val september = DateSpan(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))
 
-    private fun state(breakdown: CategoryBreakdown, period: ChartPeriod = ChartPeriod.MONTH) =
-        DonutState(period, september, from = 0, until = 1, breakdown = breakdown)
+    private fun state(
+        breakdown: CategoryBreakdown,
+        period: ChartPeriod = ChartPeriod.MONTH,
+        span: DateSpan = september,
+        back: Int = 0
+    ) = DonutState(
+        period,
+        span,
+        from = 0,
+        until = 1,
+        breakdown = breakdown,
+        back = back,
+        choices = if (period == ChartPeriod.MONTH) {
+            (0L until 24L).map {
+                val month = YearMonth.of(2026, 9).minusMonths(it)
+                DateSpan(month.atDay(1), month.atEndOfMonth())
+            }
+        } else {
+            emptyList()
+        }
+    )
 
     private val breakdown = CategoryBreakdown(
         slices = listOf(CategorySpend(rent, 15_000_00), CategorySpend(food, 4_000_00)),
@@ -57,6 +80,8 @@ class InsightsContentTest {
 
     private var opened = mutableListOf<Long?>()
     private var selected = mutableListOf<ChartPeriod>()
+    private val steps = mutableListOf<Int>()
+    private val pasts = mutableListOf<Int>()
 
     private val days = mutableListOf<LocalDate>()
     private val months = mutableListOf<YearMonth>()
@@ -72,6 +97,8 @@ class InsightsContentTest {
             heatmap = heatmap,
             monthly = monthly,
             onSelectPeriod = { selected += it },
+            onStepPeriod = { steps += it },
+            onSelectPast = { pasts += it },
             onOpenCategory = { opened += it },
             onOpenDay = { days += it },
             onSelectMonths = { monthCounts += it },
@@ -168,10 +195,10 @@ class InsightsContentTest {
 
         // The Home figure: slices, "Other" and the refund together.
         compose.onNodeWithText("₹19,500").assertIsDisplayed()
-        compose.onNodeWithText("1 Sep 2026 – 30 Sep 2026").assertIsDisplayed()
-        compose.onNodeWithText("Rent").assertIsDisplayed()
-        compose.onNodeWithText("₹15,000").assertIsDisplayed()
-        compose.onNodeWithText("75%").assertIsDisplayed()
+        compose.onNodeWithText("September 2026").assertIsDisplayed()
+        compose.onNodeWithText("Rent").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("₹15,000").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("75%").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Other").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("More refunded than spent").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("-₹500").performScrollTo().assertIsDisplayed()
@@ -204,6 +231,44 @@ class InsightsContentTest {
         compose.onNodeWithText("Week").performClick()
         compose.onNodeWithText("Custom").performClick()
         assertEquals(listOf(ChartPeriod.WEEK, ChartPeriod.CUSTOM), selected)
+    }
+
+    @Test
+    fun arrowsStepAndForwardIsOffOnTheCurrentPeriod() {
+        show(state(breakdown))
+
+        compose.onNodeWithContentDescription("Next month").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Previous month").performClick()
+        assertEquals(listOf(-1), steps)
+    }
+
+    @Test
+    fun forwardWorksOnAnEarlierPeriod() {
+        val week = DateSpan(LocalDate.of(2026, 9, 14), LocalDate.of(2026, 9, 20))
+        show(state(breakdown, ChartPeriod.WEEK, week, back = 1))
+
+        compose.onNodeWithText("14–20 Sep").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Next week").assertIsEnabled().performClick()
+        assertEquals(listOf(1), steps)
+    }
+
+    @Test
+    fun theMonthListJumpsToTheChosenMonth() {
+        show(state(breakdown))
+
+        compose.onNode(hasText("September 2026") and hasClickAction()).performClick()
+        compose.onNodeWithText("Choose a month").assertIsDisplayed()
+        compose.onNodeWithText("June 2026").performClick()
+        assertEquals(listOf(3), pasts)
+        compose.onNodeWithText("Choose a month").assertDoesNotExist()
+    }
+
+    @Test
+    fun aCustomPeriodShowsItsDatesWithoutArrows() {
+        show(state(breakdown, ChartPeriod.CUSTOM))
+
+        compose.onNodeWithText("1 Sep 2026 – 30 Sep 2026").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Previous month").assertDoesNotExist()
     }
 
     @Test

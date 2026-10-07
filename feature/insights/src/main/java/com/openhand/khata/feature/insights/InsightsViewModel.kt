@@ -12,6 +12,7 @@ import com.openhand.khata.core.model.MonthlyComparison
 import com.openhand.khata.core.model.spendingByDay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 
 /** The category donut for one period (PRD feature 5). */
 data class DonutState(
@@ -37,8 +39,15 @@ data class DonutState(
     /** [span] as the `[from, until)` milliseconds the transactions list filters by. */
     val from: Long,
     val until: Long,
-    val breakdown: CategoryBreakdown
-)
+    val breakdown: CategoryBreakdown,
+    /** How many periods before the current one [span] is; 0 for a custom period. */
+    val back: Int = 0,
+    /** What tapping the label offers to jump to, newest first: index `i` is `i` periods back. */
+    val choices: List<DateSpan> = emptyList()
+) {
+    /** Whether › can step forward: it can't go past the current period. */
+    val canStepForward: Boolean get() = period != ChartPeriod.CUSTOM && back > 0
+}
 
 /**
  * The calendar heatmap (PRD feature 5): spending on each day from [first] to [today], and the
@@ -62,8 +71,18 @@ private data class ChartData(
     val categories: List<Category>
 )
 
-/** A preset period, or [ChartPeriod.CUSTOM] with its dates. */
-private data class Selection(val period: ChartPeriod, val custom: DateSpan? = null)
+/**
+ * A preset period [back] periods before the current one, or [ChartPeriod.CUSTOM] with its dates.
+ * [back] is kept rather than dates so that "last month" moves on when the month does.
+ */
+private data class Selection(
+    val period: ChartPeriod,
+    val custom: DateSpan? = null,
+    val back: Int = 0
+)
+
+/** What the donut shows: the [selection] worked out against [today]. */
+private data class Shown(val selection: Selection, val today: LocalDate, val span: DateSpan)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -72,7 +91,7 @@ class InsightsViewModel internal constructor(
     categories: CategoryRepository,
     today: Flow<LocalDate>,
     private val zone: ZoneId,
-    firstDayOfWeek: DayOfWeek
+    private val firstDayOfWeek: DayOfWeek
 ) : ViewModel() {
     @Inject constructor(transactions: TransactionRepository, categories: CategoryRepository) : this(
         transactions,
@@ -86,21 +105,49 @@ class InsightsViewModel internal constructor(
     private val monthCount = MutableStateFlow(SHORT_MONTHS)
     private val days = today.distinctUntilChanged()
 
+    /** The year of the first transaction: the year list starts there. Null with none. */
+    private val firstYear: Flow<Int?> = transactions.observeFirstTimestamp()
+        .map { it?.let { millis -> Instant.ofEpochMilli(millis).atZone(zone).year } }
+        .distinctUntilChanged()
+
     /** Null until the first load; then updated live as transactions or the period change. */
     val donut: StateFlow<DonutState?> =
         combine(selection, days) { selected, date ->
-            selected.period to
-                (selected.custom ?: DateSpan.of(selected.period, date, firstDayOfWeek))
+            val span = selected.custom
+                ?: DateSpan.of(selected.period, date, firstDayOfWeek, selected.back)
+            Shown(selected, date, span)
         }
             .distinctUntilChanged()
-            .flatMapLatest { (period, span) ->
+            .flatMapLatest { shown ->
+                val span = shown.span
                 val from = span.from(zone)
                 val until = span.until(zone)
-                transactions.observeCategorySpending(from, until).map {
-                    DonutState(period, span, from, until, CategoryBreakdown.of(it))
+                combine(transactions.observeCategorySpending(from, until), firstYear) {
+                        spent,
+                        first
+                    ->
+                    DonutState(
+                        period = shown.selection.period,
+                        span = span,
+                        from = from,
+                        until = until,
+                        breakdown = CategoryBreakdown.of(spent),
+                        back = shown.selection.back,
+                        choices = choices(shown.selection.period, shown.today, first)
+                    )
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+
+    /** The last 24 months, or every year since the first transaction; weeks have no list. */
+    private fun choices(period: ChartPeriod, today: LocalDate, firstYear: Int?): List<DateSpan> {
+        val count = when (period) {
+            ChartPeriod.MONTH -> MONTH_CHOICES
+            ChartPeriod.YEAR -> today.year - minOf(firstYear ?: today.year, today.year) + 1
+            ChartPeriod.WEEK, ChartPeriod.CUSTOM -> 0
+        }
+        return (0 until count).map { DateSpan.of(period, today, firstDayOfWeek, it) }
+    }
 
     /** One query covers both charts: the heatmap's 12 months and the monthly chart's. */
     private val chartData: Flow<ChartData> = days
@@ -158,6 +205,19 @@ class InsightsViewModel internal constructor(
         selection.value = Selection(period)
     }
 
+    /** One period back (-1) or forward (+1), never past the current one or for custom dates. */
+    fun stepPeriod(delta: Int) {
+        selection.update {
+            if (it.period == ChartPeriod.CUSTOM) it else it.copy(back = maxOf(0, it.back - delta))
+        }
+    }
+
+    /** The period [back] periods before the current one, of the kind already shown. */
+    fun selectPast(back: Int) {
+        require(back >= 0) { "Only past periods" }
+        selection.update { if (it.period == ChartPeriod.CUSTOM) it else it.copy(back = back) }
+    }
+
     /** Days from [first] to [last], both included. */
     fun selectRange(first: LocalDate, last: LocalDate) {
         selection.value = Selection(ChartPeriod.CUSTOM, DateSpan(first, last))
@@ -166,6 +226,7 @@ class InsightsViewModel internal constructor(
     companion object {
         const val SHORT_MONTHS = 6
         const val LONG_MONTHS = 12
+        private const val MONTH_CHOICES = 24
         private const val STOP_TIMEOUT_MILLIS = 5_000L
 
         /** The heatmap covers the last 12 months: a year back from today, today included. */

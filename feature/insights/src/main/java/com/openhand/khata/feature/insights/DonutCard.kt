@@ -16,34 +16,28 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.CategoryBreakdown
 import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.ui.categoryName
-import java.time.format.DateTimeFormatter
 
 /** The category donut, its period switch and its legend (PRD feature 5). */
 @Composable
 internal fun DonutCard(
     donut: DonutState,
     onSelectPeriod: (ChartPeriod) -> Unit,
+    onStepPeriod: (Int) -> Unit,
+    onSelectPast: (Int) -> Unit,
     onOpenCategory: (Long?) -> Unit
 ) {
     ChartCard(stringResource(R.string.insights_by_category)) {
         PeriodChips(donut.period, onSelectPeriod)
-        Text(
-            spanLabel(donut.span),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        PeriodStepper(donut, onStepPeriod, onSelectPast)
         if (donut.breakdown.isEmpty) {
             ChartEmpty(
                 stringResource(R.string.insights_nothing_spent_title),
@@ -76,13 +70,6 @@ private fun ChartPeriod.label(): Int = when (this) {
     ChartPeriod.MONTH -> R.string.insights_period_month
     ChartPeriod.YEAR -> R.string.insights_period_year
     ChartPeriod.CUSTOM -> R.string.insights_period_custom
-}
-
-@Composable
-private fun spanLabel(span: DateSpan): String {
-    val format = DateTimeFormatter.ofPattern("d MMM yyyy", LocalConfiguration.current.locales[0])
-    val first = span.first.format(format)
-    return if (span.first == span.last) first else first + " – " + span.last.format(format)
 }
 
 /** A legend row: a slice (or a category left out of the donut) and where tapping it goes. */

@@ -55,6 +55,8 @@ fun InsightsScreen(
         onSelectPeriod = {
             if (it == ChartPeriod.CUSTOM) pickingDates = true else viewModel.selectPeriod(it)
         },
+        onStepPeriod = viewModel::stepPeriod,
+        onSelectPast = viewModel::selectPast,
         onOpenCategory = { id -> donut?.let { onOpenTransactions(id, it.from, it.until) } },
         onOpenDay = { day ->
             val (from, until) = viewModel.rangeOf(day)
@@ -81,8 +83,9 @@ fun InsightsScreen(
 }
 
 /**
- * The three charts: spending by category for a period ([onOpenCategory] gets null for "Other"),
- * by day over the last 12 months, and month by month. Each shows nothing until its first load.
+ * The three charts: spending by category for a period ([onOpenCategory] gets null for "Other";
+ * [onStepPeriod] gets -1 for back and 1 for forward, [onSelectPast] how many periods back), by
+ * day over the last 12 months, and month by month. Each shows nothing until its first load.
  */
 @Composable
 fun InsightsContent(
@@ -90,6 +93,8 @@ fun InsightsContent(
     heatmap: HeatmapState?,
     monthly: MonthlyState?,
     onSelectPeriod: (ChartPeriod) -> Unit,
+    onStepPeriod: (Int) -> Unit,
+    onSelectPast: (Int) -> Unit,
     onOpenCategory: (Long?) -> Unit,
     onOpenDay: (LocalDate) -> Unit,
     onSelectMonths: (Int) -> Unit,
@@ -101,7 +106,7 @@ fun InsightsContent(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())
     ) {
         ScreenTitle(stringResource(UiR.string.nav_insights))
-        donut?.let { DonutCard(it, onSelectPeriod, onOpenCategory) }
+        donut?.let { DonutCard(it, onSelectPeriod, onStepPeriod, onSelectPast, onOpenCategory) }
         heatmap?.let { HeatmapCard(it, onOpenDay) }
         monthly?.let { MonthlyCard(it, onSelectMonths, onOpenMonth) }
         Spacer(Modifier.height(8.dp))
