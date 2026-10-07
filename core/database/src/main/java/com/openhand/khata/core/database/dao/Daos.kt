@@ -377,8 +377,9 @@ interface TransactionDao {
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteById(id: Long)
 
-    @Query("SELECT EXISTS (SELECT 1 FROM transactions)")
-    fun observeAny(): Flow<Boolean>
+    /** The earliest transaction's timestamp, or null when there are none. */
+    @Query("SELECT MIN(timestamp) FROM transactions")
+    fun observeFirstTimestamp(): Flow<Long?>
 
     /** Totals for timestamps in [from, until). Transfers are left out; refunds reduce spending. */
     @Query(

@@ -35,6 +35,38 @@ class DateSpanTest {
     }
 
     @Test
+    fun goingBackAWeekKeepsTheFirstDayOfTheWeek() {
+        assertEquals(
+            DateSpan(LocalDate.of(2026, 9, 14), LocalDate.of(2026, 9, 20)),
+            DateSpan.of(ChartPeriod.WEEK, today, DayOfWeek.MONDAY, back = 1)
+        )
+        assertEquals(
+            DateSpan(LocalDate.of(2026, 9, 13), LocalDate.of(2026, 9, 19)),
+            DateSpan.of(ChartPeriod.WEEK, today, DayOfWeek.SUNDAY, back = 2)
+        )
+    }
+
+    @Test
+    fun goingBackAMonthFromThe31stGivesTheWholeMonthBefore() {
+        assertEquals(
+            DateSpan(LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 28)),
+            DateSpan.of(ChartPeriod.MONTH, LocalDate.of(2026, 3, 31), DayOfWeek.MONDAY, back = 1)
+        )
+        assertEquals(
+            DateSpan(LocalDate.of(2025, 12, 1), LocalDate.of(2025, 12, 31)),
+            DateSpan.of(ChartPeriod.MONTH, today, DayOfWeek.MONDAY, back = 9)
+        )
+    }
+
+    @Test
+    fun goingBackAYear() {
+        assertEquals(
+            DateSpan(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)),
+            DateSpan.of(ChartPeriod.YEAR, today, DayOfWeek.MONDAY, back = 2)
+        )
+    }
+
+    @Test
     fun untilIsTheStartOfTheDayAfterTheLast() {
         val india = ZoneId.of("Asia/Kolkata")
         val span = DateSpan(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))

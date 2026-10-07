@@ -111,6 +111,74 @@ class InsightsViewModelTest {
     }
 
     @Test
+    fun stepsBackAndForwardButNotPastTheCurrentPeriod() = runTest {
+        spend(LocalDate.of(2026, 8, 10), 300_00, "rent")
+
+        val viewModel = viewModel()
+        viewModel.donut.test {
+            val current = awaitNotNull()
+            assertEquals(0, current.back)
+            assertEquals(false, current.canStepForward)
+
+            viewModel.stepPeriod(-1)
+            var state = awaitBack(1)
+            assertEquals(DateSpan(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31)), state.span)
+            assertEquals(300_00L, state.breakdown.totalPaise)
+            assertEquals(true, state.canStepForward)
+            // A category opens with the shown month's range.
+            assertEquals(state.span.from(zone), state.from)
+            assertEquals(state.span.until(zone), state.until)
+
+            viewModel.stepPeriod(1)
+            state = awaitBack(0)
+            assertEquals(current.span, state.span)
+
+            viewModel.stepPeriod(1)
+            viewModel.stepPeriod(1)
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun switchingChipsGoesBackToTheCurrentPeriod() = runTest {
+        val viewModel = viewModel()
+        viewModel.donut.test {
+            awaitNotNull()
+            viewModel.selectPast(5)
+            assertEquals(LocalDate.of(2026, 4, 1), awaitBack(5).span.first)
+
+            viewModel.selectPeriod(ChartPeriod.YEAR)
+            val state = awaitPeriod(ChartPeriod.YEAR)
+            assertEquals(0, state.back)
+            assertEquals(LocalDate.of(2026, 1, 1), state.span.first)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun listsTwoYearsOfMonthsAndEveryYearWithTransactions() = runTest {
+        spend(LocalDate.of(2023, 6, 1), 100_00, "food")
+
+        val viewModel = viewModel()
+        viewModel.donut.test {
+            val months = awaitNotNull().choices
+            assertEquals(24, months.size)
+            assertEquals(LocalDate.of(2026, 9, 1), months.first().first)
+            assertEquals(LocalDate.of(2024, 10, 1), months.last().first)
+
+            viewModel.selectPeriod(ChartPeriod.YEAR)
+            var state = awaitPeriod(ChartPeriod.YEAR)
+            while (state.choices.size != 4) state = awaitNotNull()
+            assertEquals(listOf(2026, 2025, 2024, 2023), state.choices.map { it.first.year })
+
+            viewModel.selectPeriod(ChartPeriod.WEEK)
+            assertEquals(emptyList<DateSpan>(), awaitPeriod(ChartPeriod.WEEK).choices)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun updatesWhenATransactionIsAdded() = runTest {
         val viewModel = viewModel()
         viewModel.donut.test {
@@ -179,6 +247,14 @@ class InsightsViewModelTest {
     private suspend fun app.cash.turbine.ReceiveTurbine<DonutState?>.awaitNotNull(): DonutState {
         var item = awaitItem()
         while (item == null) item = awaitItem()
+        return item
+    }
+
+    private suspend fun app.cash.turbine.ReceiveTurbine<DonutState?>.awaitBack(
+        back: Int
+    ): DonutState {
+        var item = awaitNotNull()
+        while (item.back != back) item = awaitNotNull()
         return item
     }
 

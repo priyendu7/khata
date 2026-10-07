@@ -36,7 +36,11 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
     }
 
     /** Whether there are any transactions at all, updated as they're added or deleted. */
-    fun observeAny(): Flow<Boolean> = db.observe { it.transactionDao().observeAny() }
+    fun observeAny(): Flow<Boolean> = observeFirstTimestamp().map { it != null }
+
+    /** When the earliest transaction happened (epoch milliseconds), or null when there are none. */
+    fun observeFirstTimestamp(): Flow<Long?> =
+        db.observe { it.transactionDao().observeFirstTimestamp() }
 
     /**
      * Spending and income for timestamps in [from, until) (epoch milliseconds), updated whenever
