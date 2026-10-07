@@ -33,7 +33,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.ReviewItem
+import com.openhand.khata.core.model.SenderId
 import com.openhand.khata.core.model.UnparsedSms
+import com.openhand.khata.core.model.UnparsedSmsGroup
 import com.openhand.khata.core.ui.CategoryBadge
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
@@ -43,13 +45,13 @@ import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.TagInput
 import com.openhand.khata.core.ui.categoryName
-import com.openhand.khata.sms.parser.SenderId
 import java.time.Instant
 import java.time.ZoneId
 
 /**
  * To review (PRD feature 4): name each new payee once, one card at a time; then the bank SMS no
- * rule could read (PRD feature 7), to add by hand or dismiss.
+ * rule could read (PRD feature 7), grouped by sender, to add by hand, read with a new parser,
+ * ignore or dismiss.
  */
 @Composable
 fun ReviewScreen(
@@ -76,6 +78,7 @@ fun ReviewScreen(
         onAddByHand = { onAddByHand(firstAmountPaise(it.body), it.receivedAt, it.id) },
         onMakeParser = { onMakeParser(it.id) },
         onDismiss = viewModel::dismiss,
+        onDismissAll = viewModel::dismissAll,
         onCopy = { context.copyText(it.body) },
         onOpenIssues = { context.openIssues() },
         onIgnoreSender = viewModel::ignoreSender,
@@ -92,10 +95,11 @@ fun ReviewContent(
     onTagQueryChange: (String) -> Unit,
     onSave: (ReviewItem, name: String, categoryId: Long?, tags: List<String>) -> Unit,
     onSkip: (ReviewItem) -> Unit,
-    unparsed: List<UnparsedSms> = emptyList(),
+    unparsed: List<UnparsedSmsGroup> = emptyList(),
     onAddByHand: (UnparsedSms) -> Unit = {},
     onMakeParser: (UnparsedSms) -> Unit = {},
     onDismiss: (UnparsedSms) -> Unit = {},
+    onDismissAll: (UnparsedSmsGroup) -> Unit = {},
     onCopy: (UnparsedSms) -> Unit = {},
     onOpenIssues: () -> Unit = {},
     onIgnoreSender: (UnparsedSms) -> Unit = {},
@@ -106,21 +110,23 @@ fun ReviewContent(
     SubScreen(title = stringResource(R.string.review_title), onBack = onBack) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             val item = queue?.firstOrNull()
-            val sms = unparsed.firstOrNull()
+            // The count badges count each SMS, not each sender.
+            val unparsedCount = unparsed.sumOf { it.count }
             when {
                 queue == null -> Unit
-                item == null && sms != null -> UnparsedCard(
-                    sms = sms,
-                    left = unparsed.size,
-                    onAddByHand = { onAddByHand(sms) },
-                    onMakeParser = { onMakeParser(sms) },
-                    onDismiss = { onDismiss(sms) },
+                item == null && unparsed.isNotEmpty() -> UnparsedSmsList(
+                    groups = unparsed,
+                    left = unparsedCount,
+                    onAddByHand = onAddByHand,
+                    onMakeParser = onMakeParser,
+                    onDismiss = onDismiss,
+                    onDismissAll = onDismissAll,
                     onCopy = {
-                        onCopy(sms)
+                        onCopy(it)
                         copied = true
                     },
-                    onIgnoreSender = { ignoring = sms },
-                    onIgnoreLikeThis = { onIgnoreLikeThis(sms) }
+                    onIgnoreSender = { ignoring = it },
+                    onIgnoreLikeThis = onIgnoreLikeThis
                 )
                 item == null -> EmptyState(
                     icon = painterResource(UiR.drawable.ic_ledger),
@@ -129,7 +135,7 @@ fun ReviewContent(
                 )
                 else -> ReviewCard(
                     item = item,
-                    left = queue.size + unparsed.size,
+                    left = queue.size + unparsedCount,
                     categories = categories,
                     tagSuggestions = tagSuggestions,
                     onTagQueryChange = onTagQueryChange,

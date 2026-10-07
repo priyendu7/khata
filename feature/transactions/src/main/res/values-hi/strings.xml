@@ -85,4 +85,21 @@
     <string name="review_ignore_sender_title">%1$s के सभी SMS अनदेखा करें?</string>
     <string name="review_ignore_sender_body">रुके हुए SMS हटा दिए जाएँगे। इसे सेटिंग्स &gt; SMS इम्पोर्ट &gt; फ़िल्टर में वापस बदल सकते हैं।</string>
     <string name="review_ignore_confirm">अनदेखा करें</string>
+    <string name="review_unparsed_title_many">SMS जिन्हें खाता पढ़ नहीं सका</string>
+    <string name="review_unparsed_body_many">इनमें रकम है, लेकिन इनका फ़ॉर्मेट खाता के लिए नया है। किसी भेजने वाले के लिए पार्सर बनाएँ ताकि आगे से खाता उसके SMS पढ़ सके, इन्हें हाथ से जोड़ें, या जो लेन-देन नहीं हैं उन्हें हटा दें।</string>
+    <plurals name="review_group_title">
+        <item quantity="one">%1$s · %2$d मैसेज</item>
+        <item quantity="other">%1$s · %2$d मैसेज</item>
+    </plurals>
+    <plurals name="review_group_show">
+        <item quantity="one">%d दिखाएँ</item>
+        <item quantity="other">सभी %d दिखाएँ</item>
+    </plurals>
+    <string name="review_group_hide">मैसेज छिपाएँ</string>
+    <string name="review_dismiss_all">सब हटाएँ</string>
+    <plurals name="review_dismiss_all_title">
+        <item quantity="one">%2$s का %1$d SMS हटाएँ?</item>
+        <item quantity="other">%2$s के सभी %1$d SMS हटाएँ?</item>
+    </plurals>
+    <string name="review_dismiss_all_body">ये मिट जाएँगे और वापस नहीं लाए जा सकते। इस भेजने वाले के नए SMS फिर भी यहाँ आएँगे।</string>
 </resources>

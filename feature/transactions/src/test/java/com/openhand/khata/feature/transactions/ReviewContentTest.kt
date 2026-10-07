@@ -4,7 +4,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -12,7 +16,9 @@ import androidx.compose.ui.test.performTextReplacement
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.ReviewItem
+import com.openhand.khata.core.model.SenderId
 import com.openhand.khata.core.model.UnparsedSms
+import com.openhand.khata.core.model.UnparsedSmsGroup
 import com.openhand.khata.sms.parser.IgnoreTemplate
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -59,9 +65,11 @@ class ReviewContentTest {
     private fun show(queue: List<ReviewItem>?, unparsed: List<UnparsedSms> = emptyList()) {
         compose.setContent {
             ReviewContent(
-                unparsed = unparsed,
+                unparsed = grouped(unparsed),
                 onAddByHand = { unparsedActions += "add ${it.id}" },
+                onMakeParser = { unparsedActions += "parser ${it.id}" },
                 onDismiss = { unparsedActions += "dismiss ${it.id}" },
+                onDismissAll = { group -> unparsedActions += "dismiss all ${group.header}" },
                 onCopy = { unparsedActions += "copy ${it.id}" },
                 onOpenIssues = { unparsedActions += "github" },
                 onIgnoreSender = { ignored += "sender ${it.id}" },
@@ -176,7 +184,7 @@ class ReviewContentTest {
                 onTagQueryChange = {},
                 onSave = { _, _, _, _ -> },
                 onSkip = {},
-                unparsed = waiting,
+                unparsed = grouped(waiting),
                 onIgnoreLikeThis = { from ->
                     val template = IgnoreTemplate.compile(
                         IgnoreTemplate.pattern(from.body, emptyList())
@@ -186,11 +194,61 @@ class ReviewContentTest {
             )
         }
         compose.onNodeWithText("3 left").assertExists()
+        compose.onNodeWithText("Show all 3").performScrollTo().performClick()
 
-        compose.onNodeWithText("Ignore messages like this").performScrollTo().performClick()
+        compose.onAllNodesWithText("Ignore messages like this")[0].performScrollTo().performClick()
 
         compose.onNodeWithText("1 left").assertExists()
         compose.onNodeWithText(sms.body).assertDoesNotExist()
         compose.onNodeWithText(other.body).assertExists()
     }
+
+    /** On a tall screen, so the list composes every card. */
+    @Test
+    @Config(qualifiers = TALL)
+    fun aSenderWithManySmsIsOneCardThatExpands() {
+        val older = sms.copy(id = 4, sender = "AX-KOTAKB-S", body = "Rs.700 withdrawn at ATM.")
+        val hdfc = sms.copy(id = 5, sender = "VM-HDFCBK-S", body = "Rs.99 paid to a shop.")
+        show(emptyList(), listOf(sms, hdfc, older))
+
+        compose.onNodeWithText("3 left").assertExists()
+        compose.onNodeWithText("SMS Khata couldn't read").assertExists()
+        compose.onNodeWithText("KOTAKB · 2 messages").assertExists()
+        compose.onNodeWithText(sms.body).assertExists()
+        compose.onNodeWithText(older.body).assertDoesNotExist()
+        // A sender with one SMS keeps its own actions.
+        compose.onNodeWithText(hdfc.body).performScrollTo().assertExists()
+
+        compose.onNodeWithText("Show all 2").performScrollTo().performClick()
+        compose.onNodeWithText(older.body).performScrollTo().assertExists()
+        compose.onAllNodesWithText("Add by hand")[1].performScrollTo().performClick()
+        compose.onAllNodesWithText("Make a parser")[0].performScrollTo().performClick()
+
+        compose.onNodeWithText("Hide the messages").performScrollTo().performClick()
+        compose.onNodeWithText(older.body).assertDoesNotExist()
+        assertEquals(listOf("add 4", "parser 3"), unparsedActions)
+    }
+
+    @Test
+    fun dismissingAllOfASenderAsksFirst() {
+        show(emptyList(), listOf(sms, sms.copy(id = 4, body = "Rs.700 withdrawn at ATM.")))
+
+        compose.onNodeWithText("Dismiss all").performScrollTo().performClick()
+        compose.onNodeWithText("Dismiss all 2 SMS from KOTAKB?").assertExists()
+        compose.onNodeWithText("Cancel").performClick()
+        assertEquals(emptyList<String>(), unparsedActions)
+
+        compose.onNodeWithText("Dismiss all").performScrollTo().performClick()
+        compose.onNode(hasText("Dismiss all") and hasAnyAncestor(isDialog())).performClick()
+        assertEquals(listOf("dismiss all KOTAKB"), unparsedActions)
+    }
+
+    private companion object {
+        const val TALL = "w400dp-h2000dp"
+    }
+
+    /** As [com.openhand.khata.core.data.UnparsedSmsRepository.observeGroups] groups them. */
+    private fun grouped(newestFirst: List<UnparsedSms>) =
+        newestFirst.groupBy { SenderId.parse(it.sender)!!.header }
+            .map { (header, messages) -> UnparsedSmsGroup(header, messages) }
 }

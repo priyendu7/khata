@@ -48,6 +48,38 @@ class UnparsedSmsRepositoryTest : RepositoryTest() {
         assertEquals(0, review.observeCount().first())
     }
 
+    @Test
+    fun groupsBySenderHeaderWhateverTheOperatorPrefix() = runTest {
+        unparsed.save("AX-HDFCBK-S", "Rs.100 one", AT)
+        unparsed.save("JM-KOTAKB-S", atm, AT + HOUR)
+        unparsed.save("VM-HDFCBK-S", "Rs.300 three", AT + 2 * HOUR)
+        unparsed.save("HDFCBK", "Rs.50 four", AT - HOUR)
+
+        val groups = unparsed.observeGroups().first()
+
+        // The group with the newest SMS first; inside one, newest first.
+        assertEquals(listOf("HDFCBK", "KOTAKB"), groups.map { it.header })
+        assertEquals(listOf(3, 1), groups.map { it.count })
+        assertEquals("Rs.300 three", groups.first().newest.body)
+        assertEquals(
+            listOf("Rs.300 three", "Rs.100 one", "Rs.50 four"),
+            groups.first().messages.map { it.body }
+        )
+    }
+
+    @Test
+    fun dismissingAGroupDeletesOnlyItsSms() = runTest {
+        unparsed.save("AX-HDFCBK-S", "Rs.100 one", AT)
+        unparsed.save("VM-HDFCBK-S", "Rs.300 three", AT + HOUR)
+        unparsed.save("JM-KOTAKB-S", atm, AT)
+        val hdfc = unparsed.observeGroups().first().first { it.header == "HDFCBK" }
+
+        unparsed.delete(hdfc.messages.map { it.id })
+
+        assertEquals(listOf("KOTAKB"), unparsed.observeGroups().first().map { it.header })
+        assertEquals(1, review.observeCount().first())
+    }
+
     private companion object {
         const val AT = 1_790_000_000_000L
         const val HOUR = 3_600_000L

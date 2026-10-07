@@ -1,12 +1,12 @@
 package com.openhand.khata.feature.settings
 
+import com.openhand.khata.core.model.SenderId
 import com.openhand.khata.sms.parser.DateFormats
 import com.openhand.khata.sms.parser.RuleAccountType
 import com.openhand.khata.sms.parser.RuleCheck
 import com.openhand.khata.sms.parser.RuleDirection
 import com.openhand.khata.sms.parser.RuleMaker
 import com.openhand.khata.sms.parser.RuleValidator
-import com.openhand.khata.sms.parser.SenderId
 import java.util.Locale
 
 /**
