@@ -86,6 +86,7 @@
     <string name="problem_time">समय समझ नहीं आया</string>
     <string name="problem_amount">रकम समझ नहीं आई</string>
     <string name="problem_direction">दिशा debit, credit, refund या transfer होनी चाहिए</string>
+    <string name="problem_counts_in">गिनती का महीना 2026-10 जैसा होना चाहिए</string>
     <string name="direction_debit">खर्च</string>
     <string name="direction_credit">आमदनी</string>
     <string name="direction_refund">रिफ़ंड</string>

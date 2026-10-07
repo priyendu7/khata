@@ -13,6 +13,7 @@ import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.ui.incomeColor
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -32,6 +33,13 @@ private fun locale(): Locale = LocalConfiguration.current.locales[0]
 internal fun dateLabel(date: LocalDate, today: LocalDate = LocalDate.now()): String {
     val pattern = if (date.year == today.year) "EEE, d MMM" else "EEE, d MMM yyyy"
     return date.format(DateTimeFormatter.ofPattern(pattern, locale()))
+}
+
+/** "October", with the year added when it isn't this year. */
+@Composable
+internal fun monthLabel(month: YearMonth, today: LocalDate = LocalDate.now()): String {
+    val pattern = if (month.year == today.year) "LLLL" else "LLLL yyyy"
+    return month.format(DateTimeFormatter.ofPattern(pattern, locale()))
 }
 
 /** "Today", "Yesterday", or the date. */

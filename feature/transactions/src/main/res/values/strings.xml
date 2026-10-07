@@ -30,6 +30,10 @@
     <string name="amount_error_zero">The amount must be more than ₹0</string>
     <string name="field_date">Date</string>
     <string name="field_time">Time</string>
+    <string name="field_counts_in">Counts in</string>
+    <string name="counts_in_same">Same as date</string>
+    <string name="counts_in_same_month">%1$s (same as date)</string>
+    <string name="counts_in_label">Counts in %1$s</string>
     <string name="field_payee">Paid to or received from (optional)</string>
     <string name="field_payee_hint">e.g. Swiggy, Ramesh, landlord</string>
     <string name="payee_filled_in">Category and tags filled in from %1$s. Changes here apply to this transaction only.</string>

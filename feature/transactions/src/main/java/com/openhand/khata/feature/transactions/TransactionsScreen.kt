@@ -343,6 +343,13 @@ private fun TransactionRow(item: TransactionListItem, onClick: () -> Unit) {
                     color = amountColor(item.direction)
                 )
                 Text(timeLabel(time), style = MaterialTheme.typography.labelSmall)
+                item.countsIn?.let {
+                    Text(
+                        stringResource(R.string.counts_in_label, monthLabel(it)),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         },
         modifier = Modifier.clickable(onClick = onClick)

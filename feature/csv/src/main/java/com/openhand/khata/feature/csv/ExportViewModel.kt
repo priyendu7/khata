@@ -69,6 +69,7 @@ class ExportViewModel @Inject constructor(
                     from = range?.first?.atStartOfDay(zone)?.toInstant()?.toEpochMilli(),
                     until = range?.last?.plusDays(1)?.atStartOfDay(zone)?.toInstant()
                         ?.toEpochMilli(),
+                    zone = zone,
                     categoryName = names::nameOf
                 )
                 val text = withContext(Dispatchers.Default) { KhataCsvFormat.write(records, zone) }

@@ -7,6 +7,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -17,11 +18,11 @@ import java.time.format.DateTimeParseException
  * times are local to the phone's time zone.
  */
 object KhataCsvFormat {
-    const val VERSION = 1
+    const val VERSION = 2
     const val MARKER = "khata_csv"
 
     /** Version 1 columns. A later version may only add columns after these. */
-    val HEADER = listOf(
+    private val HEADER_V1 = listOf(
         "date",
         "time",
         "amount",
@@ -34,6 +35,9 @@ object KhataCsvFormat {
         "note",
         "reference_no"
     )
+
+    /** Every column [write] writes: version 2 added `counts_in` (#93). */
+    val HEADER = HEADER_V1 + "counts_in"
 
     const val TAG_SEPARATOR = "|"
 
@@ -60,7 +64,8 @@ object KhataCsvFormat {
             record.category.orEmpty(),
             record.tags.joinToString(TAG_SEPARATOR),
             record.note.orEmpty(),
-            record.referenceNo.orEmpty()
+            record.referenceNo.orEmpty(),
+            record.countsIn?.toString().orEmpty()
         )
     }
 
@@ -70,13 +75,14 @@ object KhataCsvFormat {
 
     /**
      * How many rows at the top of [rows] are Khata's marker and header, or null when the file isn't
-     * in Khata's format. The marker line is optional, in case a spreadsheet dropped it.
+     * in Khata's format. The marker line is optional, in case a spreadsheet dropped it, and
+     * columns added after version 1 may be missing.
      */
     fun headerRows(rows: List<List<String>>): Int? {
         val hasMarker = rows.firstOrNull()?.firstOrNull()?.trim()?.lowercase() == MARKER
         val skip = if (hasMarker) 2 else 1
         val names = rows.getOrNull(skip - 1).orEmpty().map { it.trim().lowercase() }
-        return skip.takeIf { names.size >= HEADER.size && names.take(HEADER.size) == HEADER }
+        return skip.takeIf { names.take(HEADER_V1.size) == HEADER_V1 }
     }
 
     /** Reads the data rows of a file that [headerRows] recognised. */
@@ -110,7 +116,9 @@ object KhataCsvFormat {
             category = text("category"),
             tags = column("tags").split(TAG_SEPARATOR).map { it.trim() }.filter { it.isNotEmpty() },
             note = text("note"),
-            referenceNo = text("reference_no")
+            referenceNo = text("reference_no"),
+            countsIn = text("counts_in")
+                ?.let { parseOrNull { YearMonth.parse(it) }.orFail(RowProblem.COUNTS_IN) }
         )
     }
 }

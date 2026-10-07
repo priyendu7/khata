@@ -154,4 +154,27 @@ class MigrationsTest {
             }
         }
     }
+
+    @Test
+    fun version5To6AddsCountsAtAndLeavesExistingRowsSameAsDate() {
+        helper.createDatabase(dbName, 5).use { db ->
+            db.execSQL(
+                "INSERT INTO categories (id, name, seed_key, color, icon, archived) " +
+                    "VALUES (1, NULL, 'uncategorized', 0, 'category', 0)"
+            )
+            db.execSQL(
+                "INSERT INTO transactions (id, amount_paise, direction, timestamp, category_id, " +
+                    "source, needs_review) VALUES (7, 8500000, 'credit', 1790000000000, 1, " +
+                    "'manual', 0)"
+            )
+        }
+
+        helper.runMigrationsAndValidate(dbName, 6, true, *KhataMigrations.ALL).use { db ->
+            db.query("SELECT amount_paise, counts_at FROM transactions WHERE id = 7").use {
+                it.moveToFirst()
+                assertEquals(8500000L, it.getLong(0))
+                assertTrue(it.isNull(1))
+            }
+        }
+    }
 }

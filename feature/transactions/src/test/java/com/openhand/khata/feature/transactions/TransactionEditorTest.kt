@@ -25,6 +25,7 @@ import com.openhand.khata.core.model.Payee
 import com.openhand.khata.core.model.Transaction
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.YearMonth
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -269,5 +270,19 @@ class TransactionEditorTest {
         assertEquals("Vet", transaction.payeeName)
         assertEquals("Checkup", transaction.note)
         assertEquals(listOf("dog"), transaction.tags)
+    }
+
+    @Test
+    fun countsInOffersTheMonthBeforeTheDatesAndTheMonthAfter() {
+        show(blank.copy(amount = "85000", date = LocalDate.of(2026, 9, 30)), isNew = true)
+
+        compose.onNodeWithText("Same as date").performScrollTo().performClick()
+        compose.onNodeWithText("August", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("(same as date)", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("October", substring = true).performClick()
+        compose.onNodeWithText("Same as date").assertDoesNotExist()
+        compose.onNodeWithText("Save").performClick()
+
+        assertEquals(YearMonth.of(2026, 10), saved!!.countsIn)
     }
 }

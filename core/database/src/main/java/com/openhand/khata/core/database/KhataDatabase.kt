@@ -39,7 +39,7 @@ import com.openhand.khata.core.database.entity.TransactionTagEntity
         CustomParserEntity::class,
         IgnoreRuleEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(EnumConverters::class)

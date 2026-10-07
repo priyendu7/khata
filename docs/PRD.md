@@ -66,6 +66,9 @@ v1 has eight features, and spending alerts are planned for later. SMS parsing sh
 - Each transaction records: amount, direction (debit, credit, refund or transfer), date and time, payee (UPI ID, merchant or account), source account (bank account or card, last 4 digits), category, tags, a note, the UPI or bank reference number, and the raw SMS text when there is one.
 - Add, edit and delete by hand. A transaction can be split across categories later (v2).
 - **Transfers do not count as spending.** Paying a credit card bill (for example through CRED) or moving money between your own accounts is marked as a transfer and left out of spending totals. The card purchases themselves were already counted.
+- **Counts in month.** A transaction can count in the month before or after its date, set by hand in the editor (default "Same as date"). October's salary paid on 30 September counts in October. It isn't remembered for the payee, and there's no "month starts on" setting.
+  - Everything that adds up by period uses the counts-in month, as if the transaction happened at 00:00 on the 1st of that month: Home (this month, today, top category), Insights (donut, heatmap, monthly chart) and the transactions list when filtered to a month or date range.
+  - Everything about the real event keeps the real date and time: the list's day grouping and order, SMS and CSV duplicate checks, and the review inbox. The list row shows "Counts in October".
 
 ### 2. Categories and tags
 

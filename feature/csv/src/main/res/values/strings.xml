@@ -85,6 +85,7 @@
     <string name="problem_time">the time isn\'t understood</string>
     <string name="problem_amount">the amount isn\'t understood</string>
     <string name="problem_direction">the direction must be debit, credit, refund or transfer</string>
+    <string name="problem_counts_in">the counts-in month must look like 2026-10</string>
     <string name="direction_debit">Spent</string>
     <string name="direction_credit">Received</string>
     <string name="direction_refund">Refund</string>

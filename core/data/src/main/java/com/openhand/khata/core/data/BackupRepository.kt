@@ -6,6 +6,7 @@ import com.openhand.khata.core.database.MetadataEntity
 import com.openhand.khata.core.database.dao.TransactionRow
 import com.openhand.khata.core.database.entity.TransactionEntity
 import com.openhand.khata.core.model.Category
+import com.openhand.khata.core.model.CountsIn
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.TransactionRecord
 import com.openhand.khata.core.model.TransactionSource
@@ -28,12 +29,14 @@ data class ImportResult(val added: Int, val duplicates: Int)
 @Singleton
 class BackupRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
     /**
-     * Every transaction in [from, until) (epoch milliseconds; null for no limit), oldest first.
-     * [categoryName] gives each category's name, since default categories are named by the UI.
+     * Every transaction in [from, until) (epoch milliseconds; null for no limit), oldest first,
+     * picked by its real date, not the month it counts in. [categoryName] gives each category's
+     * name, since default categories are named by the UI. Counts-in months are read in [zone].
      */
     suspend fun export(
         from: Long? = null,
         until: Long? = null,
+        zone: ZoneId = ZoneId.systemDefault(),
         categoryName: (Category) -> String
     ): List<TransactionRecord> = db.io { database ->
         database.backupDao().exportRows(from, until).map { row ->
@@ -48,7 +51,8 @@ class BackupRepository @Inject constructor(private val db: Lazy<KhataDatabase>) 
                 tags = row.tags?.split(TransactionRow.TAG_SEPARATOR)
                     ?.sortedBy { it.lowercase() }.orEmpty(),
                 note = row.note,
-                referenceNo = row.referenceNo
+                referenceNo = row.referenceNo,
+                countsIn = CountsIn.fromMillis(row.countsAt, zone)
             )
         }
     }
@@ -97,7 +101,8 @@ class BackupRepository @Inject constructor(private val db: Lazy<KhataDatabase>) 
                     note = record.note?.trim()?.ifEmpty { null },
                     referenceNo = record.referenceNo?.trim()?.ifEmpty { null },
                     source = TransactionSource.CSV,
-                    rawSms = null
+                    rawSms = null,
+                    countsAt = CountsIn.toMillis(record.countsIn, record.timestamp, zone)
                 )
                 dao.saveWithTags(entity, resolver.tagIds(record.tags))
             }

@@ -5,6 +5,7 @@ import com.openhand.khata.core.model.Payee
 import com.openhand.khata.core.model.Transaction
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import org.junit.Assert.assertEquals
@@ -139,5 +140,30 @@ class EditorFormTest {
         assertTrue(form.copy(payee = "Ramesh").canRememberPayee)
         val bare = swiggy.copy(defaultCategoryId = null, defaultTags = emptyList())
         assertTrue(form.copy(payee = "Swiggy").withKnownPayee(bare).canRememberPayee)
+    }
+
+    @Test
+    fun countsInIsTheMonthBeforeOrAfterAndTheDatesOwnMonthIsSameAsDate() {
+        val salary = form.copy(amount = "85000", date = LocalDate.of(2026, 9, 30))
+
+        assertNull(salary.withCountsIn(YearMonth.of(2026, 9)).countsIn)
+        val october = salary.withCountsIn(YearMonth.of(2026, 10))
+        assertEquals(YearMonth.of(2026, 10), october.countsIn)
+        assertEquals(YearMonth.of(2026, 10), october.toTransaction(id = 0, zone = zone).countsIn)
+    }
+
+    @Test
+    fun movingTheDateKeepsCountsInOnlyWhileItsStillNextToTheDate() {
+        val october = form.withCountsIn(YearMonth.of(2026, 10))
+
+        // To 1 Oct: October is now the date's own month.
+        assertNull(october.withDate(LocalDate.of(2026, 10, 1)).countsIn)
+        // To 2 Nov: October is the month before.
+        assertEquals(
+            YearMonth.of(2026, 10),
+            october.withDate(LocalDate.of(2026, 11, 2)).countsIn
+        )
+        // To 15 Aug: October is two months away.
+        assertNull(october.withDate(LocalDate.of(2026, 8, 15)).countsIn)
     }
 }

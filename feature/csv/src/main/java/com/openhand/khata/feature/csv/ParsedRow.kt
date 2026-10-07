@@ -3,7 +3,7 @@ package com.openhand.khata.feature.csv
 import com.openhand.khata.core.model.TransactionRecord
 
 /** Why a row can't be imported; each is shown to the user with the row's line number. */
-enum class RowProblem { COLUMNS, DATE, TIME, AMOUNT, DIRECTION }
+enum class RowProblem { COLUMNS, DATE, TIME, AMOUNT, DIRECTION, COUNTS_IN }
 
 /**
  * One data row of an imported file. [line] is its row number in the file, counting from 1 at the

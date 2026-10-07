@@ -30,6 +30,8 @@ data class TransactionRow(
     @ColumnInfo(name = "amount_paise") val amountPaise: Long,
     val direction: Direction,
     val timestamp: Long,
+    /** See [TransactionEntity.countsAt]. */
+    @ColumnInfo(name = "counts_at") val countsAt: Long?,
     val note: String?,
     @ColumnInfo(name = "payee_name") val payeeName: String?,
     @ColumnInfo(name = "account_name") val accountName: String?,
@@ -78,7 +80,9 @@ data class ExportRow(
     /** Tag names joined with [TransactionRow.TAG_SEPARATOR], or null when there are none. */
     val tags: String?,
     val note: String?,
-    @ColumnInfo(name = "reference_no") val referenceNo: String?
+    @ColumnInfo(name = "reference_no") val referenceNo: String?,
+    /** See [TransactionEntity.countsAt]. */
+    @ColumnInfo(name = "counts_at") val countsAt: Long?
 )
 
 /**
@@ -377,8 +381,8 @@ interface TransactionDao {
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteById(id: Long)
 
-    /** The earliest transaction's timestamp, or null when there are none. */
-    @Query("SELECT MIN(timestamp) FROM transactions")
+    /** The earliest transaction's timestamp, or the month it counts in if earlier; null when none. */
+    @Query("SELECT MIN(COALESCE(counts_at, timestamp)) FROM transactions")
     fun observeFirstTimestamp(): Flow<Long?>
 
     /** Totals for timestamps in [from, until). Transfers are left out; refunds reduce spending. */
@@ -387,7 +391,9 @@ interface TransactionDao {
             "WHEN 'refund' THEN -amount_paise ELSE 0 END), 0) AS spent_paise, " +
             "COALESCE(SUM(CASE direction WHEN 'credit' THEN amount_paise ELSE 0 END), 0) " +
             "AS income_paise " +
-            "FROM transactions WHERE timestamp >= :from AND timestamp < :until"
+            "FROM transactions " +
+            "WHERE COALESCE(counts_at, timestamp) >= :from " +
+            "AND COALESCE(counts_at, timestamp) < :until"
     )
     fun observeTotals(from: Long, until: Long): Flow<TotalsRow>
 
@@ -403,7 +409,8 @@ interface TransactionDao {
             "AS spent_paise " +
             "FROM transactions t JOIN categories c ON c.id = t.category_id " +
             "WHERE t.direction IN ('debit', 'refund') " +
-            "AND t.timestamp >= :from AND t.timestamp < :until " +
+            "AND COALESCE(t.counts_at, t.timestamp) >= :from " +
+            "AND COALESCE(t.counts_at, t.timestamp) < :until " +
             "GROUP BY c.id HAVING spent_paise > 0 ORDER BY spent_paise DESC, c.id LIMIT 1"
     )
     fun observeTopCategory(from: Long, until: Long): Flow<CategorySpendRow?>
@@ -421,7 +428,8 @@ interface TransactionDao {
             "AS spent_paise " +
             "FROM transactions t JOIN categories c ON c.id = t.category_id " +
             "WHERE t.direction IN ('debit', 'refund') " +
-            "AND t.timestamp >= :from AND t.timestamp < :until " +
+            "AND COALESCE(t.counts_at, t.timestamp) >= :from " +
+            "AND COALESCE(t.counts_at, t.timestamp) < :until " +
             "GROUP BY c.id HAVING spent_paise != 0 ORDER BY spent_paise DESC, c.id"
     )
     fun observeCategorySpending(from: Long, until: Long): Flow<List<CategorySpendRow>>
@@ -431,8 +439,10 @@ interface TransactionDao {
      * local day or month in Kotlin (SQLite only knows UTC days). Transfers never count.
      */
     @Query(
-        "SELECT timestamp, direction, amount_paise, category_id FROM transactions " +
-            "WHERE direction != 'transfer' AND timestamp >= :from AND timestamp < :until"
+        "SELECT COALESCE(counts_at, timestamp) AS timestamp, direction, amount_paise, " +
+            "category_id FROM transactions WHERE direction != 'transfer' " +
+            "AND COALESCE(counts_at, timestamp) >= :from " +
+            "AND COALESCE(counts_at, timestamp) < :until"
     )
     fun observeAmounts(from: Long, until: Long): Flow<List<AmountRow>>
 
@@ -441,7 +451,7 @@ interface TransactionDao {
      * [query] matches the payee name or note and must have `%`, `_` and `\` escaped with `\`.
      */
     @Query(
-        "SELECT t.id, t.amount_paise, t.direction, t.timestamp, t.note, " +
+        "SELECT t.id, t.amount_paise, t.direction, t.timestamp, t.counts_at, t.note, " +
             "p.display_name AS payee_name, a.name AS account_name, " +
             "c.id AS category_id, c.name AS category_name, c.seed_key AS category_seed_key, " +
             "c.color AS category_color, c.icon AS category_icon, " +
@@ -456,8 +466,8 @@ interface TransactionDao {
             "AND (:accountId IS NULL OR t.account_id = :accountId) " +
             "AND (:tagId IS NULL OR EXISTS (SELECT 1 FROM transaction_tags x " +
             "WHERE x.transaction_id = t.id AND x.tag_id = :tagId)) " +
-            "AND (:from IS NULL OR t.timestamp >= :from) " +
-            "AND (:until IS NULL OR t.timestamp < :until) " +
+            "AND (:from IS NULL OR COALESCE(t.counts_at, t.timestamp) >= :from) " +
+            "AND (:until IS NULL OR COALESCE(t.counts_at, t.timestamp) < :until) " +
             "AND (:query IS NULL OR p.display_name LIKE '%' || :query || '%' ESCAPE '\\' " +
             "OR t.note LIKE '%' || :query || '%' ESCAPE '\\') " +
             "ORDER BY t.timestamp DESC, t.id DESC"
@@ -486,7 +496,7 @@ interface BackupDao {
             "c.archived AS category_archived, " +
             "(SELECT GROUP_CONCAT(g.name, char(31)) FROM transaction_tags tt " +
             "JOIN tags g ON g.id = tt.tag_id WHERE tt.transaction_id = t.id) AS tags, " +
-            "t.note, t.reference_no " +
+            "t.note, t.reference_no, t.counts_at " +
             "FROM transactions t " +
             "JOIN categories c ON c.id = t.category_id " +
             "LEFT JOIN payees p ON p.id = t.payee_id " +
