@@ -1,35 +1,27 @@
 package com.openhand.khata.feature.settings
 
-import androidx.compose.foundation.layout.Row
+import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.openhand.khata.core.model.CustomParser
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SubScreen
 
@@ -38,30 +30,58 @@ import com.openhand.khata.core.ui.SubScreen
 fun ParsersScreen(
     onBack: () -> Unit,
     onAdd: () -> Unit,
+    onEdit: (ruleId: String, builtIn: Boolean) -> Unit,
     viewModel: ParsersViewModel = hiltViewModel()
 ) {
-    val custom by viewModel.custom.collectAsStateWithLifecycle()
-    val builtIn by viewModel.builtIn.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val resources = LocalResources.current
+    val rows by viewModel.rows.collectAsStateWithLifecycle()
     ParsersContent(
         onBack = onBack,
         onAdd = onAdd,
-        custom = custom,
-        builtIn = builtIn,
-        onEnabled = viewModel::setEnabled,
-        onDelete = viewModel::delete
+        rows = rows,
+        actions = RuleActions(
+            onEnabled = viewModel::setEnabled,
+            onEdit = { onEdit(it.rule.id, it.builtIn) },
+            onCopy = { row ->
+                context.copyToClipboard(row.code)
+                val copied = resources.getString(R.string.parsers_copied, row.rule.id)
+                Toast.makeText(context, copied, Toast.LENGTH_SHORT).show()
+            },
+            onDelete = viewModel::delete,
+            onReset = viewModel::reset,
+            onKeepMine = viewModel::keepMine
+        )
     )
 }
 
+/** What can be done to a rule from its row. Reset is also Use new version. */
+class RuleActions(
+    val onEnabled: (RuleRow, Boolean) -> Unit = { _, _ -> },
+    val onEdit: (RuleRow) -> Unit = {},
+    val onCopy: (RuleRow) -> Unit = {},
+    val onDelete: (RuleRow) -> Unit = {},
+    val onReset: (RuleRow) -> Unit = {},
+    val onKeepMine: (RuleRow) -> Unit = {}
+)
+
+/** A question before an edit or a custom rule is thrown away. */
+private enum class Confirm { DELETE, RESET, USE_NEW }
+
 @Composable
-fun ParsersContent(
-    onBack: () -> Unit,
-    onAdd: () -> Unit,
-    custom: List<CustomParser>?,
-    builtIn: List<BuiltInBank>,
-    onEnabled: (CustomParser, Boolean) -> Unit,
-    onDelete: (CustomParser) -> Unit
-) {
-    var deleting by rememberSaveable { mutableStateOf<Long?>(null) }
+fun ParsersContent(onBack: () -> Unit, onAdd: () -> Unit, rows: ParserRows?, actions: RuleActions) {
+    var confirming by remember { mutableStateOf<Pair<Confirm, RuleRow>?>(null) }
+    val rowActions = RuleActions(
+        onEnabled = actions.onEnabled,
+        onEdit = actions.onEdit,
+        onCopy = actions.onCopy,
+        onDelete = { confirming = Confirm.DELETE to it },
+        // Use new version and Reset both drop the edit; only the question differs.
+        onReset = { row ->
+            confirming = (if (row.updateAvailable) Confirm.USE_NEW else Confirm.RESET) to row
+        },
+        onKeepMine = actions.onKeepMine
+    )
     SubScreen(
         title = stringResource(R.string.parsers_title),
         onBack = onBack,
@@ -77,58 +97,71 @@ fun ParsersContent(
                 )
             }
             item { Header(stringResource(R.string.parsers_custom_header)) }
-            if (custom?.isEmpty() == true) {
-                item {
-                    Text(
-                        stringResource(R.string.parsers_custom_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
+            if (rows?.custom?.isEmpty() == true) {
+                item { Note(stringResource(R.string.parsers_custom_empty)) }
             }
-            items(custom.orEmpty(), key = { it.id }) { parser ->
-                CustomRow(parser, onEnabled = { onEnabled(parser, it) }) { deleting = parser.id }
+            items(rows?.custom.orEmpty(), key = { "custom-" + it.rule.id }) { row ->
+                RuleListItem(row, rowActions)
             }
             item {
                 HorizontalDivider(Modifier.padding(top = 8.dp))
                 Header(stringResource(R.string.parsers_builtin_header))
+                Note(stringResource(R.string.parsers_builtin_note))
             }
-            items(builtIn, key = { "builtin-" + it.bank }) { bank ->
-                ListItem(
-                    headlineContent = { Text(bank.bank) },
-                    supportingContent = {
-                        Text(
-                            pluralStringResource(
-                                R.plurals.parsers_builtin_rules,
-                                bank.rules,
-                                bank.rules,
-                                bank.senders.joinToString(", ")
-                            )
-                        )
-                    }
-                )
+            rows?.builtIn.orEmpty().groupBy { it.rule.bank }.forEach { (bank, bankRows) ->
+                item(key = "bank-$bank") { BankHeader(bank) }
+                items(bankRows, key = { "builtin-" + it.rule.id }) { row ->
+                    RuleListItem(row, rowActions)
+                }
             }
         }
     }
-    custom?.firstOrNull { it.id == deleting }?.let { parser ->
-        AlertDialog(
-            onDismissRequest = { deleting = null },
-            title = { Text(stringResource(R.string.parsers_delete_title, parser.ruleId)) },
-            text = { Text(stringResource(R.string.parsers_delete_body)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    onDelete(parser)
-                    deleting = null
-                }) { Text(stringResource(UiR.string.delete)) }
+    confirming?.let { (kind, row) ->
+        ConfirmDialog(
+            kind,
+            row.rule.id,
+            onConfirm = {
+                if (kind == Confirm.DELETE) actions.onDelete(row) else actions.onReset(row)
+                confirming = null
             },
-            dismissButton = {
-                TextButton(onClick = { deleting = null }) {
-                    Text(stringResource(UiR.string.cancel))
-                }
-            }
+            onDismiss = { confirming = null }
         )
     }
+}
+
+@Composable
+private fun ConfirmDialog(
+    kind: Confirm,
+    ruleId: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val (title, body, button) = when (kind) {
+        Confirm.DELETE -> Triple(
+            R.string.parsers_delete_title,
+            R.string.parsers_delete_body,
+            UiR.string.delete
+        )
+        Confirm.RESET -> Triple(
+            R.string.parsers_reset_title,
+            R.string.parsers_reset_body,
+            R.string.parsers_menu_reset
+        )
+        Confirm.USE_NEW -> Triple(
+            R.string.parsers_use_new_title,
+            R.string.parsers_use_new_body,
+            R.string.parsers_menu_use_new
+        )
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(title, ruleId)) },
+        text = { Text(stringResource(body)) },
+        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(button)) } },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(UiR.string.cancel)) }
+        }
+    )
 }
 
 @Composable
@@ -142,36 +175,20 @@ private fun Header(text: String) {
 }
 
 @Composable
-private fun CustomRow(parser: CustomParser, onEnabled: (Boolean) -> Unit, onDelete: () -> Unit) {
-    ListItem(
-        headlineContent = { Text(parser.bank) },
-        supportingContent = {
-            Text(
-                if (parser.enabled) {
-                    parser.ruleId
-                } else {
-                    stringResource(R.string.parsers_rule_off, parser.ruleId)
-                }
-            )
-        },
-        trailingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Switch(checked = parser.enabled, onCheckedChange = null)
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        painterResource(R.drawable.ic_delete),
-                        contentDescription = stringResource(
-                            R.string.parsers_delete_label,
-                            parser.ruleId
-                        )
-                    )
-                }
-            }
-        },
-        modifier = Modifier.toggleable(
-            value = parser.enabled,
-            role = Role.Switch,
-            onValueChange = onEnabled
-        )
+private fun BankHeader(bank: String) {
+    Text(
+        bank,
+        style = MaterialTheme.typography.labelLarge,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)
+    )
+}
+
+@Composable
+private fun Note(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     )
 }

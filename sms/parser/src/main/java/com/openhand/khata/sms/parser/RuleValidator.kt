@@ -52,6 +52,9 @@ object RuleValidator {
         }
     }
 
+    /** The named groups in [pattern], or null if it uses something outside the allowed subset. */
+    fun groups(pattern: String): Set<String>? = RegexSubset.namedGroups(pattern)
+
     /** Exactly one of `direction` and `directionWords`, with no empty or blank word lists. */
     private fun directionValid(rule: ParserRule): Boolean {
         val words = rule.directionWords

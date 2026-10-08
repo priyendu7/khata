@@ -177,4 +177,29 @@ class MigrationsTest {
             }
         }
     }
+
+    @Test
+    fun version7To8AddsBuiltInRuleOverridesAndKeepsCustomParsers() {
+        helper.createDatabase(dbName, 7).use { db ->
+            db.execSQL(
+                "INSERT INTO custom_parsers (rule_id, bank, code, enabled, added_at) " +
+                    "VALUES ('hdfc-upi', 'HDFC', 'khata1:e30', 0, 1790000000000)"
+            )
+        }
+
+        helper.runMigrationsAndValidate(dbName, 8, true, *KhataMigrations.ALL).use { db ->
+            db.query("SELECT rule_id, enabled FROM custom_parsers").use {
+                it.moveToFirst()
+                assertEquals("hdfc-upi", it.getString(0))
+                assertEquals(0, it.getInt(1))
+            }
+            db.execSQL("INSERT INTO builtin_rule_overrides (rule_id) VALUES ('kotak-upi-sent')")
+            db.query("SELECT enabled, edited_code, base_hash FROM builtin_rule_overrides").use {
+                it.moveToFirst()
+                assertEquals(1, it.getInt(0))
+                assertTrue(it.isNull(1))
+                assertTrue(it.isNull(2))
+            }
+        }
+    }
 }

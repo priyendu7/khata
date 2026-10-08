@@ -5,9 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openhand.khata.core.data.CustomParserRepository
 import com.openhand.khata.core.data.UnparsedSmsRepository
+import com.openhand.khata.core.model.SenderId
 import com.openhand.khata.sms.ingest.SmsInbox
 import com.openhand.khata.sms.ingest.SmsIngestor
 import com.openhand.khata.sms.parser.CompiledRule
+import com.openhand.khata.sms.parser.ParserRule
+import com.openhand.khata.sms.parser.RuleCode
+import com.openhand.khata.sms.parser.RuleCodeResult
 import com.openhand.khata.sms.parser.RuleMaker
 import com.openhand.khata.sms.parser.SmsParser
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +34,9 @@ const val NO_UNPARSED = -1L
 /** Or opens it on this sender and SMS text, from Test a message. */
 const val MAKE_FROM_SENDER_ARG = "sender"
 const val MAKE_FROM_BODY_ARG = "body"
+
+/** Or re-marks this rule (its code) for Settings > Parsers > Edit, returning the new pattern. */
+const val MAKE_REMARK_ARG = "remark"
 
 /**
  * Make a parser from an SMS (PRD feature 8): pick or paste an SMS, mark its parts, check the rule
@@ -71,6 +78,10 @@ class MakeParserViewModel @Inject constructor(
     private val saving = RuleSaving(viewModelScope, parsers, ingestor)
     val step = saving.step
 
+    /** The rule being re-marked, whose pattern goes back to the edit screen instead of saving. */
+    val remarking: ParserRule? = savedState.get<String>(MAKE_REMARK_ARG)
+        ?.let { (RuleCode.decode(it) as? RuleCodeResult.Decoded)?.rule }
+
     init {
         val id = savedState.get<Long>(MAKE_FROM_UNPARSED_ARG) ?: NO_UNPARSED
         val body = savedState.get<String>(MAKE_FROM_BODY_ARG)
@@ -87,11 +98,23 @@ class MakeParserViewModel @Inject constructor(
         }
     }
 
-    /** Needs the SMS permission. Senders are checked before any text is read. */
+    /**
+     * Needs the SMS permission. Senders are checked before any text is read. When re-marking,
+     * only SMS from the rule's senders are offered.
+     */
     fun loadCandidates(now: Long = System.currentTimeMillis()) {
+        val headers = remarking?.senders?.mapNotNullTo(mutableSetOf()) {
+            SenderId.parse(it)?.header
+        }
         viewModelScope.launch {
             val parser = ingestor.parser()
-            _candidates.value = withContext(Dispatchers.IO) { candidateSms(inbox, parser, now) }
+            _candidates.value = withContext(Dispatchers.IO) {
+                if (headers != null) {
+                    recentSms(inbox, parser, headers, now)
+                } else {
+                    candidateSms(inbox, parser, now)
+                }
+            }
         }
     }
 
@@ -99,7 +122,8 @@ class MakeParserViewModel @Inject constructor(
     fun choose(sender: String?, body: String, receivedAt: Long) {
         viewModelScope.launch {
             val known = sender?.let { ingestor.parser().bankOf(it) }
-            _form.value = MakerForm.start(sender, body, receivedAt, known)
+            val form = MakerForm.start(sender, body, receivedAt, known)
+            _form.value = remarking?.let(form::remarking) ?: form
         }
     }
 

@@ -98,12 +98,24 @@ object KhataMigrations {
         }
     }
 
+    /** 7 → 8: the user's changes to built-in parser rules, switched off or edited (#111). */
+    val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `builtin_rule_overrides` (" +
+                    "`rule_id` TEXT NOT NULL, `enabled` INTEGER NOT NULL DEFAULT 1, " +
+                    "`edited_code` TEXT, `base_hash` TEXT, PRIMARY KEY(`rule_id`))"
+            )
+        }
+    }
+
     val ALL: Array<Migration> = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
         MIGRATION_3_4,
         MIGRATION_4_5,
         MIGRATION_5_6,
-        MIGRATION_6_7
+        MIGRATION_6_7,
+        MIGRATION_7_8
     )
 }

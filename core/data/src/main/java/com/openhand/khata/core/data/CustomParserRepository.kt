@@ -44,6 +44,15 @@ class CustomParserRepository @Inject constructor(private val db: Lazy<KhataDatab
         }
     }
 
+    /**
+     * Saves an edited rule over the one with the same [ruleId], keeping its place in the order
+     * and its switch. Saves it as new if that rule was deleted meanwhile.
+     */
+    suspend fun edit(ruleId: String, bank: String, code: String, now: Long) {
+        val updated = db.io { it.customParserDao().updateCode(ruleId, bank, code) }
+        if (updated == 0) save(ruleId, bank, code, now)
+    }
+
     suspend fun setEnabled(id: Long, enabled: Boolean) {
         db.io { it.customParserDao().setEnabled(id, enabled) }
     }

@@ -58,10 +58,15 @@ import com.openhand.khata.sms.parser.RuleMaker
 
 /**
  * Make a parser from an SMS (PRD feature 8): pick or paste one, mark its parts, check the rule on
- * recent SMS from the same senders, save it, and share its code if you like.
+ * recent SMS from the same senders, save it, and share its code if you like. When re-marking a
+ * rule (Settings > Parsers > Edit), the rule's code goes to [onRemarked] instead of being saved.
  */
 @Composable
-fun MakeParserScreen(onDone: () -> Unit, viewModel: MakeParserViewModel = hiltViewModel()) {
+fun MakeParserScreen(
+    onDone: () -> Unit,
+    onRemarked: (String) -> Unit = {},
+    viewModel: MakeParserViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     val form by viewModel.form.collectAsStateWithLifecycle()
     val savedIds by viewModel.savedIds.collectAsStateWithLifecycle()
@@ -104,7 +109,14 @@ fun MakeParserScreen(onDone: () -> Unit, viewModel: MakeParserViewModel = hiltVi
                 canReadSms = canReadSms,
                 recent = recent,
                 saving = step != SaveStep.Editing,
-                onSave = viewModel::save
+                onSave = { rule ->
+                    if (viewModel.remarking != null) {
+                        onRemarked(RuleCode.encode(rule.rule))
+                    } else {
+                        viewModel.save(rule)
+                    }
+                },
+                remarking = viewModel.remarking != null
             )
         }
     }
@@ -185,7 +197,8 @@ fun MakeParserContent(
     canReadSms: Boolean,
     recent: List<SmsInbox.Message>,
     saving: Boolean,
-    onSave: (CompiledRule) -> Unit
+    onSave: (CompiledRule) -> Unit,
+    remarking: Boolean = false
 ) {
     SubScreen(title = stringResource(R.string.parser_make_title), onBack = onBack) { padding ->
         Column(
@@ -210,7 +223,7 @@ fun MakeParserContent(
             HorizontalDivider()
             RuleDetails(form, onForm)
             HorizontalDivider()
-            RuleResult(form, check, canReadSms, recent, saving, onSave)
+            RuleResult(form, check, canReadSms, recent, saving, onSave, remarking)
         }
     }
 }
@@ -357,7 +370,8 @@ private fun RuleResult(
     canReadSms: Boolean,
     recent: List<SmsInbox.Message>,
     saving: Boolean,
-    onSave: (CompiledRule) -> Unit
+    onSave: (CompiledRule) -> Unit,
+    remarking: Boolean
 ) {
     when (check) {
         null -> ParserHint(stringResource(R.string.parser_make_need_amount))
@@ -404,7 +418,17 @@ private fun RuleResult(
                 onClick = { onSave(rule) },
                 enabled = own != null && !saving,
                 modifier = Modifier.fillMaxWidth()
-            ) { Text(stringResource(R.string.parser_make_save)) }
+            ) {
+                Text(
+                    stringResource(
+                        if (remarking) {
+                            R.string.parser_make_use_pattern
+                        } else {
+                            R.string.parser_make_save
+                        }
+                    )
+                )
+            }
         }
     }
 }
@@ -472,7 +496,7 @@ private fun fieldLabel(field: RuleMaker.Field): Int = when (field) {
     RuleMaker.Field.DATE -> R.string.parser_field_date
 }
 
-private fun Context.copyToClipboard(text: String) {
+internal fun Context.copyToClipboard(text: String) {
     val clipboard = getSystemService(ClipboardManager::class.java)
     clipboard.setPrimaryClip(ClipData.newPlainText("Khata rule", text))
 }

@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.openhand.khata.core.data.BuiltInRuleOverrideRepository
 import com.openhand.khata.core.data.CustomParserRepository
 import com.openhand.khata.core.data.IgnoreRuleRepository
 import com.openhand.khata.core.data.SmsImporter
@@ -60,6 +61,7 @@ class NewSmsTest {
                     SmsImporter(Lazy { db }),
                     UnparsedSmsRepository(Lazy { db }),
                     CustomParserRepository(Lazy { db }),
+                    BuiltInRuleOverrideRepository(Lazy { db }),
                     IgnoreRuleRepository(Lazy { db }),
                     settings
                 )

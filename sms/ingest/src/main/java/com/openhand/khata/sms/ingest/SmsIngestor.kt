@@ -1,5 +1,6 @@
 package com.openhand.khata.sms.ingest
 
+import com.openhand.khata.core.data.BuiltInRuleOverrideRepository
 import com.openhand.khata.core.data.CustomParserRepository
 import com.openhand.khata.core.data.IgnoreRuleRepository
 import com.openhand.khata.core.data.SmsImportPreview
@@ -14,6 +15,7 @@ import com.openhand.khata.sms.parser.IgnoreRule
 import com.openhand.khata.sms.parser.IgnoreRules
 import com.openhand.khata.sms.parser.ParseResult
 import com.openhand.khata.sms.parser.ParsedSms
+import com.openhand.khata.sms.parser.RuleOverride
 import com.openhand.khata.sms.parser.SmsFilters
 import com.openhand.khata.sms.parser.SmsParser
 import javax.inject.Inject
@@ -28,6 +30,7 @@ class SmsIngestor @Inject constructor(
     private val importer: SmsImporter,
     private val unparsed: UnparsedSmsRepository,
     private val customParsers: CustomParserRepository,
+    private val builtInOverrides: BuiltInRuleOverrideRepository,
     private val ignoreRules: IgnoreRuleRepository,
     private val settings: SmsImportSettings
 ) {
@@ -36,36 +39,44 @@ class SmsIngestor @Inject constructor(
     /** The last parser built, with what it was built from and its custom rule ids. */
     @Volatile private var current: Built? = null
 
-    private class Built(
+    /** What the parser is built from; it's rebuilt when any of this changes. */
+    private data class Inputs(
         val codes: List<String>,
+        val overrides: List<RuleOverride>,
         val filters: SmsFilters,
-        val ignore: List<IgnoreRule>,
-        val parser: SmsParser,
-        val customIds: Set<String>
+        val ignore: List<IgnoreRule>
     )
+
+    private class Built(val inputs: Inputs, val parser: SmsParser, val customIds: Set<String>)
 
     /**
      * The rules as they are now: the custom rules that are switched on (PRD feature 8), then the
-     * built-in ones, behind the filters and ignore rules the user has on. Rebuilt only when one of
-     * those changes, in the phone's time zone then.
+     * built-in ones with the user's changes (switched off or edited, #111), behind the filters
+     * and ignore rules the user has on. Rebuilt only when one of those changes, in the phone's
+     * time zone then.
      */
     suspend fun parser(): SmsParser = built().parser
 
     private suspend fun built(): Built {
-        val codes = customParsers.enabledCodes()
-        val filters = settings.filters.value
-        val ignore = ignoreRules.enabled().map { IgnoreRule(it.id, it.header, it.pattern) }
-        current?.let {
-            if (it.codes == codes && it.filters == filters && it.ignore == ignore) return it
-        }
-        val custom = CustomRules.load(codes)
-        return Built(
-            codes,
-            filters,
-            ignore,
-            CustomRules.parser(custom, builtIn, filters, IgnoreRules(ignore)),
-            custom.mapTo(mutableSetOf()) { it.rule.id }
-        ).also { current = it }
+        val inputs = Inputs(
+            codes = customParsers.enabledCodes(),
+            overrides = builtInOverrides.getAll().map {
+                RuleOverride(it.ruleId, it.enabled, it.editedCode)
+            },
+            filters = settings.filters.value,
+            ignore = ignoreRules.enabled().map { IgnoreRule(it.id, it.header, it.pattern) }
+        )
+        current?.let { if (it.inputs == inputs) return it }
+        val custom = CustomRules.load(inputs.codes)
+        val builtInNow = BuiltInRules.withOverrides(builtIn, inputs.overrides)
+        val parser = CustomRules.parser(
+            custom,
+            builtInNow,
+            inputs.filters,
+            IgnoreRules(inputs.ignore)
+        )
+        return Built(inputs, parser, custom.mapTo(mutableSetOf()) { it.rule.id })
+            .also { current = it }
     }
 
     /**
@@ -116,7 +127,8 @@ class SmsIngestor @Inject constructor(
     }
 
     /**
-     * Reads the SMS waiting in To review again with the current rules, after one was added. Each
+     * Reads the SMS waiting in To review again with the current rules, after one was added or
+     * edited. Each
      * one a rule now reads becomes a transaction (or is found to be one already saved) and leaves
      * To review. Returns how many did.
      */
