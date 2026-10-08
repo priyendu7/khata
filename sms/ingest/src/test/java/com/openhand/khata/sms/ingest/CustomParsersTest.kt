@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.openhand.khata.core.data.BuiltInRuleOverrideRepository
 import com.openhand.khata.core.data.CustomParserRepository
 import com.openhand.khata.core.data.DuplicateMatch
 import com.openhand.khata.core.data.IgnoreRuleRepository
@@ -12,6 +13,7 @@ import com.openhand.khata.core.data.SmsImporter
 import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
+import com.openhand.khata.sms.parser.BuiltInRules
 import com.openhand.khata.sms.parser.CodeCheck
 import com.openhand.khata.sms.parser.CustomRules
 import com.openhand.khata.sms.parser.ParserRule
@@ -39,6 +41,7 @@ class CustomParsersTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private lateinit var db: KhataDatabase
     private lateinit var parsers: CustomParserRepository
+    private lateinit var overrides: BuiltInRuleOverrideRepository
     private lateinit var ingestor: SmsIngestor
     private lateinit var settings: SmsImportSettings
     private lateinit var unparsed: UnparsedSmsRepository
@@ -76,12 +79,14 @@ class CustomParsersTest {
             .allowMainThreadQueries()
             .build()
         parsers = CustomParserRepository(Lazy { db })
+        overrides = BuiltInRuleOverrideRepository(Lazy { db })
         settings = SmsImportSettings(context)
         unparsed = UnparsedSmsRepository(Lazy { db })
         ingestor = SmsIngestor(
             SmsImporter(Lazy { db }),
             unparsed,
             parsers,
+            overrides,
             IgnoreRuleRepository(Lazy { db }),
             settings
         )
@@ -221,6 +226,40 @@ class CustomParsersTest {
         ingestor.ingest("JM-KOTAKB-S", upiSms, at)
         val again = ingestor.explain("JM-KOTAKB-S", upiSms, at)
         assertEquals(DuplicateMatch.REFERENCE, again.preview!!.duplicate!!.match)
+    }
+
+    @Test
+    fun theParserIsRebuiltWhenABuiltInRuleIsSwitchedOffOrEdited() = runTest {
+        assertEquals("Kotak", ingestor.parser().bankOf("JM-KOTAKB-S"))
+
+        overrides.setEnabled("kotak-upi-sent", false)
+        assertEquals(IngestOutcome.UNREADABLE, ingestor.ingest("JM-KOTAKB-S", upiSms, at))
+
+        overrides.setEnabled("kotak-upi-sent", true)
+        val sent = BuiltInRules.all().first { it.id == "kotak-upi-sent" }
+        val edited = sent.copy(bank = "My Kotak")
+        overrides.saveEdit(sent.id, RuleCode.encode(edited), BuiltInRules.hash(sent))
+        ingestor.ingest("JM-KOTAKB-S", upiSms, at)
+
+        val account = db.accountDao().getById(saved().single().accountId!!)!!
+        assertEquals("My Kotak", account.bank)
+        // An edited built-in rule is still a built-in one.
+        assertEquals(
+            TriedRule("kotak-upi-sent", custom = false),
+            ingestor.explain("JM-KOTAKB-S", upiSms, at).rulesTried.last()
+        )
+    }
+
+    @Test
+    fun theSmsWaitingInToReviewAreReadAgainAfterAnEdit() = runTest {
+        assertEquals(IngestOutcome.UNREADABLE, ingestor.ingest("JM-KOTAKB-S", atmSms, at))
+        val sent = BuiltInRules.all().first { it.id == "kotak-upi-sent" }
+
+        val edited = kotakAtm.copy(id = sent.id)
+        overrides.saveEdit(sent.id, RuleCode.encode(edited), BuiltInRules.hash(sent))
+
+        assertEquals(1, ingestor.retryUnparsed())
+        assertEquals(listOf(200_000L), saved().map { it.amountPaise })
     }
 
     private companion object {

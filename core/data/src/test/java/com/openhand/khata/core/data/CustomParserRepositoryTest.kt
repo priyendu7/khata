@@ -55,6 +55,32 @@ class CustomParserRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun editingReplacesTheRuleInItsPlaceWithItsSwitch() = runTest {
+        parsers.save("hdfc-upi", "HDFC", "khata1:a", now = 1)
+        parsers.save("icici-card", "ICICI", "khata1:b", now = 2)
+        val hdfc = parsers.observeAll().first().first { it.ruleId == "hdfc-upi" }
+        parsers.setEnabled(hdfc.id, false)
+
+        parsers.edit("hdfc-upi", "HDFC Bank", "khata1:edited", now = 9)
+
+        val all = parsers.observeAll().first()
+        assertEquals(listOf("icici-card", "hdfc-upi"), all.map { it.ruleId })
+        with(all.last()) {
+            assertEquals(hdfc.id, id)
+            assertEquals("HDFC Bank", bank)
+            assertEquals("khata1:edited", code)
+            assertEquals(false, enabled)
+        }
+    }
+
+    @Test
+    fun editingADeletedRuleSavesItAgain() = runTest {
+        parsers.edit("hdfc-upi", "HDFC", "khata1:a", now = 1)
+
+        assertEquals(listOf("khata1:a"), parsers.enabledCodes())
+    }
+
+    @Test
     fun deleteRemovesIt() = runTest {
         parsers.save("hdfc-upi", "HDFC", "khata1:a", now = 1)
 

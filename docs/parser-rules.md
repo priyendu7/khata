@@ -81,6 +81,15 @@ To share a rule, the app turns it into a **rule code**: `khata1:` followed by th
 
 In **Settings > Parsers > Add**, paste the code. The app shows why a code can't be used (the messages for the codes above and below), and lets you test the rule on one of your recent SMS from that bank, or on one you paste, before saving. Saved rules are kept in the encrypted database and can be switched off or deleted. Pasting a rule with the same `id` as a saved one replaces it. After saving, the app offers to read the bank SMS waiting in To review with the new rule.
 
+### Managing rules in the app
+
+**Settings > Parsers** lists your rules first, then every built-in rule, one row per rule, grouped by bank. Each row has an on/off switch and a menu with **Edit** and **Copy code** (custom rules also have **Delete**). The engine order stays the same: custom rules first, then built-in ones.
+
+- **Edit** opens one form for both kinds: bank name, senders, direction (fixed, or direction words), account type, date format (when the pattern has a `date` group) and, under Advanced, the pattern. **Re-mark on an SMS** opens the rule maker on a recent SMS from the rule's senders, or a pasted one, and brings the new pattern back with the same `id`. **Check** runs the edited rule over your recent SMS from its senders. Saving checks the rule with `RuleValidator`, then reads the SMS waiting in To review again.
+- Built-in rules ship inside the app, so a change to one is stored in the database (`builtin_rule_overrides`) and applied on top: a rule switched off is skipped, and an edited one runs in its place, in the same position. An edit that no longer passes the checks falls back to the shipped rule. Built-in rules can't be deleted; switch them off instead. An edited one shows **Edited** and has **Reset to built-in**.
+- When an app update changes a built-in rule you edited (its JSON hash differs from the one stored with your edit), the row shows **Updated version available**, with **Use new version** (drops your edit) and **Keep mine**.
+- **Copy code** copies the rule's `khata1:` code (for an edited built-in rule, your version), for example to send it in to be shipped as built-in.
+
 ### Making a rule in the app
 
 Most rules are made from an SMS on the phone rather than written by hand. Open an SMS no rule could read in **To review** and tap **Make a parser**, or go to **Settings > Parsers > Add > Make a parser** and pick one of your recent bank SMS (or paste one). Then:

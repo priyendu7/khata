@@ -3,6 +3,7 @@ package com.openhand.khata.sms.ingest
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.openhand.khata.core.data.BuiltInRuleOverrideRepository
 import com.openhand.khata.core.data.CustomParserRepository
 import com.openhand.khata.core.data.IgnoreRuleRepository
 import com.openhand.khata.core.data.SmsImporter
@@ -51,6 +52,7 @@ class SmsIgnoringTest {
             SmsImporter(Lazy { db }),
             unparsed,
             CustomParserRepository(Lazy { db }),
+            BuiltInRuleOverrideRepository(Lazy { db }),
             rules,
             SmsImportSettings(context)
         )

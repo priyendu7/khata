@@ -2,6 +2,7 @@ package com.openhand.khata.feature.settings
 
 import com.openhand.khata.core.model.SenderId
 import com.openhand.khata.sms.parser.DateFormats
+import com.openhand.khata.sms.parser.ParserRule
 import com.openhand.khata.sms.parser.RuleAccountType
 import com.openhand.khata.sms.parser.RuleCheck
 import com.openhand.khata.sms.parser.RuleDirection
@@ -25,7 +26,9 @@ data class MakerForm(
     val bank: String = "",
     /** As typed: sender IDs separated by commas or spaces. */
     val senders: String = "",
-    val dateFormat: String? = null
+    val dateFormat: String? = null,
+    /** Re-marking a rule (Settings > Parsers > Edit): its id stays. */
+    val fixedId: String? = null
 ) {
     val words: List<RuleMaker.Word> = RuleMaker.words(body)
 
@@ -82,7 +85,7 @@ data class MakerForm(
     fun check(taken: Set<String>): RuleCheck? {
         if (marks.none { it.field == RuleMaker.Field.AMOUNT }) return null
         val draft = RuleMaker.Draft(
-            id = RuleMaker.ruleId(bank, direction, taken),
+            id = fixedId ?: RuleMaker.ruleId(bank, direction, taken),
             bank = bank,
             senders = senderList(),
             body = body,
@@ -93,6 +96,15 @@ data class MakerForm(
         )
         return RuleValidator.validate(RuleMaker.rule(draft))
     }
+
+    /** Re-marking [rule]: its id, bank, senders and the rest stay as they are. */
+    fun remarking(rule: ParserRule): MakerForm = copy(
+        fixedId = rule.id,
+        bank = rule.bank,
+        senders = rule.senders.joinToString(", "),
+        direction = rule.direction ?: direction,
+        accountType = rule.accountType
+    )
 
     companion object {
         /**

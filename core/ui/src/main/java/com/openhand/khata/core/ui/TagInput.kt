@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 /**
  * Tags on the transaction as removable chips, a field to add more (Enter, a comma or the + button
  * adds), and existing tags to pick from. New names become new tags when the form is saved.
+ * Settings > Parsers uses it for sender IDs too, with its own [placeholder] and [addLabel].
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -39,7 +40,9 @@ fun TagInput(
     onQueryChange: (String) -> Unit,
     onAdd: (String) -> Unit,
     onRemove: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    placeholder: String = stringResource(R.string.field_tags_hint),
+    addLabel: String = stringResource(R.string.tag_add)
 ) {
     var text by rememberSaveable { mutableStateOf("") }
     fun add(name: String) {
@@ -78,7 +81,7 @@ fun TagInput(
                 }
             },
             label = { Text(label) },
-            placeholder = { Text(stringResource(R.string.field_tags_hint)) },
+            placeholder = { Text(placeholder) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             // Keeps the keyboard open so several tags can be added in a row.
@@ -88,7 +91,7 @@ fun TagInput(
                     IconButton(onClick = { add(text) }) {
                         Icon(
                             painterResource(R.drawable.ic_add),
-                            contentDescription = stringResource(R.string.tag_add)
+                            contentDescription = addLabel
                         )
                     }
                 }

@@ -38,6 +38,10 @@ interface CustomParserDao {
 
     @Upsert suspend fun upsert(parser: CustomParserEntity)
 
+    /** Replaces the rule's code, keeping its place in the order and its switch. */
+    @Query("UPDATE custom_parsers SET bank = :bank, code = :code WHERE rule_id = :ruleId")
+    suspend fun updateCode(ruleId: String, bank: String, code: String): Int
+
     @Query("UPDATE custom_parsers SET enabled = :enabled WHERE id = :id")
     suspend fun setEnabled(id: Long, enabled: Boolean)
 

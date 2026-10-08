@@ -2,14 +2,18 @@ package com.openhand.khata.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.openhand.khata.core.data.BuiltInRuleOverrideRepository
 import com.openhand.khata.core.data.CustomParserRepository
+import com.openhand.khata.core.model.BuiltInRuleOverride
 import com.openhand.khata.core.model.CustomParser
 import com.openhand.khata.core.model.SenderId
 import com.openhand.khata.sms.ingest.SmsInbox
 import com.openhand.khata.sms.ingest.SmsIngestor
 import com.openhand.khata.sms.parser.BuiltInRules
 import com.openhand.khata.sms.parser.CompiledRule
+import com.openhand.khata.sms.parser.ParserRule
 import com.openhand.khata.sms.parser.RuleCode
+import com.openhand.khata.sms.parser.RuleCodeResult
 import com.openhand.khata.sms.parser.SmsParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.TimeUnit
@@ -20,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -27,32 +32,103 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** A bank the app reads out of the box, for the read-only list in Settings > Parsers. */
-data class BuiltInBank(val bank: String, val rules: Int, val senders: List<String>)
+/**
+ * One rule in Settings > Parsers, custom or built-in, as the engine runs it: for an edited
+ * built-in rule, [rule] is the edited version.
+ */
+data class RuleRow(
+    val rule: ParserRule,
+    val builtIn: Boolean,
+    val enabled: Boolean,
+    /** A custom rule's row id; null for a built-in rule. */
+    val customId: Long? = null,
+    /** A built-in rule the user edited. */
+    val edited: Boolean = false,
+    /** An app update changed this built-in rule since the user edited it. */
+    val updateAvailable: Boolean = false,
+    /** The built-in rule's hash as shipped now, stored by Keep mine. */
+    val builtInHash: String? = null
+) {
+    /** The rule code that Copy code puts on the clipboard. */
+    val code: String get() = RuleCode.encode(rule)
+}
 
-internal fun builtInBanks(rules: List<CompiledRule> = BuiltInRules.load()): List<BuiltInBank> =
-    rules.groupBy { it.rule.bank }.map { (bank, bankRules) ->
-        BuiltInBank(bank, bankRules.size, bankRules.flatMap { it.headers }.distinct().sorted())
-    }
+/** Settings > Parsers: custom rules in the engine's order, then built-in ones by bank. */
+data class ParserRows(val custom: List<RuleRow>, val builtIn: List<RuleRow>)
 
-/** Settings > Parsers (PRD feature 8): the user's rules, and the built-in ones. */
+/**
+ * The rows for [custom] rules and the [builtIn] rules with the user's [overrides]. An override for
+ * a rule id that isn't built in (any more) is ignored.
+ */
+internal fun parserRows(
+    custom: List<CustomParser>,
+    builtIn: List<ParserRule>,
+    overrides: List<BuiltInRuleOverride>
+): ParserRows {
+    val byId = overrides.associateBy { it.ruleId }
+    return ParserRows(
+        custom = custom.mapNotNull { parser ->
+            decode(parser.code)?.let { RuleRow(it, false, parser.enabled, customId = parser.id) }
+        },
+        builtIn = builtIn.map { original ->
+            val override = byId[original.id]
+            val hash = BuiltInRules.hash(original)
+            val editedCode = override?.editedCode
+            RuleRow(
+                // An edit that can't be read runs as the original, so it's shown as that.
+                rule = editedCode?.let(::decode)?.takeIf { it.id == original.id } ?: original,
+                builtIn = true,
+                enabled = override?.enabled ?: true,
+                edited = editedCode != null,
+                updateAvailable = editedCode != null && override.baseHash != hash,
+                builtInHash = hash
+            )
+        }
+    )
+}
+
+private fun decode(code: String): ParserRule? =
+    (RuleCode.decode(code) as? RuleCodeResult.Decoded)?.rule
+
+/** Settings > Parsers (PRD feature 8): the user's rules and the built-in ones, each managed alike. */
 @HiltViewModel
-class ParsersViewModel @Inject constructor(private val parsers: CustomParserRepository) :
-    ViewModel() {
+class ParsersViewModel @Inject constructor(
+    private val parsers: CustomParserRepository,
+    private val overrides: BuiltInRuleOverrideRepository
+) : ViewModel() {
+    private val builtIn = flow { emit(BuiltInRules.all()) }.flowOn(Dispatchers.Default)
+
     /** Null until loaded. */
-    val custom: StateFlow<List<CustomParser>?> = parsers.observeAll()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_AFTER_MS), null)
+    val rows: StateFlow<ParserRows?> =
+        combine(parsers.observeAll(), builtIn, overrides.observeAll(), ::parserRows)
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_AFTER_MS), null)
 
-    val builtIn: StateFlow<List<BuiltInBank>> = flow { emit(builtInBanks()) }
-        .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_AFTER_MS), emptyList())
-
-    fun setEnabled(parser: CustomParser, enabled: Boolean) {
-        viewModelScope.launch { parsers.setEnabled(parser.id, enabled) }
+    fun setEnabled(row: RuleRow, enabled: Boolean) {
+        viewModelScope.launch {
+            val id = row.customId
+            if (id != null) {
+                parsers.setEnabled(id, enabled)
+            } else {
+                overrides.setEnabled(row.rule.id, enabled)
+            }
+        }
     }
 
-    fun delete(parser: CustomParser) {
-        viewModelScope.launch { parsers.delete(parser.id) }
+    fun delete(row: RuleRow) {
+        val id = row.customId ?: return
+        viewModelScope.launch { parsers.delete(id) }
+    }
+
+    /** Reset to built-in, and Use new version: the edit goes. */
+    fun reset(row: RuleRow) {
+        viewModelScope.launch { overrides.clearEdit(row.rule.id) }
+    }
+
+    /** Keep mine: the edit stays, and the newer built-in rule is no longer offered. */
+    fun keepMine(row: RuleRow) {
+        val hash = row.builtInHash ?: return
+        viewModelScope.launch { overrides.keepEdit(row.rule.id, hash) }
     }
 }
 

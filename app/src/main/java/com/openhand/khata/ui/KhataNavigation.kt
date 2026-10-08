@@ -39,6 +39,9 @@ import com.openhand.khata.feature.insights.InsightsScreen
 import com.openhand.khata.feature.lock.LockSettingsSection
 import com.openhand.khata.feature.payees.PayeesScreen
 import com.openhand.khata.feature.settings.AddParserScreen
+import com.openhand.khata.feature.settings.EDIT_BUILTIN_ARG
+import com.openhand.khata.feature.settings.EDIT_RULE_ID_ARG
+import com.openhand.khata.feature.settings.EditParserScreen
 import com.openhand.khata.feature.settings.FILTERS_SHOW_ARG
 import com.openhand.khata.feature.settings.FiltersScreen
 import com.openhand.khata.feature.settings.IGNORE_FROM_UNPARSED_ARG
@@ -46,9 +49,11 @@ import com.openhand.khata.feature.settings.IgnoreLikeThisScreen
 import com.openhand.khata.feature.settings.MAKE_FROM_BODY_ARG
 import com.openhand.khata.feature.settings.MAKE_FROM_SENDER_ARG
 import com.openhand.khata.feature.settings.MAKE_FROM_UNPARSED_ARG
+import com.openhand.khata.feature.settings.MAKE_REMARK_ARG
 import com.openhand.khata.feature.settings.MakeParserScreen
 import com.openhand.khata.feature.settings.NO_UNPARSED
 import com.openhand.khata.feature.settings.ParsersScreen
+import com.openhand.khata.feature.settings.REMARKED_RULE_KEY
 import com.openhand.khata.feature.settings.SettingsPage
 import com.openhand.khata.feature.settings.SettingsRoute
 import com.openhand.khata.feature.settings.SmsImportScreen
@@ -159,7 +164,25 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
             )
         }
         composable(Route.PARSERS) {
-            ParsersScreen(onBack = back, onAdd = { navController.navigate(Route.ADD_PARSER) })
+            ParsersScreen(
+                onBack = back,
+                onAdd = { navController.navigate(Route.ADD_PARSER) },
+                onEdit = { ruleId, builtIn ->
+                    navController.navigate(Route.editParser(ruleId, builtIn))
+                }
+            )
+        }
+        composable(
+            Route.EDIT_PARSER,
+            arguments = listOf(
+                navArgument(EDIT_RULE_ID_ARG) { type = NavType.StringType },
+                navArgument(EDIT_BUILTIN_ARG) { type = NavType.BoolType }
+            )
+        ) {
+            EditParserScreen(
+                onDone = back,
+                onRemark = { navController.navigate(Route.remarkParser(it)) }
+            )
         }
         composable(Route.ADD_PARSER) {
             AddParserScreen(
@@ -179,14 +202,24 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
                     type = NavType.LongType
                     defaultValue = NO_UNPARSED
                 }
-            ) + listOf(MAKE_FROM_SENDER_ARG, MAKE_FROM_BODY_ARG).map {
+            ) + listOf(MAKE_FROM_SENDER_ARG, MAKE_FROM_BODY_ARG, MAKE_REMARK_ARG).map {
                 navArgument(it) {
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
                 }
             }
-        ) { MakeParserScreen(onDone = back) }
+        ) {
+            MakeParserScreen(
+                onDone = back,
+                // Back to Settings > Parsers > Edit, which picks up the new pattern.
+                onRemarked = { code ->
+                    navController.previousBackStackEntry?.savedStateHandle
+                        ?.set(REMARKED_RULE_KEY, code)
+                    navController.popBackStack()
+                }
+            )
+        }
         composable(Route.REVIEW) {
             ReviewScreen(
                 onBack = back,
@@ -228,6 +261,9 @@ private object Route {
         "sms_import/filters" + (show?.let { "?$FILTERS_SHOW_ARG=$it" } ?: "")
     const val PARSERS = "parsers"
     const val ADD_PARSER = "parsers/add"
+    const val EDIT_PARSER = "parsers/edit/{$EDIT_RULE_ID_ARG}/{$EDIT_BUILTIN_ARG}"
+
+    fun editParser(ruleId: String, builtIn: Boolean) = "parsers/edit/${Uri.encode(ruleId)}/$builtIn"
     const val REVIEW = "review"
     const val IGNORE_LIKE_THIS = "review/ignore/{$IGNORE_FROM_UNPARSED_ARG}"
 
@@ -235,7 +271,8 @@ private object Route {
 
     /** Make a parser, from an SMS in To review or one to pick or paste. */
     const val MAKE_PARSER = "parsers/make?$MAKE_FROM_UNPARSED_ARG={$MAKE_FROM_UNPARSED_ARG}" +
-        "&$MAKE_FROM_SENDER_ARG={$MAKE_FROM_SENDER_ARG}&$MAKE_FROM_BODY_ARG={$MAKE_FROM_BODY_ARG}"
+        "&$MAKE_FROM_SENDER_ARG={$MAKE_FROM_SENDER_ARG}&$MAKE_FROM_BODY_ARG={$MAKE_FROM_BODY_ARG}" +
+        "&$MAKE_REMARK_ARG={$MAKE_REMARK_ARG}"
 
     fun makeParser(unparsedId: Long = NO_UNPARSED) =
         "parsers/make?$MAKE_FROM_UNPARSED_ARG=$unparsedId"
@@ -244,6 +281,9 @@ private object Route {
     fun makeParser(sender: String, body: String) = "parsers/make?$MAKE_FROM_SENDER_ARG=${Uri.encode(
         sender
     )}&$MAKE_FROM_BODY_ARG=${Uri.encode(body)}"
+
+    /** The rule maker re-marking a rule (its code) for Settings > Parsers > Edit. */
+    fun remarkParser(code: String) = "parsers/make?$MAKE_REMARK_ARG=${Uri.encode(code)}"
 
     /** Add (id 0) or edit a transaction. */
     const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}" +
