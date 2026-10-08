@@ -109,6 +109,18 @@ object KhataMigrations {
         }
     }
 
+    /**
+     * 8 → 9: which side of a move a transfer is, its other side, and why it's a transfer (#113).
+     * Null for every existing row; a one-time back-fill fills in what it can from the SMS.
+     */
+    val MIGRATION_8_9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `transactions` ADD COLUMN `transfer_side` TEXT")
+            db.execSQL("ALTER TABLE `transactions` ADD COLUMN `transfer_pair_id` INTEGER")
+            db.execSQL("ALTER TABLE `transactions` ADD COLUMN `transfer_kind` TEXT")
+        }
+    }
+
     val ALL: Array<Migration> = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
@@ -116,6 +128,7 @@ object KhataMigrations {
         MIGRATION_4_5,
         MIGRATION_5_6,
         MIGRATION_6_7,
-        MIGRATION_7_8
+        MIGRATION_7_8,
+        MIGRATION_8_9
     )
 }

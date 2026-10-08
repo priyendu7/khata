@@ -9,12 +9,15 @@ import com.openhand.khata.core.model.SmsTransaction
 import com.openhand.khata.core.model.Totals
 import com.openhand.khata.core.model.Transaction
 import com.openhand.khata.core.model.TransactionSource
+import com.openhand.khata.core.model.TransferKind
+import com.openhand.khata.core.model.TransferSide
 import java.time.Instant
 import java.time.ZoneId
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -538,6 +541,92 @@ class SmsImporterTest : RepositoryTest() {
         )
         assertEquals(Direction.DEBIT, directionOf(cred.transactionId))
         assertEquals(Totals(spentPaise = 36_600, incomePaise = 0), totals())
+    }
+
+    @Test
+    fun aCredPaymentSavesOutAndTheCardsPaymentReceivedSavesInLinkedToIt() = runTest {
+        val cred = saved(sms(amount = 500_000, payee = "CRED", ref = "212129343896"))
+        val sent = db.transactionDao().getById(cred.transactionId)!!
+        assertEquals(TransferSide.OUT, sent.transferSide)
+        assertEquals(TransferKind.CARD_PAYMENT, sent.transferKind)
+        assertNull(sent.transferPairId)
+
+        val received = saved(
+            card(
+                amount = 500_000,
+                direction = Direction.CREDIT,
+                payee = null,
+                at = AT + 10 * MINUTE,
+                body = "Payment of Rs 5000 received on your HDFC Bank Credit Card XX1234"
+            )
+        )
+
+        val card = db.transactionDao().getById(received.transactionId)!!
+        assertEquals(TransferSide.IN, card.transferSide)
+        assertEquals(TransferKind.CARD_PAYMENT, card.transferKind)
+        assertEquals(cred.transactionId, card.transferPairId)
+        val linked = db.transactionDao().getById(cred.transactionId)!!
+        assertEquals(received.transactionId, linked.transferPairId)
+        // Already a card payment going out: it keeps both.
+        assertEquals(TransferSide.OUT, linked.transferSide)
+        assertEquals(TransferKind.CARD_PAYMENT, linked.transferKind)
+    }
+
+    @Test
+    fun aMoveBetweenOwnAccountsSavesBothSidesLinkedAndCountsOnce() = runTest {
+        val out = saved(sms(amount = 1_000_000, ref = "1", payee = "PRIYENDU S"))
+        val into = saved(
+            sms(
+                amount = 1_000_000,
+                ref = "2",
+                payee = "PRIYENDU SINGH",
+                direction = Direction.CREDIT,
+                bank = "HDFC",
+                last4 = "5678",
+                at = AT + 20 * MINUTE
+            )
+        )
+
+        val sent = db.transactionDao().getById(out.transactionId)!!
+        val got = db.transactionDao().getById(into.transactionId)!!
+        assertEquals(TransferSide.OUT, sent.transferSide)
+        assertEquals(TransferKind.OTHER_SIDE, sent.transferKind)
+        assertEquals(into.transactionId, sent.transferPairId)
+        assertEquals(TransferSide.IN, got.transferSide)
+        assertEquals(TransferKind.OTHER_SIDE, got.transferKind)
+        assertEquals(out.transactionId, got.transferPairId)
+
+        val summary = transactions.observeTransfers(AT - DAY, AT + DAY).first()
+        assertEquals(1_000_000L, summary.totalPaise)
+        val move = summary.moves.single()
+        assertEquals(out.transactionId, move.transactionId)
+        assertEquals("Kotak 7391", move.from.account?.name)
+        assertEquals("HDFC 5678", move.to.account?.name)
+        assertEquals(Totals.ZERO, totals())
+    }
+
+    @Test
+    fun aSavedTransferIsNotLinkedTwice() = runTest {
+        saved(sms(amount = 500_000, payee = "CRED", ref = null))
+        val first = saved(
+            card(amount = 500_000, direction = Direction.CREDIT, payee = null, at = AT + MINUTE)
+        )
+        val second = saved(
+            sms(
+                amount = 500_000,
+                direction = Direction.CREDIT,
+                payee = null,
+                ref = null,
+                bank = "Axis",
+                type = AccountType.CREDIT_CARD,
+                last4 = "9999",
+                at = AT + 2 * MINUTE,
+                body = "Payment of Rs 5000 received on your Axis Credit Card XX9999"
+            )
+        )
+
+        assertTrue(db.transactionDao().getById(first.transactionId)!!.transferPairId != null)
+        assertNull(db.transactionDao().getById(second.transactionId)!!.transferPairId)
     }
 
     private fun card(

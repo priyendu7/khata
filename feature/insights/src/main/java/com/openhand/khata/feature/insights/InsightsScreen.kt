@@ -40,16 +40,19 @@ import java.time.YearMonth
 /**
  * Insights tab, wired to its [InsightsViewModel]. [onOpenTransactions] opens the transactions list
  * with a filter: a category, tag or account (or a mix, or none) over a period.
+ * [onOpenTransaction] opens one transaction, a move on the Transfers card.
  */
 @Composable
 fun InsightsScreen(
     onOpenTransactions: (TransactionFilter) -> Unit,
+    onOpenTransaction: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: InsightsViewModel = hiltViewModel()
 ) {
     val donut by viewModel.donut.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val transfers by viewModel.transfers.collectAsStateWithLifecycle()
     val breakdown by viewModel.breakdown.collectAsStateWithLifecycle()
     val heatmap by viewModel.heatmap.collectAsStateWithLifecycle()
     val monthly by viewModel.monthly.collectAsStateWithLifecycle()
@@ -98,6 +101,13 @@ fun InsightsScreen(
             onSelectPast = { viewModel.selectPast(it, PeriodCard.ACCOUNTS) },
             onOpen = viewModel::openAccount
         ),
+        transfers = transfers,
+        transferActions = CardActions(
+            onSelectPeriod = { selectPeriod(it, PeriodCard.TRANSFERS) },
+            onStepPeriod = { viewModel.stepPeriod(it, PeriodCard.TRANSFERS) },
+            onSelectPast = { viewModel.selectPast(it, PeriodCard.TRANSFERS) },
+            onOpen = onOpenTransaction
+        ),
         onCloseBreakdown = viewModel::closeBreakdown,
         onOpenTransactions = onOpenTransactions,
         modifier = modifier
@@ -107,6 +117,7 @@ fun InsightsScreen(
             PeriodCard.CATEGORIES -> donut?.span
             PeriodCard.TAGS -> tags?.span
             PeriodCard.ACCOUNTS -> accounts?.span
+            PeriodCard.TRANSFERS -> transfers?.span
         }
         DateRangeDialog(
             start = span?.first,
@@ -123,9 +134,9 @@ fun InsightsScreen(
 /**
  * The charts: spending by category for a period ([onOpenCategory] gets null for "Other";
  * [onStepPeriod] gets -1 for back and 1 for forward, [onSelectPast] how many periods back), by
- * tag, by account, by day over the last 12 months, and month by month. The tag and account cards
- * have their own periods, and [breakdown] is the sheet open over one of them. Each shows nothing
- * until its first load.
+ * tag, by account, by day over the last 12 months, and month by month, then the transfers. The
+ * tag, account and transfer cards have their own periods, and [breakdown] is the sheet open over
+ * the tag or account card. Each shows nothing until its first load.
  */
 @Composable
 fun InsightsContent(
@@ -145,6 +156,8 @@ fun InsightsContent(
     breakdown: BreakdownState? = null,
     tagActions: CardActions<Tag?> = CardActions(),
     accountActions: CardActions<Account?> = CardActions(),
+    transfers: TransfersState? = null,
+    transferActions: CardActions<Long> = CardActions(),
     onCloseBreakdown: () -> Unit = {},
     onOpenTransactions: (TransactionFilter) -> Unit = {}
 ) {
@@ -158,6 +171,7 @@ fun InsightsContent(
         accounts?.let { AccountCard(it, accountActions) }
         heatmap?.let { HeatmapCard(it, onOpenDay) }
         monthly?.let { MonthlyCard(it, onSelectMonths, onOpenMonth) }
+        transfers?.let { TransferCard(it, transferActions) }
         Spacer(Modifier.height(8.dp))
     }
     breakdown?.let { BreakdownSheet(it, onCloseBreakdown, onOpenTransactions) }

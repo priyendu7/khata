@@ -5,6 +5,8 @@ import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.IgnoreKind
 import com.openhand.khata.core.model.TransactionSource
+import com.openhand.khata.core.model.TransferKind
+import com.openhand.khata.core.model.TransferSide
 
 /**
  * Stores enums as fixed lowercase text, not Kotlin names, so renaming a constant can't break
@@ -61,4 +63,28 @@ class EnumConverters {
     @TypeConverter
     fun toIgnoreKind(value: String): IgnoreKind =
         IgnoreKind.entries.single { fromIgnoreKind(it) == value }
+
+    @TypeConverter
+    fun fromTransferSide(value: TransferSide?): String? = when (value) {
+        TransferSide.OUT -> "out"
+        TransferSide.IN -> "in"
+        null -> null
+    }
+
+    @TypeConverter
+    fun toTransferSide(value: String?): TransferSide? =
+        TransferSide.entries.singleOrNull { fromTransferSide(it) == value }
+
+    @TypeConverter
+    fun fromTransferKind(value: TransferKind?): String? = when (value) {
+        TransferKind.CARD_PAYMENT -> "card_payment"
+        TransferKind.OWN_ACCOUNT -> "own_account"
+        TransferKind.OTHER_SIDE -> "other_side"
+        TransferKind.MANUAL -> "manual"
+        null -> null
+    }
+
+    @TypeConverter
+    fun toTransferKind(value: String?): TransferKind? =
+        TransferKind.entries.singleOrNull { fromTransferKind(it) == value }
 }

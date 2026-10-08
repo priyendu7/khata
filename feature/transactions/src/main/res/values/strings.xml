@@ -24,6 +24,8 @@
     <string name="direction_credit">Income</string>
     <string name="direction_refund">Refund</string>
     <string name="direction_transfer">Transfer</string>
+    <string name="transfer_side_out">Money out of this account</string>
+    <string name="transfer_side_in">Money into this account</string>
     <string name="field_amount">Amount</string>
     <string name="amount_error_empty">Enter an amount</string>
     <string name="amount_error_invalid">Enter an amount like 250 or 99.50</string>

@@ -42,6 +42,7 @@ import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.CountsIn
 import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.TransferSide
 import com.openhand.khata.core.ui.CategoryBadge
 import com.openhand.khata.core.ui.CategoryEditor
 import com.openhand.khata.core.ui.Choice
@@ -132,7 +133,10 @@ internal fun TransactionEditorContent(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            DirectionChips(form.direction) { onChange(form.copy(direction = it)) }
+            DirectionChips(form.direction) { onChange(form.withDirection(it)) }
+            if (form.direction == Direction.TRANSFER) {
+                TransferSideChips(form.transferSide) { onChange(form.copy(transferSide = it)) }
+            }
             AmountField(form, showErrors, focus = isNew) { onChange(form.copy(amount = it)) }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PickerField(
@@ -356,6 +360,30 @@ private fun DirectionChips(selected: Direction, onSelect: (Direction) -> Unit) {
                 selected = direction == selected,
                 onClick = { onSelect(direction) },
                 label = { Text(stringResource(direction.label())) }
+            )
+        }
+    }
+}
+
+/** Which way a transfer went on its account (#113); neither is picked when it isn't known. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TransferSideChips(selected: TransferSide?, onSelect: (TransferSide) -> Unit) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        TransferSide.entries.forEach { side ->
+            FilterChip(
+                selected = side == selected,
+                onClick = { onSelect(side) },
+                label = {
+                    Text(
+                        stringResource(
+                            when (side) {
+                                TransferSide.OUT -> R.string.transfer_side_out
+                                TransferSide.IN -> R.string.transfer_side_in
+                            }
+                        )
+                    )
+                }
             )
         }
     }

@@ -8,6 +8,8 @@ import androidx.room.PrimaryKey
 import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.TransactionSource
+import com.openhand.khata.core.model.TransferKind
+import com.openhand.khata.core.model.TransferSide
 
 /** A bank account, card or wallet. Only the last 4 digits of any number are ever stored. */
 @Entity(tableName = "accounts")
@@ -157,7 +159,18 @@ data class TransactionEntity(
      * Local midnight on the 1st of the month the user counts this in (#93), or null for the
      * month of [timestamp]. Totals and charts use it; the list's order and duplicate checks don't.
      */
-    @ColumnInfo(name = "counts_at") val countsAt: Long? = null
+    @ColumnInfo(name = "counts_at") val countsAt: Long? = null,
+    /**
+     * For a transfer: which way money went on this account (#113), or null when it isn't known.
+     * The next two are null for anything that isn't a transfer, too.
+     */
+    @ColumnInfo(name = "transfer_side") val transferSide: TransferSide? = null,
+    /**
+     * The other side of the same move, when both are saved. Not a foreign key (SQLite can't add
+     * one to an existing table), so deleting a transaction unlinks its pair in code.
+     */
+    @ColumnInfo(name = "transfer_pair_id") val transferPairId: Long? = null,
+    @ColumnInfo(name = "transfer_kind") val transferKind: TransferKind? = null
 )
 
 @Entity(

@@ -118,6 +118,13 @@ class SmsIngestor @Inject constructor(
         is ParseResult.Filtered -> IngestOutcome.FILTERED
     }
 
+    /**
+     * What a saved transaction's SMS says, read again with the current rules; [bank] is its
+     * account's. Null when no rule reads it now.
+     */
+    suspend fun reread(body: String, bank: String?, at: Long): SmsTransaction? =
+        parser().readWithoutSender(body, at, bank)?.toTransaction(body)
+
     /** How many of the SMS waiting in To review [rule] can read, before it's used on them. */
     suspend fun unparsedReadableBy(rule: CompiledRule): Int {
         val parser = SmsParser(listOf(rule), filters = settings.filters.value)

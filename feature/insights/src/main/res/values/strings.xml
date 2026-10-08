@@ -78,4 +78,27 @@
     </plurals>
     <string name="home_review_body">From payees you haven\'t named yet. Name each one once, and later payments are filled in for you.</string>
     <string name="home_review_action">Review</string>
+    <!-- Transfers card (#113): money moved between the user's own accounts, never spending. -->
+    <string name="insights_transfers">Transfers</string>
+    <string name="insights_transfers_total">Total moved</string>
+    <string name="insights_transfers_not_counted">Not counted as spending or income</string>
+    <string name="insights_transfers_empty_title">Nothing moved in this period</string>
+    <string name="insights_transfers_empty_body">Card bills paid and moves between your own accounts show here.</string>
+    <string name="insights_card_bills">Card bills paid</string>
+    <!-- A card bill paid through CRED or a biller, with no SMS from the card itself; then "2 payments". -->
+    <string name="insights_card_unknown">Card bill · card not known · %1$s</string>
+    <!-- A card payment with no payee and no card. -->
+    <string name="insights_card_unknown_no_payee">Card bill</string>
+    <plurals name="insights_payment_count">
+        <item quantity="one">%d payment</item>
+        <item quantity="other">%d payments</item>
+    </plurals>
+    <string name="insights_moves">Moves</string>
+    <!-- One move, e.g. "Kotak Savings → HDFC Card ••5678". -->
+    <string name="insights_move_from_to">%1$s → %2$s</string>
+    <!-- A move whose direction isn't known: the transaction's account and the other end. -->
+    <string name="insights_move_between">%1$s ↔ %2$s</string>
+    <!-- The other end of a move when neither its account nor a payee is known. -->
+    <string name="insights_move_unknown_end">Not known</string>
+    <string name="insights_moves_show_all">Show all %d</string>
 </resources>

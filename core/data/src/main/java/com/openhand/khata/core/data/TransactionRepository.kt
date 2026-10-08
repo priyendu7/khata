@@ -1,7 +1,9 @@
 package com.openhand.khata.core.data
 
+import androidx.room.withTransaction
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.database.dao.TransactionRow
+import com.openhand.khata.core.database.dao.TransferRow
 import com.openhand.khata.core.database.entity.PayeeEntity
 import com.openhand.khata.core.database.entity.TransactionEntity
 import com.openhand.khata.core.model.Account
@@ -10,6 +12,7 @@ import com.openhand.khata.core.model.AmountEntry
 import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.CountsIn
 import com.openhand.khata.core.model.DefaultCategory
+import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Tag
 import com.openhand.khata.core.model.TagSpend
 import com.openhand.khata.core.model.Totals
@@ -17,6 +20,10 @@ import com.openhand.khata.core.model.Transaction
 import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.model.TransactionListItem
 import com.openhand.khata.core.model.TransactionSource
+import com.openhand.khata.core.model.TransferEntry
+import com.openhand.khata.core.model.TransferKind
+import com.openhand.khata.core.model.TransferSide
+import com.openhand.khata.core.model.TransferSummary
 import dagger.Lazy
 import java.time.ZoneId
 import javax.inject.Inject
@@ -146,6 +153,14 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
             rows.map { AmountEntry(it.timestamp, it.direction, it.amountPaise, it.categoryId) }
         }
 
+    /**
+     * What moved between the user's accounts in [from, until) (#113): card bills per card, and
+     * each move once. None of it counts in [observeTotals] or any chart.
+     */
+    fun observeTransfers(from: Long, until: Long): Flow<TransferSummary> =
+        db.observe { it.transferDao().observeTransfers(from, until) }
+            .map { rows -> TransferSummary.of(rows.map { it.toModel() }) }
+
     /** The transaction with [id] as the edit screen shows it, or null if it's gone. */
     suspend fun get(id: Long, zone: ZoneId = ZoneId.systemDefault()): Transaction? =
         db.io { database ->
@@ -161,7 +176,8 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
                 categoryId = entity.categoryId,
                 tags = dao.tagNames(id),
                 note = entity.note,
-                countsIn = CountsIn.fromMillis(entity.countsAt, zone)
+                countsIn = CountsIn.fromMillis(entity.countsAt, zone),
+                transferSide = entity.transferSide
             )
         }
 
@@ -175,6 +191,10 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
      * category and tags as its defaults, and its Uncategorized transactions take the category. A
      * payee that already has some keeps them: a different category here overrides them for this
      * transaction only (PRD feature 3).
+     *
+     * A transfer keeps its kind and its other side while its side stays the same; picking a side
+     * makes it a transfer the user set (#113). One that's no longer a transfer loses all three,
+     * and its other side, which stays a transfer, is unlinked.
      */
     suspend fun save(
         transaction: Transaction,
@@ -201,6 +221,7 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
             }
             val dao = database.transactionDao()
             val existing = if (transaction.id == 0L) null else dao.getById(transaction.id)
+            val transfer = transferOf(transaction, existing)
             val entity = TransactionEntity(
                 id = existing?.id ?: 0,
                 amountPaise = transaction.amountPaise,
@@ -215,9 +236,32 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
                 rawSms = existing?.rawSms,
                 // Saving from the edit screen means the user has looked at it.
                 needsReview = false,
-                countsAt = CountsIn.toMillis(transaction.countsIn, transaction.timestamp, zone)
+                countsAt = CountsIn.toMillis(transaction.countsIn, transaction.timestamp, zone),
+                transferSide = transfer.side,
+                transferPairId = transfer.pairId,
+                transferKind = transfer.kind
             )
-            dao.saveWithTags(entity, tagIds)
+            database.withTransaction {
+                val oldPair = existing?.transferPairId
+                if (oldPair != null && oldPair != transfer.pairId) {
+                    database.transferDao().setTransferPair(oldPair, null)
+                }
+                dao.saveWithTags(entity, tagIds)
+            }
+        }
+    }
+
+    private fun transferOf(
+        transaction: Transaction,
+        existing: TransactionEntity?
+    ): TransferColumns {
+        if (transaction.direction != Direction.TRANSFER) return TransferColumns()
+        val unchanged = existing?.direction == Direction.TRANSFER &&
+            existing.transferSide == transaction.transferSide
+        return if (unchanged) {
+            TransferColumns(existing.transferSide, existing.transferPairId, existing.transferKind)
+        } else {
+            TransferColumns(transaction.transferSide, kind = TransferKind.MANUAL)
         }
     }
 
@@ -240,8 +284,9 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
         categoryId?.let { dao.categorizeUncategorized(payee.id, it, uncategorizedId) }
     }
 
+    /** Deletes [id]; if it was one side of a transfer, the other side stays, on its own. */
     suspend fun delete(id: Long) {
-        db.io { it.transactionDao().deleteById(id) }
+        db.io { it.transferDao().deleteUnlinking(id) }
     }
 }
 
@@ -264,4 +309,23 @@ private data class CategoryScope(
     val untagged: Boolean = false,
     val accountId: Long? = null,
     val noAccount: Boolean = false
+)
+
+private fun TransferRow.toModel() = TransferEntry(
+    id = id,
+    amountPaise = amountPaise,
+    timestamp = timestamp,
+    side = side,
+    kind = kind,
+    account = account?.toModel(),
+    payeeName = payeeName,
+    pairId = pairId,
+    pairAccount = pairAccount?.toModel()
+)
+
+/** A transaction's transfer columns (#113); all null for anything that isn't a transfer. */
+private data class TransferColumns(
+    val side: TransferSide? = null,
+    val pairId: Long? = null,
+    val kind: TransferKind? = null
 )

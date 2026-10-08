@@ -18,7 +18,9 @@ data class Transaction(
     val tags: List<String> = emptyList(),
     val note: String? = null,
     /** The month totals count it in, or null for its date's month; see [CountsIn]. */
-    val countsIn: YearMonth? = null
+    val countsIn: YearMonth? = null,
+    /** For a transfer: money out of [accountId] or into it; null when not known (#113). */
+    val transferSide: TransferSide? = null
 )
 
 /** One row of the transactions list, with everything it shows already joined in. */

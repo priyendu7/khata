@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -23,11 +24,13 @@ import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Payee
 import com.openhand.khata.core.model.Transaction
+import com.openhand.khata.core.model.TransferSide
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -111,6 +114,62 @@ class TransactionEditorTest {
     }
 
     private val blank = EditorForm(date = LocalDate.of(2026, 9, 26), time = LocalTime.of(9, 30))
+
+    @Test
+    fun choosingTransferOffersItsSideAndStartsAtMoneyOut() {
+        show(blank.copy(amount = "18400", accountId = cash.id), isNew = true)
+        compose.onNodeWithText("Money out of this account").assertDoesNotExist()
+
+        compose.onNodeWithText("Transfer").performClick()
+        compose.onNodeWithText("Save").performClick()
+
+        assertEquals(Direction.TRANSFER, saved?.direction)
+        assertEquals(TransferSide.OUT, saved?.transferSide)
+    }
+
+    @Test
+    fun choosingMoneyIntoTheAccountSavesSideIn() {
+        show(blank.copy(amount = "18400"), isNew = true)
+
+        compose.onNodeWithText("Transfer").performClick()
+        compose.onNodeWithText("Money into this account").performClick()
+        compose.onNodeWithText("Save").performClick()
+
+        assertEquals(TransferSide.IN, saved?.transferSide)
+    }
+
+    @Test
+    fun aTransferWithAnUnknownSideKeepsItUntilOneIsPicked() {
+        show(
+            blank.copy(amount = "500", direction = Direction.TRANSFER, transferSide = null),
+            isNew = false
+        )
+
+        compose.onNodeWithText("Money out of this account").assertIsNotSelected()
+        compose.onNodeWithText("Money into this account").assertIsNotSelected()
+        compose.onNodeWithText("Save").performClick()
+
+        assertNull(saved?.transferSide)
+    }
+
+    @Test
+    fun changingATransferToAnExpenseSavesNoSide() {
+        show(
+            blank.copy(
+                amount = "500",
+                direction = Direction.TRANSFER,
+                transferSide = TransferSide.OUT
+            ),
+            isNew = false
+        )
+
+        compose.onNodeWithText("Expense").performClick()
+        compose.onNodeWithText("Money out of this account").assertDoesNotExist()
+        compose.onNodeWithText("Save").performClick()
+
+        assertEquals(Direction.DEBIT, saved?.direction)
+        assertNull(saved?.transferSide)
+    }
 
     @Test
     fun addsATransaction() {

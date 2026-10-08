@@ -13,6 +13,7 @@ import com.openhand.khata.core.model.HeatLevels
 import com.openhand.khata.core.model.MonthlyComparison
 import com.openhand.khata.core.model.Tag
 import com.openhand.khata.core.model.TagSpend
+import com.openhand.khata.core.model.TransferSummary
 import com.openhand.khata.core.model.spendingByDay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.DayOfWeek
@@ -66,6 +67,17 @@ data class AccountsState(
     override val from: Long,
     override val until: Long,
     val spending: List<AccountSpend>,
+    override val back: Int = 0,
+    override val choices: List<DateSpan> = emptyList()
+) : ShownPeriod
+
+/** What moved between the user's accounts in one period (#113); never spending or income. */
+data class TransfersState(
+    override val period: ChartPeriod,
+    override val span: DateSpan,
+    override val from: Long,
+    override val until: Long,
+    val summary: TransferSummary,
     override val back: Int = 0,
     override val choices: List<DateSpan> = emptyList()
 ) : ShownPeriod
@@ -214,6 +226,12 @@ class InsightsViewModel internal constructor(
     val accounts: StateFlow<AccountsState?> =
         cardState(PeriodCard.ACCOUNTS, transactions::observeAccountSpending) { p, spent ->
             AccountsState(p.period, p.span, p.from, p.until, spent, p.back, p.choices)
+        }
+
+    /** The Transfers card, with its own period. */
+    val transfers: StateFlow<TransfersState?> =
+        cardState(PeriodCard.TRANSFERS, transactions::observeTransfers) { p, summary ->
+            TransfersState(p.period, p.span, p.from, p.until, summary, p.back, p.choices)
         }
 
     /**
