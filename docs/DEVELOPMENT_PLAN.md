@@ -140,6 +140,8 @@ This phase is for using the app day to day, testing it, and acting on what comes
 - [x] Spending by category: step back to earlier months, weeks and years (#98)
 - [ ] Insights: spending by tag, with each tag's spending by category (#104)
 - [ ] Insights: spending by account, with each account's spending by category (#108)
+- [ ] Parsers: switch off, edit and copy every rule, built-in ones too (#111)
+- [ ] Insights: Transfers card, with card bills paid and moves between accounts (#113)
 
 **SMS filters** (PRD feature 7). The app reads every business sender, not only banks it has rules for, so a bank without a rule shows up in the review inbox instead of being skipped. Filters decide what's worth asking about.
 
