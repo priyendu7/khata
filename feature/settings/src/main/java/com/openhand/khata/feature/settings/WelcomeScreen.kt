@@ -3,6 +3,7 @@ package com.openhand.khata.feature.settings
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -78,25 +79,43 @@ fun WelcomeContent(
     var smsStep by rememberSaveable { mutableStateOf(false) }
     // Always Khata's red and marigold, not the phone's dynamic colours: it's the first impression.
     KhataTheme(dynamicColor = false) {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            val modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)
-            if (smsStep) {
-                SmsStep(animate, onDone, modifier)
-            } else {
-                PromiseContent(
-                    appIcon = appIcon,
-                    language = language,
-                    onLanguage = onLanguage,
-                    animate = animate,
-                    modifier = modifier,
-                    onGetStarted = {
-                        onPromiseSeen()
-                        smsStep = true
-                    }
-                )
+        MarigoldInTheDark {
+            Surface(color = MaterialTheme.colorScheme.background) {
+                val modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)
+                if (smsStep) {
+                    SmsStep(animate, onDone, modifier)
+                } else {
+                    PromiseContent(
+                        appIcon = appIcon,
+                        language = language,
+                        onLanguage = onLanguage,
+                        animate = animate,
+                        modifier = modifier,
+                        onGetStarted = {
+                            onPromiseSeen()
+                            smsStep = true
+                        }
+                    )
+                }
             }
         }
     }
+}
+
+/**
+ * In dark mode the brand red is drawn light enough to read on black, which looks pink; the
+ * welcome uses the launcher icon's marigold for its accents there instead.
+ */
+@Composable
+private fun MarigoldInTheDark(content: @Composable () -> Unit) {
+    if (!isSystemInDarkTheme()) return content()
+    val scheme = MaterialTheme.colorScheme
+    MaterialTheme(
+        colorScheme = scheme.copy(primary = scheme.secondary, onPrimary = scheme.onSecondary),
+        typography = MaterialTheme.typography,
+        shapes = MaterialTheme.shapes,
+        content = content
+    )
 }
 
 /**
