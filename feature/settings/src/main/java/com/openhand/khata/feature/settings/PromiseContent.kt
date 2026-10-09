@@ -112,8 +112,10 @@ fun PromiseContent(
 private fun PromiseBox() {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        // The same as the choice cards on the next step, so the two read as one welcome.
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
         )
     ) {
         Column(Modifier.padding(vertical = 20.dp, horizontal = 8.dp)) {
@@ -159,10 +161,14 @@ private fun RowScope.Promise(@DrawableRes icon: Int, @StringRes title: Int, @Str
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(MaterialTheme.colorScheme.primary),
             contentAlignment = Alignment.Center
         ) {
-            Icon(painterResource(icon), contentDescription = null, tint = MARIGOLD)
+            Icon(
+                painterResource(icon),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
         }
         Text(
             stringResource(title).trimEnd('.', '।'),
