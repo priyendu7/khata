@@ -56,6 +56,7 @@ import com.openhand.khata.feature.settings.MAKE_FROM_UNPARSED_ARG
 import com.openhand.khata.feature.settings.MAKE_REMARK_ARG
 import com.openhand.khata.feature.settings.MakeParserScreen
 import com.openhand.khata.feature.settings.NO_UNPARSED
+import com.openhand.khata.feature.settings.OurPromiseScreen
 import com.openhand.khata.feature.settings.ParsersScreen
 import com.openhand.khata.feature.settings.REMARKED_RULE_KEY
 import com.openhand.khata.feature.settings.SettingsPage
@@ -83,17 +84,20 @@ import com.openhand.khata.feature.transactions.TransactionsScreen
 
 /**
  * Top-level navigation: the tabs, and the screens opened from them. [openRequest] is a screen to
- * open from outside (the backup reminder notification opens Export).
+ * open from outside (the backup reminder notification opens Export; the welcome, SMS import).
  */
 @Composable
 fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
     val navController = rememberNavController()
     val back: () -> Unit = { navController.popBackStack() }
     LaunchedEffect(openRequest) {
-        if (openRequest == BackupReminderNotifier.OPEN_EXPORT) {
-            navController.navigate(Route.EXPORT) { launchSingleTop = true }
-            onOpened()
+        val route = when (openRequest) {
+            BackupReminderNotifier.OPEN_EXPORT -> Route.EXPORT
+            OPEN_SMS_IMPORT -> Route.SMS_IMPORT
+            else -> return@LaunchedEffect
         }
+        navController.navigate(route) { launchSingleTop = true }
+        onOpened()
     }
     NavHost(navController, startDestination = Route.TABS) {
         composable(Route.TABS) {
@@ -158,6 +162,9 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
             )
         }
         composable(Route.LOCK) { LockSettingsPage(onBack = back) }
+        composable(Route.PROMISE) {
+            OurPromiseScreen(appIcon = R.drawable.ic_launcher_foreground, onBack = back)
+        }
         composable(Route.SMS_IMPORT) {
             SmsImportScreen(
                 onBack = back,
@@ -277,6 +284,7 @@ private object Route {
     const val IMPORT_SETTINGS = "settings_file/import"
     const val LOCK = "lock"
     const val SMS_IMPORT = "sms_import"
+    const val PROMISE = "promise"
     const val TEST_MESSAGE = "sms_import/test"
     const val FILTERS = "sms_import/filters?$FILTERS_SHOW_ARG={$FILTERS_SHOW_ARG}"
 
@@ -355,7 +363,11 @@ private fun SettingsPage.route() = when (this) {
     SettingsPage.EXPORT_SETTINGS -> Route.EXPORT_SETTINGS
     SettingsPage.IMPORT_SETTINGS -> Route.IMPORT_SETTINGS
     SettingsPage.LOCK -> Route.LOCK
+    SettingsPage.PROMISE -> Route.PROMISE
 }
+
+/** From the welcome's "Read messages automatically? Yes" (#128). */
+const val OPEN_SMS_IMPORT = "sms_import"
 
 /** Bottom-navigation shell: Home, Transactions, Insights, Settings. */
 @Composable
