@@ -13,6 +13,8 @@ android {
 dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:model"))
+    // Export and import settings (#125) read and apply the lock settings, never the PIN.
+    implementation(project(":core:security"))
     implementation(project(":core:ui"))
     implementation(project(":sms:ingest"))
     implementation(project(":sms:parser"))

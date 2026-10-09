@@ -66,6 +66,8 @@ enum class SettingsPage {
     PAYEES,
     EXPORT,
     IMPORT,
+    EXPORT_SETTINGS,
+    IMPORT_SETTINGS,
     LOCK
 }
 
@@ -183,6 +185,14 @@ private fun BackupSection(
     Row(stringResource(R.string.settings_import), stringResource(R.string.settings_import_value)) {
         onOpen(SettingsPage.IMPORT)
     }
+    Row(
+        stringResource(R.string.settings_export_settings),
+        stringResource(R.string.settings_export_settings_value)
+    ) { onOpen(SettingsPage.EXPORT_SETTINGS) }
+    Row(
+        stringResource(R.string.settings_import_settings),
+        stringResource(R.string.settings_import_settings_value)
+    ) { onOpen(SettingsPage.IMPORT_SETTINGS) }
     backupReminder()
 }
 
@@ -203,7 +213,7 @@ private fun AboutSection(versionName: String, onOpenLink: (String) -> Unit) {
 
 /** English and हिन्दी are always written in their own script, so either can be found. */
 @Composable
-private fun languageName(language: AppLanguage) = stringResource(
+internal fun languageName(language: AppLanguage) = stringResource(
     when (language) {
         AppLanguage.SYSTEM -> R.string.language_system
         AppLanguage.ENGLISH -> R.string.language_english

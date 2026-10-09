@@ -1,10 +1,9 @@
 package com.openhand.khata.core.security.lock
 
+import com.openhand.khata.core.security.Pbkdf2
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.PBEKeySpec
 
 /**
  * Salted, deliberately slow hashes (PBKDF2-HMAC-SHA256) for the app PIN and recovery code. Only
@@ -36,14 +35,8 @@ class SecretHasher(
             MessageDigest.isEqual(decode(expected), derive(secret, decode(salt), rounds))
     }
 
-    private fun derive(secret: String, salt: ByteArray, rounds: Int): ByteArray {
-        val spec = PBEKeySpec(secret.toCharArray(), salt, rounds, HASH_BITS)
-        return try {
-            SecretKeyFactory.getInstance(ALGORITHM).generateSecret(spec).encoded
-        } finally {
-            spec.clearPassword()
-        }
-    }
+    private fun derive(secret: String, salt: ByteArray, rounds: Int): ByteArray =
+        Pbkdf2.derive(secret.toCharArray(), salt, rounds, HASH_BITS)
 
     private fun encode(bytes: ByteArray) =
         Base64.getEncoder().withoutPadding().encodeToString(bytes)
@@ -54,7 +47,6 @@ class SecretHasher(
         const val DEFAULT_ITERATIONS = 120_000
         private const val PREFIX = "pbkdf2-sha256"
         private const val PARTS = 4
-        private const val ALGORITHM = "PBKDF2WithHmacSHA256"
         private const val SALT_BYTES = 16
         private const val HASH_BITS = 256
     }

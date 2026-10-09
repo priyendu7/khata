@@ -43,10 +43,13 @@ import com.openhand.khata.feature.settings.AddParserScreen
 import com.openhand.khata.feature.settings.EDIT_BUILTIN_ARG
 import com.openhand.khata.feature.settings.EDIT_RULE_ID_ARG
 import com.openhand.khata.feature.settings.EditParserScreen
+import com.openhand.khata.feature.settings.ExportSettingsScreen
 import com.openhand.khata.feature.settings.FILTERS_SHOW_ARG
 import com.openhand.khata.feature.settings.FiltersScreen
 import com.openhand.khata.feature.settings.IGNORE_FROM_UNPARSED_ARG
 import com.openhand.khata.feature.settings.IgnoreLikeThisScreen
+import com.openhand.khata.feature.settings.ImportSettingsNext
+import com.openhand.khata.feature.settings.ImportSettingsScreen
 import com.openhand.khata.feature.settings.MAKE_FROM_BODY_ARG
 import com.openhand.khata.feature.settings.MAKE_FROM_SENDER_ARG
 import com.openhand.khata.feature.settings.MAKE_FROM_UNPARSED_ARG
@@ -138,6 +141,22 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         composable(Route.PAYEES) { PayeesScreen(onBack = back) }
         composable(Route.EXPORT) { ExportScreen(onBack = back) }
         composable(Route.IMPORT) { ImportScreen(onBack = back) }
+        composable(Route.EXPORT_SETTINGS) { ExportSettingsScreen(onBack = back) }
+        composable(Route.IMPORT_SETTINGS) {
+            ImportSettingsScreen(
+                onBack = back,
+                next = ImportSettingsNext(
+                    onSmsImport = { navController.navigate(Route.SMS_IMPORT) },
+                    onAppLock = { navController.navigate(Route.LOCK) },
+                    // Instead of the settings import, so Back from it goes to Settings.
+                    onImportTransactions = {
+                        navController.navigate(Route.IMPORT) {
+                            popUpTo(Route.IMPORT_SETTINGS) { inclusive = true }
+                        }
+                    }
+                )
+            )
+        }
         composable(Route.LOCK) { LockSettingsPage(onBack = back) }
         composable(Route.SMS_IMPORT) {
             SmsImportScreen(
@@ -254,6 +273,8 @@ private object Route {
     const val PAYEES = "payees"
     const val EXPORT = "export"
     const val IMPORT = "import"
+    const val EXPORT_SETTINGS = "settings_file/export"
+    const val IMPORT_SETTINGS = "settings_file/import"
     const val LOCK = "lock"
     const val SMS_IMPORT = "sms_import"
     const val TEST_MESSAGE = "sms_import/test"
@@ -331,6 +352,8 @@ private fun SettingsPage.route() = when (this) {
     SettingsPage.PAYEES -> Route.PAYEES
     SettingsPage.EXPORT -> Route.EXPORT
     SettingsPage.IMPORT -> Route.IMPORT
+    SettingsPage.EXPORT_SETTINGS -> Route.EXPORT_SETTINGS
+    SettingsPage.IMPORT_SETTINGS -> Route.IMPORT_SETTINGS
     SettingsPage.LOCK -> Route.LOCK
 }
 

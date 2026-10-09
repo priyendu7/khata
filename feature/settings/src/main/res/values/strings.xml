@@ -309,4 +309,108 @@
         <item quantity="one">%d event</item>
         <item quantity="other">%d events</item>
     </plurals>
+
+    <!-- Export and import settings (#125) -->
+    <string name="settings_export_settings">Export settings</string>
+    <string name="settings_export_settings_value">Parsers, filters, setup and preferences in one password-protected file</string>
+    <string name="settings_import_settings">Import settings</string>
+    <string name="settings_import_settings_value">From a Khata settings file. Restoring a phone? Import settings first, then transactions.</string>
+    <string name="settings_file_password">Password</string>
+    <plurals name="settings_file_custom_parsers">
+        <item quantity="one">%d custom parser</item>
+        <item quantity="other">%d custom parsers</item>
+    </plurals>
+    <plurals name="settings_file_builtin_edits">
+        <item quantity="one">%d change to a built-in parser</item>
+        <item quantity="other">%d changes to built-in parsers</item>
+    </plurals>
+    <plurals name="settings_file_ignore_rules">
+        <item quantity="one">%d ignore rule</item>
+        <item quantity="other">%d ignore rules</item>
+    </plurals>
+    <string name="export_settings_title">Export settings</string>
+    <string name="export_settings_intro">Saves your parsers, SMS filters and ignore rules, categories, accounts, payees, events and preferences in one file, locked with a password. Transactions aren\'t in it: export them separately. The app PIN is never in it.</string>
+    <string name="export_settings_repeat">Password again</string>
+    <string name="export_settings_too_short">At least %1$d characters</string>
+    <string name="export_settings_different">The passwords don\'t match</string>
+    <string name="export_settings_no_recovery">There\'s no way to recover this password. Without it, the file can\'t be opened, by you or anyone else.</string>
+    <string name="export_settings_button">Export settings</string>
+    <string name="export_settings_working">Saving…</string>
+    <string name="export_settings_done">Settings saved</string>
+    <string name="export_settings_done_preferences">Plus your preferences: SMS filters, backup reminder, language and app lock</string>
+    <string name="export_settings_failed">Couldn\'t save the file. Try again, or pick another place.</string>
+    <string name="import_settings_title">Import settings</string>
+    <string name="import_settings_intro">Brings back parsers, filters, categories, accounts, payees, events and preferences from a Khata settings file. You\'ll see what changes before anything is saved.</string>
+    <string name="import_settings_order">Restoring a phone: import settings first, then transactions. Both match names, so the other order works too.</string>
+    <string name="import_settings_choose">Choose settings file</string>
+    <string name="import_settings_choose_another">Choose another file</string>
+    <string name="import_settings_password_intro">Enter the password the file was saved with.</string>
+    <string name="import_settings_wrong_password">Wrong password, or the file is damaged. Nothing was changed.</string>
+    <string name="import_settings_open">Open</string>
+    <string name="import_settings_unreadable">Couldn\'t read that file. Nothing was changed.</string>
+    <string name="import_settings_not_settings">That isn\'t a Khata settings file. To import transactions, use Import transactions.</string>
+    <string name="import_settings_newer">This file was made by a newer Khata. Update the app, then try again.</string>
+    <string name="import_settings_damaged">This settings file is damaged. Nothing was changed.</string>
+    <string name="import_settings_save_failed">Couldn\'t save the settings. Nothing was changed.</string>
+    <string name="import_settings_preview_intro">Nothing is saved until you tap Import.</string>
+    <string name="import_settings_replace_all">Replace all</string>
+    <string name="import_settings_keep_all">Keep all mine</string>
+    <string name="import_settings_replace">Replace</string>
+    <string name="import_settings_keep_mine">Keep mine</string>
+    <string name="import_settings_custom_rules">Custom parsers</string>
+    <string name="import_settings_builtin_edits">Changes to built-in parsers</string>
+    <string name="import_settings_rule_new">New · %1$s</string>
+    <string name="import_settings_rule_changed">Different here · %1$s in the file</string>
+    <string name="import_settings_rule_same">Already the same</string>
+    <plurals name="import_settings_unreadable_rules">
+        <item quantity="one">%d rule can\'t be read by this version of Khata and will be skipped</item>
+        <item quantity="other">%d rules can\'t be read by this version of Khata and will be skipped</item>
+    </plurals>
+    <string name="import_settings_older_builtins">Made for another version of the built-in rule, so Parsers will show an update for it: %1$s</string>
+    <string name="import_settings_unknown_builtins">Not in this version of Khata, skipped: %1$s</string>
+    <string name="import_settings_setup">Setup</string>
+    <string name="import_settings_ignore_rules">Ignore rules</string>
+    <plurals name="import_settings_new">
+        <item quantity="one">%d new</item>
+        <item quantity="other">%d new</item>
+    </plurals>
+    <plurals name="import_settings_updated">
+        <item quantity="one">%d will be updated</item>
+        <item quantity="other">%d will be updated</item>
+    </plurals>
+    <plurals name="import_settings_same">
+        <item quantity="one">%d already here</item>
+        <item quantity="other">%d already here</item>
+    </plurals>
+    <string name="import_settings_none">None in the file</string>
+    <string name="import_settings_preferences">Preferences</string>
+    <string name="import_settings_pref_change">%1$s → %2$s</string>
+    <string name="import_settings_pref_same">%1$s · no change</string>
+    <string name="import_settings_filters_on">%1$d of %2$d on</string>
+    <plurals name="import_settings_reminder_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <string name="import_settings_app_lock">App lock</string>
+    <string name="import_settings_lock_method">Unlock with</string>
+    <string name="import_settings_lock_timeout">Lock after</string>
+    <string name="import_settings_block_screenshots">Block screenshots</string>
+    <string name="import_settings_lock_device">Phone screen lock</string>
+    <string name="import_settings_lock_pin">App PIN</string>
+    <string name="import_settings_timeout_immediately">Immediately</string>
+    <string name="import_settings_timeout_30s">After 30 seconds</string>
+    <string name="import_settings_timeout_1m">After 1 minute</string>
+    <string name="import_settings_timeout_5m">After 5 minutes</string>
+    <string name="import_settings_import">Import</string>
+    <string name="import_settings_done">Settings imported</string>
+    <plurals name="import_settings_read_again">
+        <item quantity="one">The new rules read %d SMS that was waiting in To review</item>
+        <item quantity="other">The new rules read %d SMS that were waiting in To review</item>
+    </plurals>
+    <string name="import_settings_needs_pin">The file unlocks with an app PIN, but this phone has none yet. Khata uses your phone\'s screen lock until you set one.</string>
+    <string name="import_settings_set_pin">Set app PIN</string>
+    <string name="import_settings_sms_was_on">SMS import was on. Turning it on needs your permission, so it\'s still off.</string>
+    <string name="import_settings_turn_on_sms">Turn on SMS import</string>
+    <string name="import_settings_next_transactions">Next, import your transactions from their CSV backup.</string>
+    <string name="import_settings_finish">Done</string>
 </resources>

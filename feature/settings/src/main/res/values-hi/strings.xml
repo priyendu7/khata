@@ -306,4 +306,108 @@
         <item quantity="one">%d इवेंट</item>
         <item quantity="other">%d इवेंट</item>
     </plurals>
+
+    <!-- Export and import settings (#125) -->
+    <string name="settings_export_settings">सेटिंग्स एक्सपोर्ट करें</string>
+    <string name="settings_export_settings_value">पार्सर, फ़िल्टर, सेटअप और पसंद, पासवर्ड से सुरक्षित एक फ़ाइल में</string>
+    <string name="settings_import_settings">सेटिंग्स इम्पोर्ट करें</string>
+    <string name="settings_import_settings_value">Khata की सेटिंग्स फ़ाइल से। फ़ोन रीस्टोर कर रहे हैं? पहले सेटिंग्स, फिर लेन-देन इम्पोर्ट करें।</string>
+    <string name="settings_file_password">पासवर्ड</string>
+    <plurals name="settings_file_custom_parsers">
+        <item quantity="one">%d अपना पार्सर</item>
+        <item quantity="other">%d अपने पार्सर</item>
+    </plurals>
+    <plurals name="settings_file_builtin_edits">
+        <item quantity="one">पहले से मौजूद पार्सर में %d बदलाव</item>
+        <item quantity="other">पहले से मौजूद पार्सर में %d बदलाव</item>
+    </plurals>
+    <plurals name="settings_file_ignore_rules">
+        <item quantity="one">अनदेखा करने का %d नियम</item>
+        <item quantity="other">अनदेखा करने के %d नियम</item>
+    </plurals>
+    <string name="export_settings_title">सेटिंग्स एक्सपोर्ट करें</string>
+    <string name="export_settings_intro">आपके पार्सर, SMS फ़िल्टर और अनदेखा करने के नियम, श्रेणियाँ, खाते, पाने वाले, इवेंट और पसंद एक फ़ाइल में सहेजता है, जिस पर पासवर्ड का ताला होता है। लेन-देन इसमें नहीं होते: उन्हें अलग से एक्सपोर्ट करें। ऐप PIN इसमें कभी नहीं होता।</string>
+    <string name="export_settings_repeat">पासवर्ड फिर से</string>
+    <string name="export_settings_too_short">कम से कम %1$d अक्षर</string>
+    <string name="export_settings_different">दोनों पासवर्ड एक जैसे नहीं हैं</string>
+    <string name="export_settings_no_recovery">यह पासवर्ड वापस पाने का कोई तरीका नहीं है। इसके बिना फ़ाइल न आप खोल पाएँगे, न कोई और।</string>
+    <string name="export_settings_button">सेटिंग्स एक्सपोर्ट करें</string>
+    <string name="export_settings_working">सहेजा जा रहा है…</string>
+    <string name="export_settings_done">सेटिंग्स सहेजी गईं</string>
+    <string name="export_settings_done_preferences">साथ में आपकी पसंद: SMS फ़िल्टर, बैकअप रिमाइंडर, भाषा और ऐप लॉक</string>
+    <string name="export_settings_failed">फ़ाइल सहेजी नहीं जा सकी। फिर कोशिश करें, या कोई और जगह चुनें।</string>
+    <string name="import_settings_title">सेटिंग्स इम्पोर्ट करें</string>
+    <string name="import_settings_intro">Khata की सेटिंग्स फ़ाइल से पार्सर, फ़िल्टर, श्रेणियाँ, खाते, पाने वाले, इवेंट और पसंद वापस लाता है। कुछ भी सहेजने से पहले आपको दिखेगा कि क्या बदलेगा।</string>
+    <string name="import_settings_order">फ़ोन रीस्टोर करते समय: पहले सेटिंग्स, फिर लेन-देन इम्पोर्ट करें। दोनों नाम से मिलाते हैं, इसलिए उल्टे क्रम में भी काम चलता है।</string>
+    <string name="import_settings_choose">सेटिंग्स फ़ाइल चुनें</string>
+    <string name="import_settings_choose_another">कोई और फ़ाइल चुनें</string>
+    <string name="import_settings_password_intro">वह पासवर्ड डालें जिससे फ़ाइल सहेजी गई थी।</string>
+    <string name="import_settings_wrong_password">पासवर्ड गलत है, या फ़ाइल खराब है। कुछ नहीं बदला गया।</string>
+    <string name="import_settings_open">खोलें</string>
+    <string name="import_settings_unreadable">वह फ़ाइल पढ़ी नहीं जा सकी। कुछ नहीं बदला गया।</string>
+    <string name="import_settings_not_settings">यह Khata की सेटिंग्स फ़ाइल नहीं है। लेन-देन इम्पोर्ट करने के लिए \"लेन-देन इम्पोर्ट करें\" इस्तेमाल करें।</string>
+    <string name="import_settings_newer">यह फ़ाइल Khata के नए वर्शन ने बनाई है। ऐप अपडेट करके फिर कोशिश करें।</string>
+    <string name="import_settings_damaged">यह सेटिंग्स फ़ाइल खराब है। कुछ नहीं बदला गया।</string>
+    <string name="import_settings_save_failed">सेटिंग्स सहेजी नहीं जा सकीं। कुछ नहीं बदला गया।</string>
+    <string name="import_settings_preview_intro">जब तक आप \"इम्पोर्ट\" नहीं दबाते, कुछ भी सहेजा नहीं जाएगा।</string>
+    <string name="import_settings_replace_all">सब बदलें</string>
+    <string name="import_settings_keep_all">सब मेरे रखें</string>
+    <string name="import_settings_replace">बदलें</string>
+    <string name="import_settings_keep_mine">मेरा रखें</string>
+    <string name="import_settings_custom_rules">अपने पार्सर</string>
+    <string name="import_settings_builtin_edits">पहले से मौजूद पार्सर में बदलाव</string>
+    <string name="import_settings_rule_new">नया · %1$s</string>
+    <string name="import_settings_rule_changed">यहाँ अलग है · फ़ाइल में %1$s</string>
+    <string name="import_settings_rule_same">पहले से एक जैसा</string>
+    <plurals name="import_settings_unreadable_rules">
+        <item quantity="one">Khata का यह वर्शन %d नियम नहीं पढ़ सकता, वह छोड़ दिया जाएगा</item>
+        <item quantity="other">Khata का यह वर्शन %d नियम नहीं पढ़ सकता, वे छोड़ दिए जाएँगे</item>
+    </plurals>
+    <string name="import_settings_older_builtins">पहले से मौजूद नियम के दूसरे वर्शन के लिए बने हैं, इसलिए पार्सर में उनका अपडेट दिखेगा: %1$s</string>
+    <string name="import_settings_unknown_builtins">Khata के इस वर्शन में नहीं हैं, छोड़ दिए गए: %1$s</string>
+    <string name="import_settings_setup">सेटअप</string>
+    <string name="import_settings_ignore_rules">अनदेखा करने के नियम</string>
+    <plurals name="import_settings_new">
+        <item quantity="one">%d नया</item>
+        <item quantity="other">%d नए</item>
+    </plurals>
+    <plurals name="import_settings_updated">
+        <item quantity="one">%d अपडेट होगा</item>
+        <item quantity="other">%d अपडेट होंगे</item>
+    </plurals>
+    <plurals name="import_settings_same">
+        <item quantity="one">%d पहले से है</item>
+        <item quantity="other">%d पहले से हैं</item>
+    </plurals>
+    <string name="import_settings_none">फ़ाइल में कोई नहीं</string>
+    <string name="import_settings_preferences">पसंद</string>
+    <string name="import_settings_pref_change">%1$s → %2$s</string>
+    <string name="import_settings_pref_same">%1$s · कोई बदलाव नहीं</string>
+    <string name="import_settings_filters_on">%2$d में से %1$d चालू</string>
+    <plurals name="import_settings_reminder_days">
+        <item quantity="one">%d दिन</item>
+        <item quantity="other">%d दिन</item>
+    </plurals>
+    <string name="import_settings_app_lock">ऐप लॉक</string>
+    <string name="import_settings_lock_method">अनलॉक करें</string>
+    <string name="import_settings_lock_timeout">कब लॉक हो</string>
+    <string name="import_settings_block_screenshots">स्क्रीनशॉट रोकें</string>
+    <string name="import_settings_lock_device">फ़ोन का स्क्रीन लॉक</string>
+    <string name="import_settings_lock_pin">ऐप PIN</string>
+    <string name="import_settings_timeout_immediately">तुरंत</string>
+    <string name="import_settings_timeout_30s">30 सेकंड बाद</string>
+    <string name="import_settings_timeout_1m">1 मिनट बाद</string>
+    <string name="import_settings_timeout_5m">5 मिनट बाद</string>
+    <string name="import_settings_import">इम्पोर्ट</string>
+    <string name="import_settings_done">सेटिंग्स इम्पोर्ट हो गईं</string>
+    <plurals name="import_settings_read_again">
+        <item quantity="one">नए नियमों ने समीक्षा में रुका %d SMS पढ़ लिया</item>
+        <item quantity="other">नए नियमों ने समीक्षा में रुके %d SMS पढ़ लिए</item>
+    </plurals>
+    <string name="import_settings_needs_pin">फ़ाइल ऐप PIN से खुलती है, पर इस फ़ोन पर अभी कोई PIN नहीं है। जब तक आप PIN नहीं बनाते, Khata फ़ोन का स्क्रीन लॉक इस्तेमाल करेगा।</string>
+    <string name="import_settings_set_pin">ऐप PIN बनाएँ</string>
+    <string name="import_settings_sms_was_on">SMS इम्पोर्ट चालू था। इसे चालू करने के लिए आपकी अनुमति चाहिए, इसलिए अभी यह बंद है।</string>
+    <string name="import_settings_turn_on_sms">SMS इम्पोर्ट चालू करें</string>
+    <string name="import_settings_next_transactions">अब अपने लेन-देन उनके CSV बैकअप से इम्पोर्ट करें।</string>
+    <string name="import_settings_finish">हो गया</string>
 </resources>

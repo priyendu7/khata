@@ -21,6 +21,7 @@
     <!-- Import -->
     <string name="import_title">लेन-देन इम्पोर्ट करें</string>
     <string name="import_intro">CSV फ़ाइल से लेन-देन जोड़ें: Khata का एक्सपोर्ट, या कॉलम मिलाने के बाद कोई भी स्प्रेडशीट या बैंक स्टेटमेंट। पहले आपको झलक दिखेगी, और जो लेन-देन पहले से सहेजे हैं वे छोड़ दिए जाएँगे।</string>
+    <string name="import_restore_order">फ़ोन रीस्टोर कर रहे हैं? अपने पार्सर, श्रेणियों, खातों और पाने वालों के लिए पहले सेटिंग्स इम्पोर्ट करें (सेटिंग्स › सेटिंग्स इम्पोर्ट करें), फिर लेन-देन। दोनों नाम से मिलाते हैं, इसलिए उल्टे क्रम में भी काम चलता है।</string>
     <string name="import_choose_file">CSV फ़ाइल चुनें</string>
     <string name="import_choose_another">कोई और फ़ाइल चुनें</string>
     <string name="import_done">हो गया</string>

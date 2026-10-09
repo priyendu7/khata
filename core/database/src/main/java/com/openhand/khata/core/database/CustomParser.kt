@@ -30,6 +30,12 @@ interface CustomParserDao {
     @Query("SELECT * FROM custom_parsers ORDER BY added_at DESC, id DESC")
     fun observeAll(): Flow<List<CustomParserEntity>>
 
+    @Query("SELECT * FROM custom_parsers ORDER BY added_at DESC, id DESC")
+    suspend fun getAll(): List<CustomParserEntity>
+
+    @Query("SELECT * FROM custom_parsers WHERE rule_id = :ruleId")
+    suspend fun getByRuleId(ruleId: String): CustomParserEntity?
+
     @Query("SELECT code FROM custom_parsers WHERE enabled = 1 ORDER BY added_at DESC, id DESC")
     suspend fun enabledCodes(): List<String>
 

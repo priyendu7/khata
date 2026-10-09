@@ -1,6 +1,6 @@
 # Privacy Policy — Khata
 
-_Last updated: September 25, 2026_
+_Last updated: October 9, 2026_
 
 Khata is free, open-source software published by priyendu7. It has no ads and is built to respect your privacy.
 
@@ -18,7 +18,12 @@ By default Khata locks itself: it opens behind your phone's fingerprint, face, P
 
 If the phone's secure key storage is ever reset (for example after some factory resets or security updates), the database can no longer be decrypted by anyone, including you. Khata then starts with an empty database instead of failing to open. This is another reason to export a CSV backup regularly.
 
-Android's automatic backup and device-to-device transfer are turned off for this app, so none of this is copied to Google Drive or another phone. The only way data leaves the app is a **CSV export that you start yourself**, saved to a location you pick; after that, the file is under your control. Uninstalling the app, or clearing its data, permanently deletes everything — there is no copy anywhere else, so export a CSV first if you want to keep your history.
+Android's automatic backup and device-to-device transfer are turned off for this app, so none of this is copied to Google Drive or another phone. The only ways data leaves the app are exports **that you start yourself**, each saved to a location you pick; after that, the file is under your control:
+
+- **Export transactions** writes a CSV file. It is not encrypted.
+- **Export settings** writes a settings file with your parser and ignore rules, SMS filters, categories, accounts (name, type, bank, last 4 digits), payees, events and preferences (SMS import on or off, backup reminder, language, app lock options). It is encrypted with AES-256-GCM using a key derived from a password you choose, and without that password nobody, including us, can open it or recover the password. It never contains your transactions, your app PIN or recovery code, or the database key. The format is described in [settings-format.md](settings-format.md).
+
+Uninstalling the app, or clearing its data, permanently deletes everything — there is no copy anywhere else, so export your transactions (and settings) first if you want to keep them.
 
 ## Permissions
 

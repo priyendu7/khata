@@ -94,6 +94,11 @@ fun ImportContent(
 @Composable
 private fun StartStep(onChooseFile: () -> Unit) {
     Text(stringResource(R.string.import_intro), style = MaterialTheme.typography.bodyLarge)
+    Text(
+        stringResource(R.string.import_restore_order),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
     Button(onClick = onChooseFile, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.import_choose_file))
     }
