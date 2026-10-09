@@ -410,4 +410,19 @@
     <string name="import_settings_turn_on_sms">SMS इम्पोर्ट चालू करें</string>
     <string name="import_settings_next_transactions">अब अपने लेन-देन उनके CSV बैकअप से इम्पोर्ट करें।</string>
     <string name="import_settings_finish">हो गया</string>
+
+    <string name="welcome_title">खाता में आपका स्वागत है</string>
+    <string name="welcome_subtitle">आपकी पैसों की डायरी, जो सिर्फ़ इसी फ़ोन पर रहती है।</string>
+    <string name="promise_title">हमारा वादा</string>
+    <string name="promise_offline_title">इंटरनेट नहीं। कभी नहीं।</string>
+    <string name="promise_offline_body">खाता के पास इंटरनेट की अनुमति नहीं है। अपने फ़ोन में ऐप की जानकारी में देख लें।</string>
+    <string name="promise_encrypted_title">आपके फ़ोन पर एन्क्रिप्टेड।</string>
+    <string name="promise_encrypted_body">न अकाउंट, न विज्ञापन, न ट्रैकिंग।</string>
+    <string name="promise_open_title">ओपन सोर्स।</string>
+    <string name="promise_open_body">कोई भी इसका कोड पढ़ सकता है।</string>
+    <string name="welcome_get_started">शुरू करें</string>
+    <string name="welcome_sms_title">लेन-देन के मैसेज अपने-आप पढ़ें?</string>
+    <string name="welcome_sms_yes">हाँ</string>
+    <string name="welcome_sms_later">बाद में</string>
+    <string name="settings_promise_value">इंटरनेट नहीं, एन्क्रिप्टेड, ओपन सोर्स</string>
 </resources>

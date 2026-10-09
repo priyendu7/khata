@@ -68,7 +68,8 @@ enum class SettingsPage {
     IMPORT,
     EXPORT_SETTINGS,
     IMPORT_SETTINGS,
-    LOCK
+    LOCK,
+    PROMISE
 }
 
 @Composable
@@ -97,7 +98,7 @@ fun SettingsScreen(
         Row(stringResource(R.string.settings_language), languageName(language)) {
             choosingLanguage = true
         }
-        AboutSection(versionName, onOpenLink)
+        AboutSection(versionName, onOpen, onOpenLink)
     }
     if (choosingLanguage) {
         ChoiceDialog(
@@ -197,8 +198,15 @@ private fun BackupSection(
 }
 
 @Composable
-private fun AboutSection(versionName: String, onOpenLink: (String) -> Unit) {
+private fun AboutSection(
+    versionName: String,
+    onOpen: (SettingsPage) -> Unit,
+    onOpenLink: (String) -> Unit
+) {
     SectionHeader(stringResource(R.string.settings_section_about))
+    Row(stringResource(R.string.promise_title), stringResource(R.string.settings_promise_value)) {
+        onOpen(SettingsPage.PROMISE)
+    }
     Row(
         stringResource(R.string.settings_privacy),
         stringResource(R.string.settings_privacy_value)
@@ -232,4 +240,3 @@ private fun Row(title: String, value: String, onClick: (() -> Unit)? = null) {
 
 private const val PRIVACY_POLICY_URL =
     "https://github.com/priyendu7/khata/blob/main/docs/PRIVACY.md"
-private const val SOURCE_URL = "https://github.com/priyendu7/khata"

@@ -103,7 +103,8 @@ class SettingsScreenTest {
             "Payees" to SettingsPage.PAYEES,
             "Events" to SettingsPage.EVENTS,
             "Export transactions" to SettingsPage.EXPORT,
-            "Import transactions" to SettingsPage.IMPORT
+            "Import transactions" to SettingsPage.IMPORT,
+            "Our promise" to SettingsPage.PROMISE
         )
         rows.keys.forEach { compose.onNodeWithText(it).performScrollTo().performClick() }
         assertEquals(rows.values.toList(), opened)

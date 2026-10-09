@@ -1,0 +1,265 @@
+package com.openhand.khata.feature.settings
+
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+
+/**
+ * Our promise (#128): the first thing Khata shows, and again from Settings > About. Privacy is the
+ * main reason to pick Khata, so it says so before anything else. Without [onGetStarted] there's no
+ * button (Settings has a back arrow instead).
+ */
+@Composable
+fun PromiseContent(
+    @DrawableRes appIcon: Int,
+    language: AppLanguage,
+    onLanguage: (AppLanguage) -> Unit,
+    animate: Boolean,
+    modifier: Modifier = Modifier,
+    onOpenLink: (String) -> Unit = {},
+    onGetStarted: (() -> Unit)? = null
+) {
+    // Once only: a language change or rotation recreates the screen, and it shouldn't replay.
+    var played by rememberSaveable { mutableStateOf(false) }
+    val enter = remember { animate && !played }
+    LaunchedEffect(Unit) { played = true }
+    WelcomeColumn(modifier) {
+        LanguageChoice(language, onLanguage)
+        Appear(0, enter) { WelcomeIllustration(appIcon) }
+        Text(
+            stringResource(R.string.welcome_title),
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.semantics { heading() }
+        )
+        Text(
+            stringResource(R.string.welcome_subtitle),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center
+        )
+        Appear(1, enter) {
+            PromiseCard(
+                R.drawable.ic_cloud_off,
+                R.string.promise_offline_title,
+                R.string.promise_offline_body
+            )
+        }
+        Appear(2, enter) {
+            PromiseCard(
+                R.drawable.ic_lock,
+                R.string.promise_encrypted_title,
+                R.string.promise_encrypted_body
+            )
+        }
+        Appear(PROMISE_CARDS, enter) {
+            PromiseCard(
+                R.drawable.ic_code,
+                R.string.promise_open_title,
+                R.string.promise_open_body
+            ) {
+                // The browser does the fetching; Khata itself has no internet permission.
+                TextButton(onClick = { onOpenLink(SOURCE_URL) }) {
+                    Text(stringResource(R.string.promise_open_link))
+                }
+            }
+        }
+        onGetStarted?.let {
+            Button(onClick = it, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Text(stringResource(R.string.welcome_get_started))
+            }
+        }
+    }
+}
+
+/**
+ * A column in the middle of the screen, that scrolls when it doesn't fit (landscape, large fonts)
+ * and stays readable on a wide screen.
+ */
+@Composable
+internal fun WelcomeColumn(modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .fillMaxWidth()
+                .heightIn(min = maxHeight),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            WelcomeItems(content)
+        }
+    }
+}
+
+@Composable
+private fun WelcomeItems(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier
+            .widthIn(max = MAX_WIDTH.dp)
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .testTag(WELCOME_CONTENT_TAG),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        content = content
+    )
+}
+
+/** English / हिन्दी, applied at once so the rest of the screen is in the chosen language. */
+@Composable
+private fun LanguageChoice(language: AppLanguage, onLanguage: (AppLanguage) -> Unit) {
+    // "System default" shows as whichever of the two the phone is in.
+    val shown = when (language) {
+        AppLanguage.SYSTEM -> if (LocalConfiguration.current.locales[0].language ==
+            AppLanguage.HINDI.tag
+        ) {
+            AppLanguage.HINDI
+        } else {
+            AppLanguage.ENGLISH
+        }
+        else -> language
+    }
+    val choices = listOf(AppLanguage.ENGLISH, AppLanguage.HINDI)
+    SingleChoiceSegmentedButtonRow {
+        choices.forEachIndexed { index, choice ->
+            SegmentedButton(
+                selected = choice == shown,
+                onClick = { if (choice != shown) onLanguage(choice) },
+                shape = SegmentedButtonDefaults.itemShape(index, choices.size)
+            ) {
+                Text(languageName(choice))
+            }
+        }
+    }
+}
+
+/** [icon], drawn like the launcher icon, on its marigold circle. Decorative. */
+@Composable
+internal fun WelcomeIllustration(@DrawableRes icon: Int, size: Int = ICON_SIZE) {
+    Box(
+        modifier = Modifier
+            .size(size.dp)
+            .clip(CircleShape)
+            .background(MARIGOLD),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(painterResource(icon), contentDescription = null, Modifier.size(size.dp))
+    }
+}
+
+@Composable
+private fun PromiseCard(
+    @DrawableRes icon: Int,
+    @StringRes title: Int,
+    @StringRes body: Int,
+    extra: @Composable () -> Unit = {}
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    ) {
+        Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painterResource(icon),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+            Column {
+                // Read as one item by TalkBack; the link (if any) stays its own.
+                Column(Modifier.semantics(mergeDescendants = true) {}) {
+                    Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(body), style = MaterialTheme.typography.bodyMedium)
+                }
+                extra()
+            }
+        }
+    }
+}
+
+/** Fades and slides in, each [index] a little after the one before; at once if not [animate]. */
+@Composable
+internal fun Appear(index: Int, animate: Boolean, content: @Composable () -> Unit) {
+    if (!animate) return content()
+    val state = remember { MutableTransitionState(false).apply { targetState = true } }
+    val delay = index * STAGGER_MS
+    AnimatedVisibility(
+        visibleState = state,
+        enter = fadeIn(tween(ENTER_MS, delayMillis = delay)) +
+            slideInVertically(tween(ENTER_MS, delayMillis = delay)) { it / SLIDE_FRACTION }
+    ) {
+        content()
+    }
+}
+
+/** The launcher icon's background. */
+private val MARIGOLD = Color(0xFFF9A825)
+private const val PROMISE_CARDS = 3
+private const val ICON_SIZE = 96
+private const val MAX_WIDTH = 560
+private const val ENTER_MS = 450
+private const val STAGGER_MS = 150
+private const val SLIDE_FRACTION = 3
+internal const val SOURCE_URL = "https://github.com/priyendu7/khata"
+internal const val WELCOME_CONTENT_TAG = "welcome_content"

@@ -413,4 +413,21 @@
     <string name="import_settings_turn_on_sms">Turn on SMS import</string>
     <string name="import_settings_next_transactions">Next, import your transactions from their CSV backup.</string>
     <string name="import_settings_finish">Done</string>
+
+    <!-- Welcome (#128): our promise, then an optional SMS import step. -->
+    <string name="welcome_title">Welcome to Khata</string>
+    <string name="welcome_subtitle">Your money diary, kept only on this phone.</string>
+    <string name="promise_title">Our promise</string>
+    <string name="promise_offline_title">No internet. Ever.</string>
+    <string name="promise_offline_body">Khata has no internet permission. Check it in your phone\'s app info.</string>
+    <string name="promise_encrypted_title">Encrypted on your phone.</string>
+    <string name="promise_encrypted_body">No account, no ads, no tracking.</string>
+    <string name="promise_open_title">Open source.</string>
+    <string name="promise_open_body">Anyone can read the code.</string>
+    <string name="promise_open_link" translatable="false">github.com/priyendu7/khata</string>
+    <string name="welcome_get_started">Get started</string>
+    <string name="welcome_sms_title">Read transaction messages automatically?</string>
+    <string name="welcome_sms_yes">Yes</string>
+    <string name="welcome_sms_later">Later</string>
+    <string name="settings_promise_value">No internet, encrypted, open source</string>
 </resources>
