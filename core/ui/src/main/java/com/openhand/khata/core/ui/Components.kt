@@ -14,6 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
@@ -24,6 +26,20 @@ fun ScreenTitle(text: String, modifier: Modifier = Modifier) {
         text = text,
         style = MaterialTheme.typography.headlineMedium,
         modifier = modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+    )
+}
+
+/** A section's name above its rows, marked as a heading so TalkBack can jump between sections. */
+@Composable
+fun SectionHeader(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 4.dp)
+            .semantics { heading() }
     )
 }
 

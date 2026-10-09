@@ -32,7 +32,7 @@ data class LockUiState(
     val checking: Boolean = false
 )
 
-/** One instance per activity: shared by the lock gate and the lock section of Settings. */
+/** Shared by the lock gate, the Security rows of Settings and Settings > App lock. */
 @HiltViewModel
 class LockViewModel @Inject constructor(
     @ApplicationContext private val context: Context,

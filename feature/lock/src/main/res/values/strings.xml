@@ -58,4 +58,7 @@
     <string name="settings_remove_pin_title">Stop using the app PIN?</string>
     <string name="settings_remove_pin_body">Khata will unlock with your phone\'s screen lock instead. Your PIN and recovery code will be deleted.</string>
     <string name="settings_remove_pin_confirm">Use phone lock</string>
+    <string name="settings_lock_off">Off</string>
+    <string name="settings_lock_summary" translatable="false">%1$s · %2$s</string>
+    <string name="settings_change_pin_note">You also get a new recovery code</string>
 </resources>

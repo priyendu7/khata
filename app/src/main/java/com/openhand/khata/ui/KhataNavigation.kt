@@ -36,7 +36,8 @@ import com.openhand.khata.feature.csv.ExportScreen
 import com.openhand.khata.feature.csv.ImportScreen
 import com.openhand.khata.feature.insights.HomeScreen
 import com.openhand.khata.feature.insights.InsightsScreen
-import com.openhand.khata.feature.lock.LockSettingsSection
+import com.openhand.khata.feature.lock.LockSettingsPage
+import com.openhand.khata.feature.lock.LockSettingsRows
 import com.openhand.khata.feature.payees.PayeesScreen
 import com.openhand.khata.feature.settings.AddParserScreen
 import com.openhand.khata.feature.settings.EDIT_BUILTIN_ARG
@@ -137,6 +138,7 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         composable(Route.PAYEES) { PayeesScreen(onBack = back) }
         composable(Route.EXPORT) { ExportScreen(onBack = back) }
         composable(Route.IMPORT) { ImportScreen(onBack = back) }
+        composable(Route.LOCK) { LockSettingsPage(onBack = back) }
         composable(Route.SMS_IMPORT) {
             SmsImportScreen(
                 onBack = back,
@@ -252,6 +254,7 @@ private object Route {
     const val PAYEES = "payees"
     const val EXPORT = "export"
     const val IMPORT = "import"
+    const val LOCK = "lock"
     const val SMS_IMPORT = "sms_import"
     const val TEST_MESSAGE = "sms_import/test"
     const val FILTERS = "sms_import/filters?$FILTERS_SHOW_ARG={$FILTERS_SHOW_ARG}"
@@ -318,6 +321,8 @@ private object Route {
 
 private fun SettingsPage.route() = when (this) {
     SettingsPage.SMS_IMPORT -> Route.SMS_IMPORT
+    SettingsPage.FILTERS -> Route.filters()
+    SettingsPage.TEST_MESSAGE -> Route.TEST_MESSAGE
     SettingsPage.PARSERS -> Route.PARSERS
     SettingsPage.ACCOUNTS -> Route.ACCOUNTS
     SettingsPage.CATEGORIES -> Route.CATEGORIES
@@ -326,6 +331,7 @@ private fun SettingsPage.route() = when (this) {
     SettingsPage.PAYEES -> Route.PAYEES
     SettingsPage.EXPORT -> Route.EXPORT
     SettingsPage.IMPORT -> Route.IMPORT
+    SettingsPage.LOCK -> Route.LOCK
 }
 
 /** Bottom-navigation shell: Home, Transactions, Insights, Settings. */
@@ -381,9 +387,11 @@ private fun MainTabs(
                 onReview = onReview
             )
             Destination.INSIGHTS -> InsightsScreen(onOpenTransactions, onOpenTransaction, modifier)
-            Destination.SETTINGS -> SettingsRoute(modifier, lockSettings = {
-                LockSettingsSection()
-            }, onOpen = onOpen)
+            Destination.SETTINGS -> SettingsRoute(
+                modifier,
+                security = { LockSettingsRows(onOpenLock = { onOpen(SettingsPage.LOCK) }) },
+                onOpen = onOpen
+            )
         }
     }
 }
