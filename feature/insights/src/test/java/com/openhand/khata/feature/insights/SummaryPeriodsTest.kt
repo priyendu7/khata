@@ -13,20 +13,31 @@ class SummaryPeriodsTest {
         ZonedDateTime.of(year, month, day, 0, 0, 0, 0, zone).toInstant().toEpochMilli()
 
     @Test
-    fun monthAndDayInThePhonesTimeZone() {
+    fun thisAndLastMonthInThePhonesTimeZone() {
         val periods = SummaryPeriods.of(LocalDate.of(2026, 9, 27), india)
 
         assertEquals(millis(2026, 9, 1), periods.monthFrom)
         assertEquals(millis(2026, 10, 1), periods.monthUntil)
-        assertEquals(millis(2026, 9, 27), periods.todayFrom)
-        assertEquals(millis(2026, 9, 28), periods.todayUntil)
+        // Last month up to the same day: 1 to 27 August.
+        assertEquals(millis(2026, 8, 1), periods.lastMonthFrom)
+        assertEquals(millis(2026, 8, 28), periods.lastMonthUntil)
+    }
+
+    @Test
+    fun lastMonthStopsAtItsEndWhenItIsShorter() {
+        val march = SummaryPeriods.of(LocalDate.of(2026, 3, 31), india)
+        assertEquals(millis(2026, 2, 1), march.lastMonthFrom)
+        assertEquals(millis(2026, 3, 1), march.lastMonthUntil)
     }
 
     @Test
     fun rollsOverTheYearAndLeapFebruary() {
         val december = SummaryPeriods.of(LocalDate.of(2026, 12, 31), india)
         assertEquals(millis(2027, 1, 1), december.monthUntil)
-        assertEquals(millis(2027, 1, 1), december.todayUntil)
+
+        val january = SummaryPeriods.of(LocalDate.of(2027, 1, 15), india)
+        assertEquals(millis(2026, 12, 1), january.lastMonthFrom)
+        assertEquals(millis(2026, 12, 16), january.lastMonthUntil)
 
         val february = SummaryPeriods.of(LocalDate.of(2028, 2, 29), india)
         assertEquals(millis(2028, 2, 1), february.monthFrom)
@@ -34,12 +45,13 @@ class SummaryPeriodsTest {
     }
 
     @Test
-    fun daylightSavingDaysAreStillWholeDays() {
+    fun daylightSavingMonthsAreStillWholeMonths() {
         val london = ZoneId.of("Europe/London")
-        // Clocks go forward on 29 March 2026, so that day is 23 hours long.
-        val periods = SummaryPeriods.of(LocalDate.of(2026, 3, 29), london)
-        assertEquals(millis(2026, 3, 29, london), periods.todayFrom)
-        assertEquals(millis(2026, 3, 30, london), periods.todayUntil)
-        assertEquals(23 * 3_600_000L, periods.todayUntil - periods.todayFrom)
+        // Clocks go forward on 29 March 2026.
+        val periods = SummaryPeriods.of(LocalDate.of(2026, 4, 30), london)
+        assertEquals(millis(2026, 3, 1, london), periods.lastMonthFrom)
+        // 1 to 30 March, one of them 23 hours long.
+        assertEquals(millis(2026, 3, 31, london), periods.lastMonthUntil)
+        assertEquals((30 * 24 - 1) * 3_600_000L, periods.lastMonthUntil - periods.lastMonthFrom)
     }
 }

@@ -554,6 +554,7 @@ interface TransactionDao {
     /**
      * The transactions list, newest first. Each null argument means "any"; the rest combine.
      * [query] matches the payee name or note and must have `%`, `_` and `\` escaped with `\`.
+     * [limit] keeps only the newest ones.
      */
     @Query(
         "SELECT t.id, t.amount_paise, t.direction, t.timestamp, t.counts_at, t.note, " +
@@ -578,7 +579,7 @@ interface TransactionDao {
             "AND (:until IS NULL OR COALESCE(t.counts_at, t.timestamp) < :until) " +
             "AND (:query IS NULL OR p.display_name LIKE '%' || :query || '%' ESCAPE '\\' " +
             "OR t.note LIKE '%' || :query || '%' ESCAPE '\\') " +
-            "ORDER BY t.timestamp DESC, t.id DESC"
+            "ORDER BY t.timestamp DESC, t.id DESC LIMIT :limit"
     )
     // Room binds query arguments only from parameters, so each filter needs its own.
     @Suppress("LongParameterList")
@@ -590,8 +591,14 @@ interface TransactionDao {
         accountId: Long?,
         noAccount: Boolean,
         from: Long?,
-        until: Long?
+        until: Long?,
+        limit: Int = NO_LIMIT
     ): Flow<List<TransactionRow>>
+
+    companion object {
+        /** SQLite reads a negative LIMIT as none. */
+        const val NO_LIMIT = -1
+    }
 }
 
 /**

@@ -44,6 +44,7 @@ import com.openhand.khata.feature.categories.TagsScreen
 import com.openhand.khata.feature.csv.BackupReminderNotifier
 import com.openhand.khata.feature.csv.ExportScreen
 import com.openhand.khata.feature.csv.ImportScreen
+import com.openhand.khata.feature.insights.HomeActions
 import com.openhand.khata.feature.insights.HomeScreen
 import com.openhand.khata.feature.insights.InsightsScreen
 import com.openhand.khata.feature.lock.LockSettingsPage
@@ -442,8 +443,15 @@ private fun MainTabs(
             Destination.HOME -> HomeScreen(
                 stringResource(R.string.app_name),
                 modifier,
-                onBackup = { onOpen(SettingsPage.EXPORT) },
-                onReview = onReview
+                HomeActions(
+                    onReview = onReview,
+                    onBackup = { onOpen(SettingsPage.EXPORT) },
+                    onOpenTransaction = onOpenTransaction,
+                    onAddTransaction = { onOpenTransaction(0L) },
+                    onTurnOnSms = { onOpen(SettingsPage.SMS_IMPORT) },
+                    onSeeAllTransactions = { current = Destination.TRANSACTIONS },
+                    onSeeAllInsights = { current = Destination.INSIGHTS }
+                )
             )
             Destination.TRANSACTIONS -> TransactionsScreen(
                 onOpenTransaction,

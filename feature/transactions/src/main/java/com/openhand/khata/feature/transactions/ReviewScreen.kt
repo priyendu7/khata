@@ -45,8 +45,13 @@ import com.openhand.khata.core.ui.PickerField
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.TagInput
+import com.openhand.khata.core.ui.amountColor
 import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.core.ui.dateLabel
+import com.openhand.khata.core.ui.label
 import com.openhand.khata.core.ui.segmentCardColors
+import com.openhand.khata.core.ui.signedAmount
+import com.openhand.khata.core.ui.timeLabel
 import java.time.Instant
 import java.time.ZoneId
 

@@ -14,18 +14,12 @@
     <string name="filter_any_category">सभी श्रेणियाँ</string>
     <string name="filter_any_tag">सभी टैग</string>
     <string name="filter_any_account">सभी खाते</string>
-    <string name="day_today">आज</string>
-    <string name="day_yesterday">कल</string>
     <string name="day_spent">खर्च %1$s</string>
     <string name="day_received">आय %1$s</string>
 
     <!-- Add and edit -->
     <string name="transactions_add">लेन-देन जोड़ें</string>
     <string name="transactions_edit">लेन-देन बदलें</string>
-    <string name="direction_debit">खर्च</string>
-    <string name="direction_credit">आय</string>
-    <string name="direction_refund">रिफ़ंड</string>
-    <string name="direction_transfer">ट्रांसफ़र</string>
     <string name="transfer_side_out">इस खाते से पैसे गए</string>
     <string name="transfer_side_in">इस खाते में पैसे आए</string>
     <string name="field_amount">रक़म</string>
@@ -37,7 +31,6 @@
     <string name="field_counts_in">किस महीने में गिनें</string>
     <string name="counts_in_same">तारीख़ वाला महीना</string>
     <string name="counts_in_same_month">%1$s (तारीख़ वाला महीना)</string>
-    <string name="counts_in_label">%1$s में गिना गया</string>
     <string name="field_payee">किसे दिया या किससे मिला (वैकल्पिक)</string>
     <string name="field_payee_hint">जैसे Swiggy, रमेश, मकान-मालिक</string>
     <string name="payee_filled_in">श्रेणी और टैग %1$s से भरे गए। यहाँ किए बदलाव सिर्फ़ इसी लेन-देन पर लागू होंगे।</string>

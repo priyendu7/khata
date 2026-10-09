@@ -1,7 +1,6 @@
 package com.openhand.khata.feature.transactions
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,10 +40,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.TransactionFilter
-import com.openhand.khata.core.model.TransactionListItem
 import com.openhand.khata.core.ui.CategoryBadge
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
@@ -52,10 +49,12 @@ import com.openhand.khata.core.ui.DateRangeDialog
 import com.openhand.khata.core.ui.EmptyState
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
-import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
+import com.openhand.khata.core.ui.TransactionRow
 import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.core.ui.dateLabel
+import com.openhand.khata.core.ui.dayLabel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -328,48 +327,4 @@ private fun DayHeader(day: DaySection) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
-}
-
-@Composable
-private fun TransactionRow(item: TransactionListItem, index: Int, count: Int, onClick: () -> Unit) {
-    val category = categoryName(item.category.name, item.category.seedKey)
-    val details = listOfNotNull(
-        stringResource(item.direction.label()).takeIf { item.direction != Direction.DEBIT },
-        category.takeIf { item.payeeName != null },
-        item.accountName,
-        item.note,
-        item.tags.takeIf { it.isNotEmpty() }?.joinToString(" ") { "#$it" }
-    ).joinToString(" · ")
-    val time = Instant.ofEpochMilli(item.timestamp).atZone(ZoneId.systemDefault()).toLocalTime()
-    SegmentListItem(
-        index = index,
-        count = count,
-        leadingContent = { CategoryBadge(item.category.icon, item.category.color) },
-        headlineContent = {
-            Text(item.payeeName ?: category, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        },
-        supportingContent = if (details.isEmpty()) {
-            null
-        } else {
-            { Text(details, maxLines = 1, overflow = TextOverflow.Ellipsis) }
-        },
-        trailingContent = {
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    signedAmount(item.direction, item.amountPaise),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = amountColor(item.direction)
-                )
-                Text(timeLabel(time), style = MaterialTheme.typography.labelSmall)
-                item.countsIn?.let {
-                    Text(
-                        stringResource(R.string.counts_in_label, monthLabel(it)),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        },
-        modifier = Modifier.clickable(onClick = onClick)
-    )
 }
