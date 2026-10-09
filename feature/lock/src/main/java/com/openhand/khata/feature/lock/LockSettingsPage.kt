@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -16,6 +15,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -24,6 +24,8 @@ import com.openhand.khata.core.security.lock.LockMethod
 import com.openhand.khata.core.security.lock.LockTimeout
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
+import com.openhand.khata.core.ui.SegmentListItem
+import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
 
 private enum class LockDialog { NONE, METHOD, TIMEOUT, REMOVE_PIN, PIN_SETUP, TURN_OFF }
@@ -54,23 +56,40 @@ fun LockSettingsContent(
 ) {
     var dialog by rememberSaveable { mutableStateOf(LockDialog.NONE) }
     SubScreen(stringResource(R.string.settings_app_lock), onBack) { padding ->
-        Column(Modifier.padding(padding).verticalScroll(rememberScrollState())) {
+        // The switch, then the method, the PIN (if one is used) and the timeout once it's on.
+        val rows = when {
+            !state.enabled -> 1
+            state.method == LockMethod.PIN -> 4
+            else -> 3
+        }
+        Column(
+            Modifier
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Segments.Inset, vertical = 8.dp)
+        ) {
             SwitchRow(
                 title = stringResource(R.string.settings_app_lock),
                 summary = stringResource(R.string.settings_app_lock_summary),
                 checked = state.enabled,
                 onCheckedChange = { on ->
                     if (on) onEnabled(true) else dialog = LockDialog.TURN_OFF
-                }
+                },
+                index = 0,
+                count = rows
             )
             if (state.enabled) {
-                ListItem(
+                SegmentListItem(
+                    index = 1,
+                    count = rows,
                     headlineContent = { Text(stringResource(R.string.settings_lock_method)) },
                     supportingContent = { Text(lockMethodText(state)) },
                     modifier = Modifier.clickable { dialog = LockDialog.METHOD }
                 )
                 if (state.method == LockMethod.PIN) {
-                    ListItem(
+                    SegmentListItem(
+                        index = 2,
+                        count = rows,
                         headlineContent = { Text(stringResource(R.string.settings_change_pin)) },
                         supportingContent = {
                             Text(stringResource(R.string.settings_change_pin_note))
@@ -78,7 +97,9 @@ fun LockSettingsContent(
                         modifier = Modifier.clickable { dialog = LockDialog.PIN_SETUP }
                     )
                 }
-                ListItem(
+                SegmentListItem(
+                    index = rows - 1,
+                    count = rows,
                     headlineContent = { Text(stringResource(R.string.settings_lock_timeout)) },
                     supportingContent = { Text(stringResource(state.timeout.label())) },
                     modifier = Modifier.clickable { dialog = LockDialog.TIMEOUT }

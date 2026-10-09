@@ -30,6 +30,7 @@ import com.openhand.khata.core.data.SmsImportPreview
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.core.ui.segmentCardColors
 import com.openhand.khata.sms.ingest.SmsExplanation
 import com.openhand.khata.sms.ingest.TriedRule
 import com.openhand.khata.sms.parser.ParseResult
@@ -130,7 +131,7 @@ private fun Answer(
     onMakeParser: () -> Unit,
     onOpenFilter: (FilterSwitch) -> Unit
 ) {
-    Card(Modifier.fillMaxWidth()) {
+    Card(Modifier.fillMaxWidth(), colors = segmentCardColors()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             val result = answer.result
             when (result) {

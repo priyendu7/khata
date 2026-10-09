@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,14 +13,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -50,6 +52,8 @@ import com.openhand.khata.core.ui.DateRangeDialog
 import com.openhand.khata.core.ui.EmptyState
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
+import com.openhand.khata.core.ui.SegmentListItem
+import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.categoryName
 import java.time.Instant
@@ -142,6 +146,8 @@ private fun SearchField(query: String, onChange: (String) -> Unit) {
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
+        // A pill, like the search bars in Google's apps.
+        shape = CircleShape,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
     )
 }
@@ -279,8 +285,15 @@ private fun DayList(days: List<DaySection>, onOpen: (Long) -> Unit) {
     LazyColumn(contentPadding = PaddingValues(bottom = 88.dp), modifier = Modifier.fillMaxSize()) {
         days.forEach { day ->
             stickyHeader(key = "day-${day.date}", contentType = "day") { DayHeader(day) }
-            items(day.items, key = { it.id }, contentType = { "transaction" }) { item ->
-                TransactionRow(item) { onOpen(item.id) }
+            itemsIndexed(
+                day.items,
+                key = { _, row -> row.id },
+                contentType = { _, _ -> "transaction" }
+            ) { index, item ->
+                // Inset here rather than in the list, so the sticky header spans the screen.
+                Box(Modifier.padding(horizontal = Segments.Inset)) {
+                    TransactionRow(item, index, day.items.size) { onOpen(item.id) }
+                }
             }
         }
     }
@@ -300,8 +313,9 @@ private fun DayHeader(day: DaySection) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            // Hides the rows scrolling under it.
+            .background(MaterialTheme.colorScheme.background)
+            .padding(start = 32.dp, end = 32.dp, top = 16.dp, bottom = 8.dp)
     ) {
         Text(
             dayLabel(day.date),
@@ -317,7 +331,7 @@ private fun DayHeader(day: DaySection) {
 }
 
 @Composable
-private fun TransactionRow(item: TransactionListItem, onClick: () -> Unit) {
+private fun TransactionRow(item: TransactionListItem, index: Int, count: Int, onClick: () -> Unit) {
     val category = categoryName(item.category.name, item.category.seedKey)
     val details = listOfNotNull(
         stringResource(item.direction.label()).takeIf { item.direction != Direction.DEBIT },
@@ -327,7 +341,9 @@ private fun TransactionRow(item: TransactionListItem, onClick: () -> Unit) {
         item.tags.takeIf { it.isNotEmpty() }?.joinToString(" ") { "#$it" }
     ).joinToString(" · ")
     val time = Instant.ofEpochMilli(item.timestamp).atZone(ZoneId.systemDefault()).toLocalTime()
-    ListItem(
+    SegmentListItem(
+        index = index,
+        count = count,
         leadingContent = { CategoryBadge(item.category.icon, item.category.color) },
         headlineContent = {
             Text(item.payeeName ?: category, maxLines = 1, overflow = TextOverflow.Ellipsis)

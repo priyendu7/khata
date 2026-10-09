@@ -1,7 +1,6 @@
 package com.openhand.khata.feature.insights
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -54,9 +53,9 @@ fun chartTheme(): ChartTheme {
         axisText = MaterialTheme.typography.labelSmall.copy(color = colors.onSurfaceVariant),
         gridLine = colors.outlineVariant,
         other = colors.outline,
-        // Card backgrounds are close to surfaceVariant, so empty cells need the outline color.
+        // Empty cells need the outline color to show on the cards' black or white.
         track = colors.outlineVariant,
-        divider = CardDefaults.cardColors().containerColor,
+        divider = colors.surfaceContainerLowest,
         spending = colors.primary,
         income = incomeColor(),
         heat = (0..HeatLevels.MAX).map {

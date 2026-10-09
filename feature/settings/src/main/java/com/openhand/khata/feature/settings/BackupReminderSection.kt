@@ -46,7 +46,10 @@ import com.openhand.khata.core.ui.R as UiR
  * permission on Android 13+; if refused, the reminder still shows on Home.
  */
 @Composable
-fun BackupReminderSection(viewModel: BackupReminderViewModel = hiltViewModel()) {
+fun BackupReminderSection(
+    modifier: Modifier = Modifier,
+    viewModel: BackupReminderViewModel = hiltViewModel()
+) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val areEnabled = { NotificationManagerCompat.from(context).areNotificationsEnabled() }
@@ -71,7 +74,8 @@ fun BackupReminderSection(viewModel: BackupReminderViewModel = hiltViewModel()) 
                 askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         },
-        onInterval = viewModel::setInterval
+        onInterval = viewModel::setInterval,
+        modifier = modifier
     )
 }
 
@@ -81,7 +85,8 @@ fun BackupReminderRows(
     settings: ReminderSettings,
     notificationsAllowed: Boolean,
     onEnabled: (Boolean) -> Unit,
-    onInterval: (ReminderInterval) -> Unit
+    onInterval: (ReminderInterval) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var editing by rememberSaveable { mutableStateOf(false) }
     val state = if (settings.enabled) {
@@ -102,7 +107,8 @@ fun BackupReminderRows(
                 }
             )
         },
-        modifier = Modifier.clickable { editing = true }
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = modifier.clickable { editing = true }
     )
     if (editing) {
         ReminderDialog(

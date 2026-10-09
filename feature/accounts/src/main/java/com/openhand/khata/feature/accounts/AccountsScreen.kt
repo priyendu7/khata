@@ -10,12 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -39,6 +38,8 @@ import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.ui.EmptyState
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.SegmentListItem
+import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
 
 @Composable
@@ -65,9 +66,14 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountsViewModel = hiltViewMo
                 body = stringResource(R.string.accounts_empty_body),
                 modifier = Modifier.padding(padding)
             )
-            else -> LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-                items(list, key = { it.id }) { account ->
-                    ListItem(
+            else -> LazyColumn(
+                Modifier.fillMaxSize().padding(padding),
+                contentPadding = Segments.ListPadding
+            ) {
+                itemsIndexed(list, key = { _, row -> row.id }) { index, account ->
+                    SegmentListItem(
+                        index = index,
+                        count = list.size,
                         headlineContent = { Text(account.name) },
                         supportingContent = { Text(accountSummary(account)) },
                         modifier = Modifier.clickable { editing = account }

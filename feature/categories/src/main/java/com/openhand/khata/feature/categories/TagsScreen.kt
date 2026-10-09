@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -19,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -29,6 +32,8 @@ import com.openhand.khata.core.data.RenameResult
 import com.openhand.khata.core.model.Tag
 import com.openhand.khata.core.ui.EmptyState
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.SegmentListItem
+import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
 
 private enum class TagAction { MENU, RENAME, MERGE, DELETE }
@@ -52,9 +57,14 @@ fun TagsScreen(onBack: () -> Unit, viewModel: TagsViewModel = hiltViewModel()) {
                 body = stringResource(R.string.tags_empty_body),
                 modifier = Modifier.padding(padding)
             )
-            else -> LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-                items(tags, key = { it.id }) { tag ->
-                    ListItem(
+            else -> LazyColumn(
+                Modifier.fillMaxSize().padding(padding),
+                contentPadding = Segments.ListPadding
+            ) {
+                itemsIndexed(tags, key = { _, row -> row.id }) { index, tag ->
+                    SegmentListItem(
+                        index = index,
+                        count = tags.size,
                         headlineContent = { Text(tag.name) },
                         supportingContent = {
                             Text(
@@ -199,7 +209,9 @@ private fun ConfirmDialog(
 
 @Composable
 private fun MenuItem(label: String, onClick: () -> Unit) {
-    ListItem(headlineContent = {
-        Text(label)
-    }, modifier = Modifier.fillMaxWidth().clickable(onClick = onClick))
+    ListItem(
+        headlineContent = { Text(label) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
+    )
 }

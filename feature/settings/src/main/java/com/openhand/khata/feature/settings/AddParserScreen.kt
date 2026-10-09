@@ -13,7 +13,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -37,7 +36,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.SubScreen
+import com.openhand.khata.core.ui.segmentCardColors
 import com.openhand.khata.sms.ingest.SmsInbox
 import com.openhand.khata.sms.parser.CodeCheck
 import com.openhand.khata.sms.parser.CompiledRule
@@ -149,7 +150,7 @@ fun AddParserContent(
 /** Most people make a rule from an SMS on the phone rather than paste one. */
 @Composable
 private fun MakeCard(onMake: () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
+    Card(Modifier.fillMaxWidth(), colors = segmentCardColors()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 stringResource(R.string.parser_add_make_title),
@@ -171,7 +172,7 @@ internal fun ErrorText(text: String) {
 
 @Composable
 private fun RuleSummary(rule: CompiledRule, replaces: Boolean) {
-    Card(Modifier.fillMaxWidth()) {
+    Card(Modifier.fillMaxWidth(), colors = segmentCardColors()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(rule.rule.bank, style = MaterialTheme.typography.titleMedium)
             Text(rule.rule.id, style = MaterialTheme.typography.bodyMedium)
@@ -213,21 +214,28 @@ private fun RuleTest(
         recent.isEmpty() -> ParserHint(stringResource(R.string.parser_test_no_recent))
         else -> {
             ParserHint(stringResource(R.string.parser_test_recent))
-            recent.forEachIndexed { index, sms ->
-                ListItem(
-                    headlineContent = {
-                        Text(sms.body, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                    },
-                    overlineContent = { Text(sms.sender) },
-                    leadingContent = { RadioButton(selected = picked == index, onClick = null) },
-                    modifier = Modifier.selectable(
-                        selected = picked == index,
-                        role = Role.RadioButton
-                    ) {
-                        picked = index
-                        pasted = ""
-                    }
-                )
+            // One group, without the form's spacing between its items.
+            Column {
+                recent.forEachIndexed { index, sms ->
+                    SegmentListItem(
+                        index = index,
+                        count = recent.size,
+                        headlineContent = {
+                            Text(sms.body, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                        },
+                        overlineContent = { Text(sms.sender) },
+                        leadingContent = {
+                            RadioButton(selected = picked == index, onClick = null)
+                        },
+                        modifier = Modifier.selectable(
+                            selected = picked == index,
+                            role = Role.RadioButton
+                        ) {
+                            picked = index
+                            pasted = ""
+                        }
+                    )
+                }
             }
         }
     }

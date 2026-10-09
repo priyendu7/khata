@@ -8,10 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -35,6 +34,8 @@ import com.openhand.khata.core.ui.DateRangeDialog
 import com.openhand.khata.core.ui.EmptyState
 import com.openhand.khata.core.ui.PickerField
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.SegmentListItem
+import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -77,9 +78,14 @@ fun EventsContent(
                 body = stringResource(R.string.events_empty_body),
                 modifier = Modifier.padding(padding)
             )
-            else -> LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-                items(events, key = { it.id }) { event ->
-                    ListItem(
+            else -> LazyColumn(
+                Modifier.fillMaxSize().padding(padding),
+                contentPadding = Segments.ListPadding
+            ) {
+                itemsIndexed(events, key = { _, row -> row.id }) { index, event ->
+                    SegmentListItem(
+                        index = index,
+                        count = events.size,
                         headlineContent = { Text(event.name) },
                         supportingContent = { Text(dateRange(event.start, event.end)) },
                         modifier = Modifier.clickable { editingId = event.id }

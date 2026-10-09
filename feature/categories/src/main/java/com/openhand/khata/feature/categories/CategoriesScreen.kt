@@ -5,8 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ListItem
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -24,6 +23,8 @@ import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.ui.CategoryBadge
 import com.openhand.khata.core.ui.CategoryEditor
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.SegmentListItem
+import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.categoryName
 import com.openhand.khata.core.ui.newCategory
@@ -45,8 +46,10 @@ fun CategoriesScreen(onBack: () -> Unit, viewModel: CategoriesViewModel = hiltVi
     ) { padding ->
         val categories = all.orEmpty()
         val (archived, active) = categories.partition { it.archived }
-        LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-            items(active, key = { it.id }) { CategoryRow(it) { editingId = it.id } }
+        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = Segments.ListPadding) {
+            itemsIndexed(active, key = { _, row -> row.id }) { index, category ->
+                CategoryRow(category, index, active.size) { editingId = category.id }
+            }
             if (archived.isNotEmpty()) {
                 item {
                     Text(
@@ -56,7 +59,9 @@ fun CategoriesScreen(onBack: () -> Unit, viewModel: CategoriesViewModel = hiltVi
                         modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
                     )
                 }
-                items(archived, key = { it.id }) { CategoryRow(it) { editingId = it.id } }
+                itemsIndexed(archived, key = { _, row -> row.id }) { index, category ->
+                    CategoryRow(category, index, archived.size) { editingId = category.id }
+                }
             }
         }
     }
@@ -81,8 +86,10 @@ fun CategoriesScreen(onBack: () -> Unit, viewModel: CategoriesViewModel = hiltVi
 }
 
 @Composable
-private fun CategoryRow(category: Category, onClick: () -> Unit) {
-    ListItem(
+private fun CategoryRow(category: Category, index: Int, count: Int, onClick: () -> Unit) {
+    SegmentListItem(
+        index = index,
+        count = count,
         leadingContent = { CategoryBadge(category.icon, category.color) },
         headlineContent = { Text(categoryName(category.name, category.seedKey)) },
         modifier = Modifier.clickable(onClick = onClick)

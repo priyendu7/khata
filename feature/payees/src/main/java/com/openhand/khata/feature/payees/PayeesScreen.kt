@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -18,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -29,6 +32,8 @@ import com.openhand.khata.core.model.Payee
 import com.openhand.khata.core.ui.CategoryBadge
 import com.openhand.khata.core.ui.EmptyState
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.SegmentListItem
+import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.categoryName
 import com.openhand.khata.core.ui.defaultCategoryNames
@@ -81,9 +86,13 @@ internal fun PayeesContent(
                 body = stringResource(R.string.payees_empty_body),
                 modifier = Modifier.padding(padding)
             )
-            else -> LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-                items(payees, key = { it.id }) { payee ->
-                    PayeeRow(payee, categories.firstOrNull { it.id == payee.defaultCategoryId }) {
+            else -> LazyColumn(
+                Modifier.fillMaxSize().padding(padding),
+                contentPadding = Segments.ListPadding
+            ) {
+                itemsIndexed(payees, key = { _, row -> row.id }) { index, payee ->
+                    val category = categories.firstOrNull { it.id == payee.defaultCategoryId }
+                    PayeeRow(payee, category, index, payees.size) {
                         selectedId = payee.id
                         action = PayeeAction.MENU
                     }
@@ -188,14 +197,22 @@ internal fun PayeesContent(
  * transactions it has.
  */
 @Composable
-private fun PayeeRow(payee: Payee, category: Category?, onClick: () -> Unit) {
+private fun PayeeRow(
+    payee: Payee,
+    category: Category?,
+    index: Int,
+    count: Int,
+    onClick: () -> Unit
+) {
     val defaults = listOfNotNull(
         stringResource(R.string.payees_own_account_label).takeIf { payee.ownAccount },
         category?.let { categoryName(it.name, it.seedKey) }
             ?: stringResource(R.string.payees_no_default_category),
         payee.defaultTags.takeIf { it.isNotEmpty() }?.joinToString(", ")
     ).joinToString(" · ")
-    ListItem(
+    SegmentListItem(
+        index = index,
+        count = count,
         leadingContent = category?.let { { CategoryBadge(it.icon, it.color) } },
         headlineContent = { Text(payee.displayName) },
         supportingContent = {
@@ -221,6 +238,7 @@ private fun PayeeRow(payee: Payee, category: Category?, onClick: () -> Unit) {
 private fun MenuItem(label: String, onClick: () -> Unit) {
     ListItem(
         headlineContent = { Text(label) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
     )
 }

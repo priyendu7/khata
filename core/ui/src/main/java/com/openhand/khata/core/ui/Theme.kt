@@ -2,7 +2,9 @@ package com.openhand.khata.core.ui
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -12,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 // Ledger red and marigold from the launcher icon; used when dynamic color isn't available (API < 31).
-private val KhataLight =
+internal val KhataLight =
     lightColorScheme(
         primary = Color(0xFFA4221F),
         onPrimary = Color.White,
@@ -24,7 +26,7 @@ private val KhataLight =
         onSecondaryContainer = Color(0xFF271900)
     )
 
-private val KhataDark =
+internal val KhataDark =
     darkColorScheme(
         primary = Color(0xFFFFB4AA),
         onPrimary = Color(0xFF690003),
@@ -36,7 +38,27 @@ private val KhataDark =
         onSecondaryContainer = Color(0xFFFFDEA6)
     )
 
-/** Material 3 theme: the phone's own colors (dynamic color) on Android 12+, Khata's colors otherwise. */
+/** Near-black behind black cards in dark mode, light grey behind white ones in light mode. */
+private val DarkBackground = Color(0xFF121212)
+private val LightBackground = Color(0xFFF1F3F4)
+
+/**
+ * Sets the surfaces apart from the cards and lists drawn on them, as in Google's own apps. Only
+ * the surfaces change: accents keep the wallpaper's colours (or Khata's).
+ */
+internal fun ColorScheme.withKhataSurfaces(dark: Boolean): ColorScheme {
+    val background = if (dark) DarkBackground else LightBackground
+    return copy(
+        background = background,
+        surface = background,
+        surfaceContainerLowest = if (dark) Color.Black else Color.White
+    )
+}
+
+/**
+ * Material 3 theme: the phone's own colors (dynamic color) on Android 12+, Khata's colors
+ * otherwise, on Khata's surfaces either way.
+ */
 @Composable
 fun KhataTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -51,6 +73,11 @@ fun KhataTheme(
             }
             darkTheme -> KhataDark
             else -> KhataLight
-        }
-    MaterialTheme(colorScheme = colorScheme, content = content)
+        }.withKhataSurfaces(darkTheme)
+    MaterialTheme(
+        colorScheme = colorScheme,
+        // Cards take the same large corners as the segmented lists.
+        shapes = Shapes(medium = Segments.Single),
+        content = content
+    )
 }

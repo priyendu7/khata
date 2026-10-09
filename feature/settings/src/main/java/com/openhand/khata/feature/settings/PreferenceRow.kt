@@ -1,12 +1,12 @@
 package com.openhand.khata.feature.settings
 
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.openhand.khata.core.security.lock.LockMethod
 import com.openhand.khata.core.security.lock.LockTimeout
+import com.openhand.khata.core.ui.SegmentListItem
 
 /** Each preference in the file, with its value here and in the file. */
 @Composable
@@ -34,8 +34,10 @@ internal fun PreferenceRows(current: AppPrefs, file: AppPrefs) {
         ) { onOff(it) }
     )
     if (rows.isEmpty()) PreviewNote(stringResource(R.string.import_settings_none))
-    rows.forEach { row ->
-        ListItem(
+    rows.forEachIndexed { index, row ->
+        SegmentListItem(
+            index = index,
+            count = rows.size,
             headlineContent = { Text(row.title) },
             supportingContent = {
                 Text(

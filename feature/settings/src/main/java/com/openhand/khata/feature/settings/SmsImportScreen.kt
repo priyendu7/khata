@@ -7,16 +7,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
@@ -39,6 +39,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.ui.DateDialog
+import com.openhand.khata.core.ui.SegmentListItem
+import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.sms.ingest.ScanProgress
 import com.openhand.khata.sms.ingest.ScanSummary
@@ -138,9 +140,12 @@ fun SmsImportContent(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
+                .padding(start = Segments.Inset, end = Segments.Inset, bottom = 16.dp)
         ) {
             Explanation()
-            ListItem(
+            SegmentListItem(
+                index = 0,
+                count = 1,
                 headlineContent = { Text(stringResource(R.string.sms_switch)) },
                 supportingContent = { Text(stringResource(switchSummary(on, permission))) },
                 trailingContent = { Switch(checked = on, onCheckedChange = null) },
@@ -159,23 +164,27 @@ fun SmsImportContent(
                 Hint(stringResource(hint))
                 OutlinedButton(
                     onClick = onOpenAppSettings,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(top = 8.dp)
                 ) {
                     Text(stringResource(R.string.sms_open_settings))
                 }
             }
             if (on) {
-                HorizontalDivider(Modifier.padding(top = 16.dp))
+                Spacer(Modifier.height(16.dp))
                 PastSmsImport(progress, lastScan, onImport, onCancel, today)
             }
             // Both work with SMS import off too; Test a message reads only what's pasted.
-            HorizontalDivider(Modifier.padding(top = 8.dp))
-            ListItem(
+            Spacer(Modifier.height(16.dp))
+            SegmentListItem(
+                index = 0,
+                count = 2,
                 headlineContent = { Text(stringResource(R.string.sms_filters_entry)) },
                 supportingContent = { Text(stringResource(R.string.sms_filters_entry_note)) },
                 modifier = Modifier.clickable(onClick = onFilters)
             )
-            ListItem(
+            SegmentListItem(
+                index = 1,
+                count = 2,
                 headlineContent = { Text(stringResource(R.string.sms_test_entry)) },
                 supportingContent = { Text(stringResource(R.string.sms_test_entry_note)) },
                 modifier = Modifier.clickable(onClick = onTestMessage)
@@ -193,7 +202,7 @@ private fun switchSummary(on: Boolean, permission: PermissionState) = when {
 @Composable
 private fun Explanation() {
     Column(
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier.padding(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(stringResource(R.string.sms_intro), style = MaterialTheme.typography.bodyLarge)
@@ -213,7 +222,7 @@ private fun Hint(text: String) {
         text,
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        modifier = Modifier.padding(vertical = 8.dp)
     )
 }
 
@@ -232,17 +241,21 @@ private fun PastSmsImport(
         DATE_PATTERN,
         LocalConfiguration.current.locales[0]
     )
-    ListItem(
+    SegmentListItem(
+        index = 0,
+        count = 2,
         headlineContent = { Text(stringResource(R.string.sms_import_title)) },
         supportingContent = { Text(stringResource(R.string.sms_import_note)) }
     )
-    ListItem(
+    SegmentListItem(
+        index = 1,
+        count = 2,
         headlineContent = { Text(stringResource(R.string.sms_import_from)) },
         supportingContent = { Text(from.format(dateFormat)) },
         modifier = Modifier.clickable(enabled = progress == null) { picking = true }
     )
     if (progress == null) {
-        Button(onClick = { onImport(from) }, modifier = Modifier.padding(horizontal = 16.dp)) {
+        Button(onClick = { onImport(from) }, modifier = Modifier.padding(top = 8.dp)) {
             Text(stringResource(R.string.sms_import_button))
         }
     } else {
@@ -263,7 +276,7 @@ private fun PastSmsImport(
 
 @Composable
 private fun ImportProgress(progress: ScanProgress, onCancel: () -> Unit) {
-    Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (progress.started && progress.total > 0) {
             LinearProgressIndicator(
                 progress = { progress.done.toFloat() / progress.total },
@@ -284,7 +297,7 @@ private fun ImportProgress(progress: ScanProgress, onCancel: () -> Unit) {
 private fun LastImport(summary: ScanSummary, dateFormat: DateTimeFormatter) {
     val since = Instant.ofEpochMilli(summary.since).atZone(ZoneId.systemDefault()).toLocalDate()
     Column(
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier.padding(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
