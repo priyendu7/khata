@@ -14,7 +14,7 @@ The plan takes Khata from an empty repo to a Play Store release in seven phases.
 | 3 SMS and custom parsers | Your bank SMS are recorded automatically; you can make a parser for any bank in the app |
 | 4 Enhancements and feedback | Using and testing the app turns into improvements: events, new categories from the editor |
 | 5 More banks and SMS extras | HDFC, ICICI, Axis and Federal built in, more Kotak formats, transfers detected, optional daily summary |
-| 6 Release | Closed test with 12 testers, then live on the Play Store |
+| 6 Release | v0.9.0: closed test with 12 testers, then live on the Play Store and F-Droid |
 
 Spending alerts come after the release, as the first update.
 
@@ -169,18 +169,24 @@ By the end of this phase more banks are built in and SMS import handles the hard
 
 ## Phase 6: Release
 
-By the end of this phase Khata is live on the Play Store. Most of the wait is Google's required 14-day closed test, so start recruiting testers during Phase 4.
+By the end of this phase Khata **v0.9.0** is live on the Play Store, on GitHub Releases and on F-Droid. It starts once #111 and #113 are merged. Most of the wait is Google's: the SMS permissions declaration review, and the 14-day closed test a personal developer account needs before production.
 
-- [ ] Create the Play developer account and complete identity verification (start this in Phase 0, since verification can take days)
-- [ ] Final app icon, feature graphic and screenshots in English and Hindi
-- [ ] Privacy policy page on GitHub Pages: no data is collected, and nothing leaves the device
-- [ ] Signed release build with R8 (code shrinking), app signing through Play, versioning scheme
-- [ ] Closed test track with at least 12 testers for 14 days; fix what they report
-- [ ] SMS permissions declaration form, with money management as the use case, and a 1–2 minute demo video
-- [ ] Data safety form: no data collected, no data shared
-- [ ] Store listing: "Khata: Private Expense Tracker", descriptions in English and Hindi
-- [ ] GitHub release with the signed APK and changelog
-- [ ] Apply for production access and roll out in stages (10%, 50%, 100%)
+- [ ] Release build with R8 code shrinking (#116)
+- [ ] Privacy policy on GitHub Pages, and Play's App content forms: data safety, content rating, target audience (#117)
+- [ ] Store listing: title, descriptions, icon, feature graphic and screenshots in English and Hindi (#118)
+- [ ] SMS permissions declaration with a 1–2 minute demo video (#119)
+- [ ] Closed test with 12+ testers from friends and family for 14 days, then apply for production access (#120)
+- [ ] Release v0.9.0: internal, closed, then production at 10%, 50%, 100%; GitHub release marked Latest (#121)
+- [ ] Publish on F-Droid (#122)
+
+**Order**
+
+1. #111 and #113.
+2. In parallel: #116 (R8), #117 and #118 (forms and listing), and the start of #120. The existing `v0.1.0-alpha.3` build has no SMS permissions, so it can go to closed testing right away and start the 14-day clock while the rest is done.
+3. #119: record the demo video on the R8 build and submit the declaration with the v0.9.0 internal release (#121).
+4. Once the declaration is approved, v0.9.0 goes to closed testing (#121).
+5. After 14 days with 12 or more testers, apply for production access (#120), then roll out in stages (#121).
+6. #122 (F-Droid) any time after the v0.9.0 tag.
 
 **After launch:** spending alerts (monthly limit per category, alerts at 80% and 100%) are the first update, followed by parsers for further banks based on GitHub requests.
 
