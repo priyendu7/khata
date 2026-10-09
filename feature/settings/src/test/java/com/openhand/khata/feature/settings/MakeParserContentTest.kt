@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -17,9 +18,7 @@ import com.openhand.khata.sms.ingest.SmsInbox
 import com.openhand.khata.sms.parser.CodeCheck
 import com.openhand.khata.sms.parser.CompiledRule
 import com.openhand.khata.sms.parser.CustomRules
-import com.openhand.khata.sms.parser.RuleCheck
 import com.openhand.khata.sms.parser.RuleCode
-import com.openhand.khata.sms.parser.RuleMaker
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -60,27 +59,35 @@ class MakeParserContentTest {
 
     private fun tap(text: String) = compose.onNodeWithText(text).performScrollTo().performClick()
 
-    private fun mark(field: String, vararg words: String) {
+    /** Marks [words] in the current step, then goes on. */
+    private fun step(vararg words: String) {
         words.forEach(::tap)
-        tap(field)
+        tap("Next")
     }
 
     @Test
-    fun marksFieldsChecksAndSaves() {
+    fun marksOneFieldAtATimeChecksAndSaves() {
         showMaker()
-        compose.onNodeWithText("Mark the amount to make a rule.").assertExists()
+        compose.onNodeWithText("Step 1 of 5").assertExists()
+        compose.onNodeWithText("Tap the amount").assertExists()
 
-        mark("Amount", "Rs.450.00")
-        mark("Account", "x4321")
-        mark("Payee", "CITY", "PHARMACY")
-        mark("Date", "2026-09-20.")
-        compose.onNodeWithText("Bank name").performScrollTo().performTextReplacement("HDFC Bank")
-
+        step("Rs.450.00")
+        compose.onNodeWithText("Tap who was paid or who paid").assertExists()
+        step("CITY", "PHARMACY")
+        compose.onNodeWithText("Tap the account or card number").assertExists()
+        step("x4321")
+        tap("Skip")
+        compose.onNodeWithText("Tap the date").assertExists()
+        tap("2026-09-20.")
         compose.onNodeWithText("Date: 2026-09-20.").assertExists()
         // The offered format, picked, and in the field for another one.
         compose.onAllNodesWithText("yyyy-MM-dd").assertCountEquals(2)
+        tap("Next")
+
+        compose.onNodeWithText("Reference: skipped").assertExists()
+        compose.onNodeWithText("Bank name").performScrollTo().performTextReplacement("HDFC Bank")
         compose.onNodeWithText("Rule name: hdfc-bank-debit").performScrollTo().assertExists()
-        // Once in the marks, once in what the rule read from this SMS.
+        // Once in the chips, once in what the rule read from this SMS.
         compose.onAllNodesWithText("Payee: CITY PHARMACY").assertCountEquals(2)
         // Read from this SMS and the other one, which uses the same card.
         compose.onAllNodesWithText("Account: 4321").assertCountEquals(2)
@@ -102,10 +109,52 @@ class MakeParserContentTest {
     }
 
     @Test
+    fun theAmountCantBeSkipped() {
+        showMaker()
+
+        compose.onNodeWithText("Skip").assertDoesNotExist()
+        compose.onNodeWithText("Back").assertDoesNotExist()
+        compose.onNodeWithText("Next").assertIsNotEnabled()
+        tap("Rs.450.00")
+        compose.onNodeWithText("Next").assertIsEnabled()
+        // Tapped again, it's cleared.
+        tap("Rs.450.00")
+        compose.onNodeWithText("Next").assertIsNotEnabled()
+    }
+
+    @Test
+    fun backKeepsWhatWasMarked() {
+        showMaker()
+
+        step("Rs.450.00")
+        step("CITY", "PHARMACY")
+        tap("Back")
+        compose.onNodeWithText("Tap who was paid or who paid").assertExists()
+        compose.onNodeWithText("Payee: CITY PHARMACY").assertExists()
+        tap("Back")
+        compose.onNodeWithText("Amount: Rs.450.00").assertExists()
+    }
+
+    @Test
+    fun aChipOpensItsStepAgainAndComesBack() {
+        showMaker()
+        step("Rs.450.00")
+        repeat(4) { tap("Skip") }
+
+        tap("Account: skipped")
+        compose.onNodeWithText("Tap the account or card number").assertExists()
+        step("x4321")
+
+        compose.onNodeWithText("Account: x4321").assertExists()
+        compose.onNodeWithText("Bank name").assertExists()
+    }
+
+    @Test
     fun aPastedSmsNeedsASender() {
         showMaker(sender = null, canReadSms = false)
 
-        mark("Amount", "Rs.450.00")
+        step("Rs.450.00")
+        repeat(4) { tap("Skip") }
 
         compose.onNodeWithText("The senders must be", substring = true).performScrollTo()
             .assertExists()
@@ -115,25 +164,6 @@ class MakeParserContentTest {
         compose.onNodeWithText("turn on SMS import", substring = true).performScrollTo()
             .assertExists()
         compose.onNodeWithText("Save rule").performScrollTo().assertExists()
-    }
-
-    @Test
-    fun clearingTheAmountTakesTheRuleAway() {
-        showMaker()
-
-        mark("Amount", "Rs.450.00")
-        compose.onNodeWithText("Amount: Rs.450.00").assertExists()
-        tap("Clear")
-
-        compose.onNodeWithText("Mark the amount to make a rule.").performScrollTo().assertExists()
-        compose.onNodeWithText("Save rule").assertDoesNotExist()
-    }
-
-    @Test
-    fun fieldButtonsWaitForASelection() {
-        showMaker()
-
-        compose.onNodeWithText("Payee").assertIsNotEnabled()
     }
 
     @Test
@@ -154,27 +184,6 @@ class MakeParserContentTest {
         tap("Use this SMS")
 
         assertEquals(listOf(sms, other), picked)
-    }
-
-    @Test
-    fun theSavedRuleCanBeCopiedAndTheAppSendsNothing() {
-        val rule = (CustomRules.check(RuleCode.encode(hdfcRule())) as CodeCheck.Valid).rule
-        val copied = mutableListOf<String>()
-        compose.setContent { SavedRuleContent(onDone = {}, rule = rule, onCopy = { copied += it }) }
-
-        compose.onNodeWithText("Saved hdfc-debit").assertExists()
-        compose.onNodeWithText(RuleCode.encode(rule.rule)).assertExists()
-        tap("Copy code")
-
-        assertEquals(listOf(RuleCode.encode(rule.rule)), copied)
-        compose.onNodeWithText("Copied").assertExists()
-        compose.onNodeWithText("Khata sends nothing", substring = true).assertExists()
-    }
-
-    private fun hdfcRule() = MakerForm.start("AX-HDFCBK-S", sms, AT, "HDFC").let { start ->
-        val amount = start.words.indexOfFirst { it.text == "Rs.450.00" }
-        (start.tap(amount).mark(RuleMaker.Field.AMOUNT).check(emptySet()) as RuleCheck.Valid)
-            .rule.rule
     }
 
     private companion object {

@@ -161,16 +161,32 @@ private fun IgnoreRuleRow(
     onEnabled: (SmsIgnoreRule, Boolean) -> Unit,
     onDelete: (SmsIgnoreRule) -> Unit
 ) {
-    val title = when (rule.kind) {
-        IgnoreKind.SENDER -> stringResource(R.string.filters_ignored_sender, rule.header)
-        IgnoreKind.TEMPLATE -> stringResource(R.string.filters_ignored_like, rule.header)
-    }
+    // Says what the rule does: a sender rule names the sender, a "like this" rule quotes the
+    // start of its sample, cut to one line.
     SegmentListItem(
         index = index,
         count = count,
-        headlineContent = { Text(title) },
+        headlineContent = {
+            when (rule.kind) {
+                IgnoreKind.SENDER ->
+                    Text(stringResource(R.string.filters_ignored_sender, rule.header))
+                IgnoreKind.TEMPLATE -> Text(
+                    stringResource(R.string.filters_ignored_like, rule.sample.oneLine()),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        },
         supportingContent = {
-            Text(rule.sample, maxLines = SAMPLE_LINES, overflow = TextOverflow.Ellipsis)
+            when (rule.kind) {
+                IgnoreKind.SENDER -> Text(
+                    rule.sample,
+                    maxLines = SAMPLE_LINES,
+                    overflow = TextOverflow.Ellipsis
+                )
+                IgnoreKind.TEMPLATE ->
+                    Text(stringResource(R.string.filters_ignored_like_from, rule.header))
+            }
         },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -188,5 +204,7 @@ private fun IgnoreRuleRow(
         }
     )
 }
+
+private fun String.oneLine() = replace(Regex("\\s+"), " ").trim()
 
 private const val SAMPLE_LINES = 2

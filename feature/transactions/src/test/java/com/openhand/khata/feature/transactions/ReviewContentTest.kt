@@ -8,7 +8,9 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -143,11 +145,15 @@ class ReviewContentTest {
     fun anUnreadableSmsCanBeAddedDismissedOrCopied() {
         show(emptyList(), listOf(sms))
 
-        compose.onNodeWithText("An SMS Khata couldn't read").assertExists()
+        compose.onNodeWithText("Khata found a transaction but couldn't read it").assertExists()
+        compose.onNodeWithText("reads SMS like this automatically next time", substring = true)
+            .assertExists()
+        compose.onNodeWithText("if it isn't a transaction", substring = true).assertExists()
         compose.onNodeWithText(sms.body).assertExists()
         compose.onNodeWithText("Add by hand").performScrollTo().performClick()
         compose.onNodeWithText("Dismiss").performScrollTo().performClick()
-        compose.onNodeWithText("Copy for a bug report").performScrollTo().performClick()
+        more().performClick()
+        compose.onNodeWithText("Copy for a bug report").performClick()
         compose.onNodeWithText("remove names", substring = true).assertExists()
         compose.onNodeWithText("Open GitHub").performClick()
 
@@ -159,12 +165,14 @@ class ReviewContentTest {
     fun ignoringASenderAsksFirst() {
         show(emptyList(), listOf(sms))
 
-        compose.onNodeWithText("Ignore this sender").performScrollTo().performClick()
+        more().performClick()
+        compose.onNodeWithText("Ignore this sender").performClick()
         compose.onNodeWithText("Ignore all SMS from KOTAKB?").assertExists()
         compose.onNodeWithText("Cancel").performClick()
         assertEquals(emptyList<String>(), ignored)
 
-        compose.onNodeWithText("Ignore this sender").performScrollTo().performClick()
+        more().performClick()
+        compose.onNodeWithText("Ignore this sender").performClick()
         compose.onNodeWithText("Ignore").performClick()
         assertEquals(listOf("sender 3"), ignored)
     }
@@ -196,7 +204,9 @@ class ReviewContentTest {
         compose.onNodeWithText("3 left").assertExists()
         compose.onNodeWithText("Show all 3").performScrollTo().performClick()
 
-        compose.onAllNodesWithText("Ignore messages like this")[0].performScrollTo().performClick()
+        // The group's menu first, then each SMS's.
+        compose.onAllNodesWithContentDescription("More actions")[1].performScrollTo().performClick()
+        compose.onNodeWithText("Ignore messages like this").performClick()
 
         compose.onNodeWithText("1 left").assertExists()
         compose.onNodeWithText(sms.body).assertDoesNotExist()
@@ -212,7 +222,7 @@ class ReviewContentTest {
         show(emptyList(), listOf(sms, hdfc, older))
 
         compose.onNodeWithText("3 left").assertExists()
-        compose.onNodeWithText("SMS Khata couldn't read").assertExists()
+        compose.onNodeWithText("Khata found transactions but couldn't read them").assertExists()
         compose.onNodeWithText("KOTAKB · 2 messages").assertExists()
         compose.onNodeWithText(sms.body).assertExists()
         compose.onNodeWithText(older.body).assertDoesNotExist()
@@ -242,6 +252,8 @@ class ReviewContentTest {
         compose.onNode(hasText("Dismiss all") and hasAnyAncestor(isDialog())).performClick()
         assertEquals(listOf("dismiss all KOTAKB"), unparsedActions)
     }
+
+    private fun more() = compose.onNodeWithContentDescription("More actions").performScrollTo()
 
     private companion object {
         const val TALL = "w400dp-h2000dp"

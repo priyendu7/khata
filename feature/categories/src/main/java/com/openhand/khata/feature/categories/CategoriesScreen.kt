@@ -27,6 +27,7 @@ import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.core.ui.defaultCategoryNames
 import com.openhand.khata.core.ui.newCategory
 
 private const val NEW = 0L
@@ -69,13 +70,15 @@ fun CategoriesScreen(onBack: () -> Unit, viewModel: CategoriesViewModel = hiltVi
     if (editingId != NONE) {
         val category = all.orEmpty().firstOrNull { it.id == editingId }
             ?: newCategory(all.orEmpty())
+        val defaultNames = defaultCategoryNames()
         CategoryEditor(
             category = category,
             onSave = {
-                viewModel.save(it)
+                viewModel.save(it, defaultNames)
                 editingId = NONE
             },
-            onDismiss = { editingId = NONE }
+            onDismiss = { editingId = NONE },
+            others = all.orEmpty()
         ) {
             ArchiveSection(category) { archive ->
                 viewModel.setArchived(category, archive)

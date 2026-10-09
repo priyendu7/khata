@@ -107,10 +107,10 @@ class FiltersContentTest {
             )
         }
 
-        compose.onNodeWithText("Sender HDFCBK").performScrollTo().assertIsOn()
-        compose.onNodeWithText("Like this, from JIOPAY").performScrollTo().assertIsOff()
-            .performClick()
-        compose.onNodeWithText("Recharge done").assertExists()
+        compose.onNodeWithText("Ignoring all SMS from HDFCBK").performScrollTo().assertIsOn()
+        compose.onNodeWithText("Ignoring SMS like: “Recharge done”").performScrollTo()
+            .assertIsOff().performClick()
+        compose.onNodeWithText("From JIOPAY").assertExists()
         compose.onAllNodesWithContentDescription("Delete")[0].performClick()
 
         assertEquals(listOf(2L to true), switched)

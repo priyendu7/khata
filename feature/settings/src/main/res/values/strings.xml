@@ -33,7 +33,7 @@
     <string name="sms_point_ignored">OTPs, offers, reminders and SMS with no amount are filtered out.</string>
     <string name="sms_point_private">Everything stays on this phone. Khata has no internet access and never sends SMS.</string>
     <string name="sms_switch">Read bank SMS</string>
-    <string name="sms_switch_on">On. New bank SMS are recorded as they arrive.</string>
+    <string name="sms_switch_on">On</string>
     <string name="sms_switch_off">Off. Adding transactions by hand works without it.</string>
     <string name="sms_refused">Permission not given. Adding transactions by hand still works.</string>
     <string name="sms_blocked">The SMS permission is turned off for Khata. To use SMS import, allow it in the app settings.</string>
@@ -41,12 +41,12 @@
     <string name="sms_open_settings">Open app settings</string>
     <string name="sms_import_title">Import past SMS</string>
     <string name="sms_import_note">Records bank SMS that were already on this phone. Transactions already saved are skipped.</string>
-    <string name="sms_import_from">From</string>
+    <string name="sms_import_from">Import SMS from</string>
     <string name="sms_import_button">Import</string>
     <string name="sms_import_starting">Starting…</string>
     <string name="sms_import_running">Reading SMS: %1$d of %2$d</string>
     <string name="sms_import_cancel">Cancel</string>
-    <string name="sms_last_import">Last import, from %1$s</string>
+    <string name="sms_last_import">Last imported %1$s (SMS from %2$s)</string>
     <string name="sms_summary_recorded">Recorded: %1$d</string>
     <string name="sms_summary_to_review">New payees to review: %1$d</string>
     <string name="sms_summary_already_there">Already saved: %1$d</string>
@@ -158,8 +158,6 @@
     <string name="parser_make_pick_recent">Recent bank SMS with an amount:</string>
     <string name="parser_make_no_candidates">No bank SMS with an amount in the last 60 days. You can paste one below.</string>
     <string name="parser_make_use">Use this SMS</string>
-    <string name="parser_make_mark_hint">Tap a word to select it. For several words, tap the first and then the last. Then tap what it is.</string>
-    <string name="parser_make_unmark">Clear</string>
     <string name="parser_make_date_format">Date format</string>
     <string name="parser_make_date_format_other">Date format (java.time pattern)</string>
     <string name="parser_make_account_type">Account type</string>
@@ -174,15 +172,6 @@
     <string name="parser_make_check_no_permission">To check the rule on your other SMS from this bank, turn on SMS import.</string>
     <string name="parser_make_doesnt_read_own">The rule doesn\'t read the SMS it was made from. Check the marked parts.</string>
     <string name="parser_make_save">Save rule</string>
-    <string name="parser_saved_title">Saved %1$s</string>
-    <string name="parser_saved_body">Khata now reads SMS like this one. Your rule is kept on this phone only; you can switch it off or delete it in Settings &gt; Parsers.</string>
-    <string name="parser_share_title">Share the rule</string>
-    <string name="parser_share_copy">Copy code</string>
-    <string name="parser_share_copied">Copied</string>
-    <string name="parser_share_note">Anyone can paste this code in Settings &gt; Parsers &gt; Add. To add it to Khata for everyone, file an issue or pull request on GitHub yourself, with the code and a sample SMS with names, account and card numbers and balances blanked out. Khata sends nothing.</string>
-    <string name="parser_make_done">Done</string>
-    <string name="sms_test_entry">Test a message</string>
-    <string name="sms_test_entry_note">See what Khata would do with an SMS. Nothing is saved.</string>
     <string name="test_sms_title">Test a message</string>
     <string name="test_sms_intro">Paste a sender and an SMS to see what Khata would do with it. Nothing is saved.</string>
     <string name="test_sms_sender">Sender</string>
@@ -225,8 +214,6 @@
     <string name="filter_group_mandate">Mandate or standing instruction</string>
     <string name="filter_group_offer">Offer</string>
     <string name="filter_group_failed">Failed payment</string>
-    <string name="sms_filters_entry">Filters</string>
-    <string name="sms_filters_entry_note">Choose which SMS are dropped before they reach To review.</string>
     <string name="filters_title">Filters</string>
     <string name="filters_before_reading">Before reading</string>
     <string name="filters_no_parser">When no parser reads an SMS</string>
@@ -247,9 +234,9 @@
     <string name="filters_note">A change applies to new SMS straight away. To get back messages a filter dropped before, import past SMS again.</string>
     <string name="test_sms_open_filter">Change this filter</string>
     <string name="filters_ignore_rules">Ignore rules</string>
-    <string name="filters_no_ignore_rules">None yet. In To review, an SMS no parser reads can be ignored by sender or by kind.</string>
-    <string name="filters_ignored_sender">Sender %1$s</string>
-    <string name="filters_ignored_like">Like this, from %1$s</string>
+    <string name="filters_no_ignore_rules">No ignore rules yet. In To review, you can ignore an SMS\'s sender, or all SMS like it.</string>
+    <string name="filters_ignored_sender">Ignoring all SMS from %1$s</string>
+    <string name="filters_ignored_like">Ignoring SMS like: “%1$s”</string>
     <string name="filter_reason_ignored_sender">You chose to ignore this sender.</string>
     <string name="filter_reason_ignored_like_this">It\'s like a message you chose to ignore.</string>
     <string name="ignore_like_title">Ignore messages like this</string>
@@ -430,4 +417,21 @@
     <string name="welcome_sms_yes">Yes</string>
     <string name="welcome_sms_later">Later</string>
     <string name="settings_promise_value">No internet, encrypted, open source</string>
+    <string name="sms_live_note">New bank SMS are recorded as they arrive. This import is only for SMS already on this phone.</string>
+    <string name="filters_ignored_like_from">From %1$s</string>
+    <string name="parser_step_count">Step %1$d of %2$d</string>
+    <string name="parser_step_amount">Tap the amount</string>
+    <string name="parser_step_payee">Tap who was paid or who paid</string>
+    <string name="parser_step_account">Tap the account or card number</string>
+    <string name="parser_step_reference">Tap the reference number</string>
+    <string name="parser_step_date">Tap the date</string>
+    <string name="parser_step_hint">For several words, tap the first and then the last. Tap a marked word again to clear it.</string>
+    <string name="parser_step_next">Next</string>
+    <string name="parser_step_skip">Skip</string>
+    <string name="parser_step_skipped">%1$s: skipped</string>
+    <string name="parser_saved">Saved.</string>
+    <plurals name="parser_saved_recorded">
+        <item quantity="one">Saved. %d waiting SMS recorded.</item>
+        <item quantity="other">Saved. %d waiting SMS recorded.</item>
+    </plurals>
 </resources>

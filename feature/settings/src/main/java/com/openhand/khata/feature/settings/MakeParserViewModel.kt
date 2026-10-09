@@ -39,8 +39,9 @@ const val MAKE_FROM_BODY_ARG = "body"
 const val MAKE_REMARK_ARG = "remark"
 
 /**
- * Make a parser from an SMS (PRD feature 8): pick or paste an SMS, mark its parts, check the rule
- * on recent SMS from that bank, save it and share its code. Nothing leaves the phone.
+ * Make a parser from an SMS (PRD feature 8): pick or paste an SMS, mark its parts one at a time,
+ * check the rule on recent SMS from that bank, and save it, which reads the SMS waiting in To
+ * review again. Nothing leaves the phone.
  */
 @HiltViewModel
 class MakeParserViewModel @Inject constructor(
@@ -69,11 +70,6 @@ class MakeParserViewModel @Inject constructor(
 
     /** Recent SMS from the rule's senders, newest first, to check it on. */
     val recent: StateFlow<List<SmsInbox.Message>> = _recent.asStateFlow()
-
-    private val _saved = MutableStateFlow<CompiledRule?>(null)
-
-    /** The rule as saved, to share its code. */
-    val saved: StateFlow<CompiledRule?> = _saved.asStateFlow()
 
     private val saving = RuleSaving(viewModelScope, parsers, ingestor)
     val step = saving.step
@@ -139,14 +135,9 @@ class MakeParserViewModel @Inject constructor(
         }
     }
 
-    fun save(rule: CompiledRule, now: Long = System.currentTimeMillis()) {
-        _saved.value = rule
-        saving.save(rule, now)
-    }
-
-    fun readWaiting() = saving.readWaiting()
-
-    fun skipWaiting() = saving.skipWaiting()
+    /** Saves [rule] and records the waiting SMS it can now read; [step] says how many. */
+    fun save(rule: CompiledRule, now: Long = System.currentTimeMillis()) =
+        saving.saveAndRead(rule, now)
 }
 
 /**

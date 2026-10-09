@@ -52,6 +52,33 @@ class CategoryRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun aNameAnotherCategoryHasIsRefused() = runTest {
+        val hindi = mapOf("food" to "भोजन", "travel" to "यात्रा")
+        val fuel = categories.save(Category(name = "Fuel", color = 0, icon = "fuel"))
+        val all = categories.observeAll().first()
+        val travel = all.first { it.seedKey == "travel" }
+        val taken = listOf(
+            // Another case and extra spaces.
+            Category(name = "  fUEL ", color = 0, icon = "x"),
+            // A default category's name in the current language.
+            Category(name = "भोजन", color = 0, icon = "x"),
+            // Renaming one to another's name.
+            travel.copy(name = "Fuel")
+        )
+
+        taken.forEach { category ->
+            assertThrows(DuplicateCategoryNameException::class.java) {
+                kotlinx.coroutines.runBlocking { categories.save(category, hindi) }
+            }
+        }
+        assertEquals(all, categories.observeAll().first())
+        // Its own name, recoloured, is fine; so is a default name in another language.
+        categories.save(Category(id = fuel, name = "FUEL", color = 1, icon = "fuel"), hindi)
+        categories.save(travel.copy(name = "Food"), hindi)
+        assertEquals("FUEL", categories.observeAll().first().first { it.id == fuel }.name)
+    }
+
+    @Test
     fun archivedCategoriesLeaveThePickersButStay() = runTest {
         val travel = categories.observeAll().first().first { it.seedKey == "travel" }
 

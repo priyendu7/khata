@@ -5,9 +5,12 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
@@ -135,28 +138,30 @@ private fun ReminderDialog(
         title = { Text(stringResource(R.string.settings_reminder)) },
         text = {
             Column {
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.settings_reminder_summary)) },
-                    supportingContent = if (settings.enabled && !notificationsAllowed) {
-                        { Text(stringResource(R.string.settings_reminder_home_only)) }
-                    } else {
-                        null
-                    },
-                    trailingContent = {
-                        Switch(checked = settings.enabled, onCheckedChange = null)
-                    },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    modifier = Modifier.toggleable(
+                DialogRow(
+                    Modifier.toggleable(
                         value = settings.enabled,
                         role = Role.Switch,
                         onValueChange = onEnabled
                     )
-                )
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_reminder_summary))
+                        if (settings.enabled && !notificationsAllowed) {
+                            Text(
+                                stringResource(R.string.settings_reminder_home_only),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Switch(checked = settings.enabled, onCheckedChange = null)
+                }
                 if (settings.enabled) {
                     Text(
                         stringResource(R.string.settings_reminder_interval),
                         style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
                     )
                     ReminderInterval.entries.forEach { interval ->
                         IntervalOption(
@@ -176,15 +181,30 @@ private fun ReminderDialog(
 
 @Composable
 private fun IntervalOption(label: String, selected: Boolean, onSelect: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
+    DialogRow(
+        Modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
     ) {
         RadioButton(selected = selected, onClick = null)
-        Text(label, modifier = Modifier.padding(start = 8.dp))
+        Text(label)
     }
+}
+
+/**
+ * The dialog's one row style, for the switch and the intervals alike, so they line up: the same
+ * height, no side padding of their own (the dialog has it), and the same gap between parts.
+ */
+@Composable
+private fun DialogRow(modifier: Modifier, content: @Composable RowScope.() -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .then(modifier)
+            .padding(vertical = 4.dp),
+        content = content
+    )
 }
 
 @Composable
