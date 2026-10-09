@@ -192,7 +192,7 @@ The app is a native Android app written in Kotlin with Jetpack Compose. It suppo
 
 ## Distribution
 
-We publish on the Play Store, and attach signed APKs to GitHub Releases. We are not publishing on F-Droid. The requirements below are from memory and need checking against the current policy pages before we submit.
+We publish on the Play Store and on F-Droid, and attach signed APKs to GitHub Releases. The requirements below are from memory and need checking against the current policy pages before we submit.
 
 **Google Play**
 
@@ -202,6 +202,12 @@ We publish on the Play Store, and attach signed APKs to GitHub Releases. We are 
 - [ ] Fill in the Data safety form: no data collected, no data shared.
 - [ ] Publish a privacy policy URL, for example a page on GitHub Pages saying no data leaves the device.
 - [ ] Store listing title: "Khata: Private Expense Tracker" (exactly 30 characters, the maximum).
+
+**F-Droid**
+
+- [ ] Fastlane metadata (descriptions and screenshots in English and Hindi) in the repo.
+- [ ] A reproducible release build, so F-Droid can publish the APK with our signature and users can move between F-Droid and GitHub without reinstalling.
+- [ ] Every dependency is free software; nothing from Google Play Services or Firebase.
 
 **GitHub Releases** get signed APKs as well, for people who install apps directly.
 
@@ -215,7 +221,7 @@ We build in five milestones. The app is useful from M2 on, before any SMS parsin
 | M1 Manual tracking | Add, edit and delete transactions; categories, tags, accounts, payee memory, income, English and Hindi interface | You can track a month of spending by hand |
 | M2 Charts and CSV | Category pie, calendar heatmap, monthly comparison, CSV export and import, backup reminder | You can import an existing spreadsheet and see all three charts |
 | M3 SMS reading | Built-in Kotak parsers, other banks through custom parsers; inbox scan; review inbox; transfer detection; making and importing custom parsers in the app | A week of real SMS is recorded correctly with no double counting |
-| M4 Release | Closed test with 12 testers, Play forms and video, GitHub release APK, store listing | Live on the Play Store |
+| M4 Release | Closed test with 12 testers, Play forms and video, GitHub release APK, store listing, F-Droid | Live on the Play Store and F-Droid |
 
 ## Success metrics and risks
 

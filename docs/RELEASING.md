@@ -76,6 +76,14 @@ Approve the run when GitHub asks (the `play-production` environment gate). Googl
    Set `tag` (e.g. `v0.2.0`) on the `1.0` run so the GitHub release is marked **Latest**.
 4. Something wrong? Run `halt production rollout` — no new users get the build. Ship a fix as a new tag and promote it.
 
+## F-Droid
+
+Khata is also published on [F-Droid](https://f-droid.org) (#122). F-Droid builds the app itself from the tagged source, using the build recipe in [`fdroiddata`](https://gitlab.com/fdroid/fdroiddata) (`metadata/com.openhand.khata.yml`). It reads the store text, screenshots and changelogs from `fastlane/metadata/android/` in this repo.
+
+- **A new version reaches F-Droid by itself.** After a `v*` tag is pushed, F-Droid's update checker picks it up, builds it, and publishes it, usually within a few days. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (and `hi-IN`) before tagging.
+- **Reproducible builds.** F-Droid compares its build with our signed GitHub APK. If they match apart from the signature, it ships our APK, so users can move between F-Droid and GitHub without reinstalling. Anything that makes builds differ (timestamps, build paths, a version taken from the environment) breaks this.
+- **Play is signed differently** (Play App Signing), so moving between Play and F-Droid or GitHub needs a reinstall. Export a CSV backup first.
+
 ## One-time setup
 
 ### GitHub
@@ -101,7 +109,7 @@ Approve the run when GitHub asks (the `play-production` environment gate). Googl
 
 ### Google Play Console
 
-1. Create a developer account at [play.google.com/console](https://play.google.com/console) (one-time US$25). **Personal accounts** created after Nov 2023 must run a **closed test with at least 12 testers opted in for 14 consecutive days** before production access is granted — plan for this before your production launch.
+1. Create a developer account at [play.google.com/console](https://play.google.com/console) (one-time US$25). **Personal accounts** created after Nov 2023 must run a **closed test with at least 12 testers opted in for 14 consecutive days** before production access is granted — plan for this before your production launch. The clock can start before the release is ready: promote a build without SMS permissions (such as `v0.1.0-alpha.3`) to closed testing, so testers opt in while the SMS declaration is reviewed (#120).
 2. **Create app** → name *Khata*, app, free.
 3. Complete *Set up your app*: privacy policy URL (use docs/PRIVACY.md; required whenever the app requests sensitive permissions), app access, ads (none), content rating, target audience, data safety, and the store listing (icon, screenshots, descriptions).
 4. **Play App Signing** is on by default: Google holds the app signing key; the keystore in GitHub secrets is your **upload key**. If the upload key is ever lost, it can be reset via Play support — the app key is safe with Google.
