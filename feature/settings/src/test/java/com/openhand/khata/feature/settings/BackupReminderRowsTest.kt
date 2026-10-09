@@ -5,12 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
@@ -38,39 +36,43 @@ class BackupReminderRowsTest {
         }
     }
 
+    private val switch get() = compose.onNodeWithText("Remind me when", substring = true)
+
     @Test
-    fun changesTheInterval() {
+    fun rowShowsTheInterval() {
         show()
-        compose.onNodeWithText("Backup reminder").assertIsOn()
-        compose.onNodeWithText("30 days without an export").performClick()
+        compose.onNodeWithText("30 days without an export").assertIsDisplayed()
+    }
+
+    @Test
+    fun changesTheIntervalInTheDialog() {
+        show()
+        compose.onNodeWithText("Backup reminder").performClick()
+        switch.assertIsOn()
+        listOf(7, 14, 60).forEach {
+            compose.onNodeWithText("$it days without an export").assertIsDisplayed()
+        }
         compose.onNodeWithText("7 days without an export").performClick()
+        compose.onNodeWithText("OK").performClick()
         compose.onNodeWithText("7 days without an export").assertIsDisplayed()
     }
 
     @Test
-    fun turnsOff() {
+    fun turnsOffInTheDialog() {
         show()
+        compose.onNodeWithText("Backup reminder").performClick()
         // Robolectric's simulated touch doesn't reach a toggleable ListItem; the click action
         // is what TalkBack and a real tap both trigger.
-        compose.onNodeWithText("Backup reminder").performSemanticsAction(SemanticsActions.OnClick)
-        compose.onNodeWithText("Backup reminder").assertIsOff()
+        switch.performSemanticsAction(SemanticsActions.OnClick)
+        switch.assertIsOff()
         compose.onNodeWithText("Remind after").assertDoesNotExist()
+        compose.onNodeWithText("OK").performClick()
+        compose.onNodeWithText("Off").assertIsDisplayed()
     }
 
     @Test
     fun saysItShowsOnHomeWhenNotificationsAreOff() {
         show(notificationsAllowed = false)
-        compose.onNodeWithText("Notifications are off", substring = true).assertIsDisplayed()
-    }
-
-    @Test
-    fun allIntervalsAreOffered() {
-        show()
-        compose.onNodeWithText("30 days without an export").performClick()
-        // The current choice is both on the row and in the dialog.
-        compose.onAllNodesWithText("30 days without an export").assertCountEquals(2)
-        listOf(7, 14, 60).forEach {
-            compose.onNodeWithText("$it days without an export").assertIsDisplayed()
-        }
+        compose.onNodeWithText("on Home only", substring = true).assertIsDisplayed()
     }
 }

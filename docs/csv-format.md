@@ -1,6 +1,6 @@
 # Khata CSV format
 
-Khata exports transactions to CSV (Settings > Export to CSV) and imports them back (Settings > Import from CSV). The export is a backup and a way to take your data to a spreadsheet. This page is the specification of the file, version **2**.
+Khata exports transactions to CSV (Settings > Export transactions) and imports them back (Settings > Import transactions). The export is a backup and a way to take your data to a spreadsheet. This page is the specification of the file, version **2**.
 
 Code: `KhataCsvFormat` and `Csv` in [`feature/csv`](../feature/csv/src/main/java/com/openhand/khata/feature/csv/).
 

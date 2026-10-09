@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Export -->
-    <string name="export_title">Export to CSV</string>
+    <string name="export_title">Export transactions</string>
     <string name="export_unencrypted">The CSV file is not encrypted, unlike Khata\'s own data. Anyone who can open the file can read your transactions, so keep it somewhere safe.</string>
     <string name="export_what">What to export</string>
     <string name="export_all">All data</string>
@@ -18,7 +18,7 @@
     <string name="export_failed">Couldn\'t save the file. Try again, or pick another place.</string>
 
     <!-- Import -->
-    <string name="import_title">Import from CSV</string>
+    <string name="import_title">Import transactions</string>
     <string name="import_intro">Add transactions from a CSV file: a Khata export, or any spreadsheet or bank statement after you match its columns. You\'ll see a preview first, and transactions that are already saved are skipped.</string>
     <string name="import_choose_file">Choose a CSV file</string>
     <string name="import_choose_another">Choose another file</string>
