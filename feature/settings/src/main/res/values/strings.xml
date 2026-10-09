@@ -411,11 +411,12 @@
     <string name="promise_encrypted_body">No account, no ads, no tracking.</string>
     <string name="promise_open_title">Open source.</string>
     <string name="promise_open_body">Anyone can read the code.</string>
-    <string name="promise_open_link" translatable="false">github.com/priyendu7/khata</string>
     <string name="welcome_get_started">Get started</string>
-    <string name="welcome_sms_title">Read transaction messages automatically?</string>
-    <string name="welcome_sms_yes">Yes</string>
-    <string name="welcome_sms_later">Later</string>
+    <string name="welcome_add_title">How do you want to add transactions?</string>
+    <string name="welcome_add_sms_title">Automatically from bank SMS</string>
+    <string name="welcome_add_sms_body">Khata reads bank messages on this phone and adds them for you. Nothing leaves the phone.</string>
+    <string name="welcome_add_hand_title">By hand</string>
+    <string name="welcome_add_hand_body">Add each one with +. You can turn on SMS import any time in Settings.</string>
     <string name="settings_promise_value">No internet, encrypted, open source</string>
     <string name="sms_live_note">New bank SMS are recorded as they arrive. This import is only for SMS already on this phone.</string>
     <string name="filters_ignored_like_from">From %1$s</string>

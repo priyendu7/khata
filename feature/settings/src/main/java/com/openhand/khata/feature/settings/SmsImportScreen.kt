@@ -18,6 +18,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -168,7 +169,8 @@ fun SmsImportContent(
                 }
             }
             if (on) {
-                Spacer(Modifier.height(16.dp))
+                // Two separate things: reading new SMS, and a one-off import of old ones.
+                HorizontalDivider(Modifier.padding(vertical = 16.dp))
                 PastSmsImport(progress, lastScan, onImport, onCancel, today)
             }
         }
@@ -184,7 +186,8 @@ private fun switchSummary(on: Boolean, permission: PermissionState) = when {
 @Composable
 private fun Explanation() {
     Column(
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        // On the same edge as the import section below, not indented under the switch's text.
+        modifier = Modifier.padding(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         val color = MaterialTheme.colorScheme.onSurfaceVariant
