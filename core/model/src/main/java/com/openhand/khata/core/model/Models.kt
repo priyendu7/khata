@@ -33,6 +33,24 @@ data class Category(
 
     /** Uncategorized is the fallback for every transaction: it can't be archived or deleted. */
     val isUncategorized: Boolean get() = seedKey == DefaultCategory.UNCATEGORIZED.key
+
+    /**
+     * The name it's shown by: its own, or for a default category without one, its name in the
+     * current language from [defaultNames] (seed key to name).
+     */
+    fun shownName(defaultNames: Map<String, String>): String? =
+        name?.trim()?.ifEmpty { null } ?: defaultNames[seedKey]
+}
+
+/**
+ * Whether a category other than [category] is already shown by [category]'s name, ignoring case
+ * and surrounding spaces. Archived categories count too: two categories never share a name.
+ */
+fun List<Category>.hasNameOf(category: Category, defaultNames: Map<String, String>): Boolean {
+    val name = category.shownName(defaultNames) ?: return false
+    return any {
+        it.id != category.id && it.shownName(defaultNames).equals(name, ignoreCase = true)
+    }
 }
 
 /** A tag and how many transactions use it. */

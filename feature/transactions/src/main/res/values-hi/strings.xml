@@ -4,7 +4,7 @@
 
     <!-- Transactions list -->
     <string name="transactions_empty_title">अभी यहाँ कुछ नहीं है</string>
-    <string name="transactions_empty_body">खर्च या आय जोड़ने के लिए + दबाएँ। आप जो भी जोड़ेंगे, वह यहाँ दिन के हिसाब से दिखेगा।</string>
+    <string name="transactions_empty_body">खर्च या आय जोड़ने के लिए + दबाएँ, या बैंक SMS अपने-आप दर्ज करने के लिए सेटिंग में SMS इम्पोर्ट चालू करें। सब कुछ यहाँ दिन के हिसाब से दिखेगा।</string>
     <string name="transactions_no_match_title">कोई मेल खाता लेन-देन नहीं</string>
     <string name="transactions_no_match_body">कुछ और खोजें, या फ़िल्टर हटाएँ।</string>
     <string name="transactions_search">नाम या नोट खोजें</string>
@@ -72,8 +72,8 @@
         <item quantity="one">%d लेन-देन देखना बाकी</item>
         <item quantity="other">%d लेन-देन देखना बाकी</item>
     </plurals>
-    <string name="review_unparsed_title">एक SMS जिसे खाता पढ़ नहीं सका</string>
-    <string name="review_unparsed_body">इसमें रकम है, लेकिन इसका फ़ॉर्मेट खाता के लिए नया है। इसे हाथ से जोड़ें, पार्सर बनाएँ ताकि आगे से खाता ऐसे SMS पढ़ सके, या अगर यह लेन-देन नहीं है तो हटा दें।</string>
+    <string name="review_unparsed_title">खाता को एक लेन-देन मिला, पर वह उसे पढ़ नहीं सका</string>
+    <string name="review_unparsed_body">इसमें रकम है, लेकिन इसका फ़ॉर्मेट खाता के लिए नया है।</string>
     <string name="review_add_by_hand">हाथ से जोड़ें</string>
     <string name="review_make_parser">पार्सर बनाएँ</string>
     <string name="review_dismiss">हटाएँ</string>
@@ -85,10 +85,10 @@
     <string name="review_ignore_sender">यह भेजने वाला अनदेखा करें</string>
     <string name="review_ignore_like_this">ऐसे मैसेज अनदेखा करें</string>
     <string name="review_ignore_sender_title">%1$s के सभी SMS अनदेखा करें?</string>
-    <string name="review_ignore_sender_body">रुके हुए SMS हटा दिए जाएँगे। इसे सेटिंग्स &gt; SMS इम्पोर्ट &gt; फ़िल्टर में वापस बदल सकते हैं।</string>
+    <string name="review_ignore_sender_body">रुके हुए SMS हटा दिए जाएँगे। इसे सेटिंग्स &gt; फ़िल्टर में वापस बदल सकते हैं।</string>
     <string name="review_ignore_confirm">अनदेखा करें</string>
-    <string name="review_unparsed_title_many">SMS जिन्हें खाता पढ़ नहीं सका</string>
-    <string name="review_unparsed_body_many">इनमें रकम है, लेकिन इनका फ़ॉर्मेट खाता के लिए नया है। किसी भेजने वाले के लिए पार्सर बनाएँ ताकि आगे से खाता उसके SMS पढ़ सके, इन्हें हाथ से जोड़ें, या जो लेन-देन नहीं हैं उन्हें हटा दें।</string>
+    <string name="review_unparsed_title_many">खाता को लेन-देन मिले, पर वह उन्हें पढ़ नहीं सका</string>
+    <string name="review_unparsed_body_many">इनमें रकम है, लेकिन इनका फ़ॉर्मेट खाता के लिए नया है।</string>
     <plurals name="review_group_title">
         <item quantity="one">%1$s · %2$d मैसेज</item>
         <item quantity="other">%1$s · %2$d मैसेज</item>
@@ -104,4 +104,7 @@
         <item quantity="other">%2$s के सभी %1$d SMS हटाएँ?</item>
     </plurals>
     <string name="review_dismiss_all_body">ये मिट जाएँगे और वापस नहीं लाए जा सकते। इस भेजने वाले के नए SMS फिर भी यहाँ आएँगे।</string>
+    <string name="review_unparsed_how_parser">पार्सर बनाएँ, ताकि अगली बार से खाता ऐसे SMS अपने-आप पढ़ ले</string>
+    <string name="review_unparsed_how_dismiss">हटाएँ, अगर यह लेन-देन नहीं है</string>
+    <string name="review_more">और विकल्प</string>
 </resources>

@@ -46,15 +46,13 @@ class SmsImportContentTest {
                 onOpenAppSettings = { openedSettings = true },
                 onImport = { imports += it },
                 onCancel = { cancelled = true },
-                onFilters = {},
-                onTestMessage = {},
                 today = LocalDate.of(2026, 9, 29)
             )
         }
     }
 
     @Test
-    fun explainsBeforeTheSwitchAndStartsOff() {
+    fun explainsUnderTheSwitchAndStartsOff() {
         show()
 
         compose.onNodeWithText("Everything stays on this phone", substring = true).assertExists()
@@ -69,8 +67,17 @@ class SmsImportContentTest {
 
         compose.onNodeWithText("Read bank SMS").assertIsOn()
         compose.onNodeWithText("1 Aug 2026").assertExists()
+        compose.onNodeWithText("New bank SMS are recorded", substring = true).assertExists()
         compose.onNodeWithText("Import").performScrollTo().performClick()
         assertEquals(listOf(LocalDate.of(2026, 8, 1)), imports)
+    }
+
+    @Test
+    fun theFromDateOpensThePicker() {
+        show(on = true)
+
+        compose.onNodeWithText("Import SMS from").performScrollTo().performClick()
+        compose.onNodeWithText("OK").assertExists()
     }
 
     @Test
@@ -85,16 +92,12 @@ class SmsImportContentTest {
 
     @Test
     fun showsTheLastImport() {
-        val since = LocalDate.of(
-            2026,
-            8,
-            1
-        ).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val since = LocalDate.of(2026, 8, 1).toMillis()
         show(
             on = true,
             lastScan = ScanSummary(
                 since,
-                since,
+                LocalDate.of(2026, 9, 3).toMillis(),
                 recorded = 42,
                 toReview = 7,
                 alreadyThere = 3,
@@ -103,7 +106,9 @@ class SmsImportContentTest {
             )
         )
 
-        compose.onNodeWithText("Last import, from 1 Aug 2026").performScrollTo().assertExists()
+        compose.onNodeWithText(
+            "Last imported 3 Sep 2026 (SMS from 1 Aug 2026)"
+        ).performScrollTo().assertExists()
         compose.onNodeWithText("Recorded: 42").assertExists()
         compose.onNodeWithText("New payees to review: 7").assertExists()
         compose.onNodeWithText("Already saved: 3").assertExists()
@@ -135,4 +140,7 @@ class SmsImportContentTest {
         compose.onNodeWithText("still has the SMS permission", substring = true).assertExists()
         compose.onNodeWithText("Open app settings").assertExists()
     }
+
+    private fun LocalDate.toMillis() =
+        atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 }

@@ -1,6 +1,10 @@
 package com.openhand.khata.ui
 
 import android.net.Uri
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -8,18 +12,24 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -81,6 +91,7 @@ import com.openhand.khata.feature.transactions.ReviewScreen
 import com.openhand.khata.feature.transactions.TRANSACTION_ID_ARG
 import com.openhand.khata.feature.transactions.TransactionEditorScreen
 import com.openhand.khata.feature.transactions.TransactionsScreen
+import kotlinx.coroutines.launch
 
 /**
  * Top-level navigation: the tabs, and the screens opened from them. [openRequest] is a screen to
@@ -90,6 +101,10 @@ import com.openhand.khata.feature.transactions.TransactionsScreen
 fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
     val navController = rememberNavController()
     val back: () -> Unit = { navController.popBackStack() }
+    // Above every screen, so a message outlives the screen that sent it.
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val showMessage: (String) -> Unit = { scope.launch { snackbar.showSnackbar(it) } }
     LaunchedEffect(openRequest) {
         val route = when (openRequest) {
             BackupReminderNotifier.OPEN_EXPORT -> Route.EXPORT
@@ -99,6 +114,21 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         navController.navigate(route) { launchSingleTop = true }
         onOpened()
     }
+    Box(Modifier.fillMaxSize()) {
+        KhataNavHost(navController, back, showMessage)
+        SnackbarHost(
+            snackbar,
+            Modifier.align(Alignment.BottomCenter).navigationBarsPadding().imePadding()
+        )
+    }
+}
+
+@Composable
+private fun KhataNavHost(
+    navController: NavHostController,
+    back: () -> Unit,
+    showMessage: (String) -> Unit
+) {
     NavHost(navController, startDestination = Route.TABS) {
         composable(Route.TABS) {
             MainTabs(
@@ -165,13 +195,7 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         composable(Route.PROMISE) {
             OurPromiseScreen(appIcon = R.drawable.ic_launcher_foreground, onBack = back)
         }
-        composable(Route.SMS_IMPORT) {
-            SmsImportScreen(
-                onBack = back,
-                onFilters = { navController.navigate(Route.filters()) },
-                onTestMessage = { navController.navigate(Route.TEST_MESSAGE) }
-            )
-        }
+        composable(Route.SMS_IMPORT) { SmsImportScreen(onBack = back) }
         composable(
             Route.FILTERS,
             arguments = listOf(
@@ -240,6 +264,11 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         ) {
             MakeParserScreen(
                 onDone = back,
+                // Back to where the maker was opened, which shows how many SMS were recorded.
+                onSaved = {
+                    back()
+                    showMessage(it)
+                },
                 // Back to Settings > Parsers > Edit, which picks up the new pattern.
                 onRemarked = { code ->
                     navController.previousBackStackEntry?.savedStateHandle

@@ -44,10 +44,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.DefaultCategory
+import com.openhand.khata.core.model.hasNameOf
 
 /**
- * Full-screen category form: name, colour and icon. Settings adds archiving in [extra]; the
- * transaction and payee pickers use it as is to add a category without leaving the editor.
+ * Full-screen category form: name, colour and icon. Settings adds archiving in [extra] and passes
+ * the [others], so a name one of them already has is refused. The transaction and payee pickers
+ * use it as is to add a category without leaving the editor; they pick the existing one instead.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -55,6 +57,7 @@ fun CategoryEditor(
     category: Category,
     onSave: (Category) -> Unit,
     onDismiss: () -> Unit,
+    others: List<Category> = emptyList(),
     extra: @Composable ColumnScope.() -> Unit = {}
 ) {
     var name by rememberSaveable { mutableStateOf(category.name.orEmpty()) }
@@ -63,6 +66,12 @@ fun CategoryEditor(
     val isNew = category.id == 0L
     val isDefault = category.seedKey != null
     val defaultName = if (isDefault) categoryName(null, category.seedKey) else null
+    val defaultNames = defaultCategoryNames()
+    val edited = category.copy(name = name)
+    // Only a new name is checked, as the repository does.
+    val renamed = !edited.shownName(defaultNames)
+        .equals(category.shownName(defaultNames), ignoreCase = true)
+    val taken = renamed && others.hasNameOf(edited, defaultNames)
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -91,6 +100,12 @@ fun CategoryEditor(
                     label = { Text(stringResource(R.string.categories_name)) },
                     // A default category with no name of its own shows its translated name.
                     placeholder = defaultName?.let { { Text(it) } },
+                    isError = taken,
+                    supportingText = if (taken) {
+                        { Text(stringResource(R.string.categories_name_taken)) }
+                    } else {
+                        null
+                    },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences
@@ -142,19 +157,15 @@ fun CategoryEditor(
                         Box(
                             Modifier
                                 .clip(CircleShape)
-                                .border(
-                                    if (selected) 3.dp else 0.dp,
-                                    MaterialTheme.colorScheme.primary,
-                                    CircleShape
-                                )
                                 .semantics { this.selected = selected }
                                 .clickable { icon = key }
-                        ) { CategoryBadge(key, color, size = 44.dp) }
+                                .selectionRing(selected, MaterialTheme.colorScheme.primary)
+                        ) { CategoryBadge(key, color, size = 40.dp) }
                     }
                 }
 
                 Button(
-                    enabled = name.isNotBlank() || isDefault,
+                    enabled = (name.isNotBlank() || isDefault) && !taken,
                     onClick = { onSave(category.copy(name = name, color = color, icon = icon)) },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(stringResource(R.string.save)) }
@@ -172,17 +183,28 @@ private fun ColourSwatch(color: Int, selected: Boolean, onClick: () -> Unit) {
     val description = stringResource(R.string.categories_colour)
     Box(
         Modifier
-            .size(40.dp)
             .clip(CircleShape)
-            .background(Color(color))
-            .border(if (selected) 3.dp else 0.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
             .semantics {
                 contentDescription = description
                 this.selected = selected
             }
             .clickable(onClick = onClick)
-    )
+            .selectionRing(selected, MaterialTheme.colorScheme.onSurface)
+    ) {
+        Box(Modifier.size(36.dp).clip(CircleShape).background(Color(color)))
+    }
 }
+
+/**
+ * A ring with a small gap around the selected option, and the same room left empty around the
+ * others so nothing moves. A zero-width border isn't nothing: it draws a hairline.
+ */
+private fun Modifier.selectionRing(selected: Boolean, color: Color): Modifier =
+    then(if (selected) Modifier.border(RING_WIDTH, color, CircleShape) else Modifier)
+        .padding(RING_WIDTH + RING_GAP)
+
+private val RING_WIDTH = 2.dp
+private val RING_GAP = 3.dp
 
 /**
  * A new category to start the form with: the first colour no category uses yet and a plain label

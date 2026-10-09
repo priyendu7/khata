@@ -3,6 +3,7 @@ package com.openhand.khata.feature.categories
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openhand.khata.core.data.CategoryRepository
+import com.openhand.khata.core.data.DuplicateCategoryNameException
 import com.openhand.khata.core.data.RenameResult
 import com.openhand.khata.core.data.TagRepository
 import com.openhand.khata.core.model.Category
@@ -22,8 +23,14 @@ class CategoriesViewModel @Inject constructor(private val categories: CategoryRe
     val all: StateFlow<List<Category>?> = categories.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
-    fun save(category: Category) {
-        viewModelScope.launch { categories.save(category) }
+    /** The editor refuses a taken name first; one taken meanwhile is simply not saved. */
+    fun save(category: Category, defaultNames: Map<String, String>) {
+        viewModelScope.launch {
+            try {
+                categories.save(category, defaultNames)
+            } catch (_: DuplicateCategoryNameException) {
+            }
+        }
     }
 
     fun setArchived(category: Category, archived: Boolean) {

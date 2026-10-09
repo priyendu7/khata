@@ -6,7 +6,7 @@
     <string name="home_spent_today">Spent today</string>
     <string name="home_top_category">Top category this month</string>
     <string name="home_empty_title">No transactions yet</string>
-    <string name="home_empty_body">Tap + to add income or an expense. Everything you add stays on this phone.</string>
+    <string name="home_empty_body">Tap + to add income or an expense, or turn on SMS import in Settings to record bank SMS automatically. Everything stays on this phone.</string>
     <string name="insights_period_week">Week</string>
     <string name="insights_period_month">Month</string>
     <string name="insights_period_year">Year</string>

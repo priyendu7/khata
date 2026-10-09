@@ -2,6 +2,7 @@ package com.openhand.khata.feature.transactions
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -280,7 +281,7 @@ private fun TransactionFacts(item: ReviewItem, showSms: Boolean, onToggleSms: ()
                 )
             }
             item.rawSms?.let { sms ->
-                TextButton(onClick = onToggleSms) {
+                TextButton(onClick = onToggleSms, contentPadding = PaddingValues(0.dp)) {
                     Text(
                         stringResource(
                             if (showSms) R.string.review_hide_sms else R.string.review_show_sms

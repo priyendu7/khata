@@ -13,6 +13,9 @@ import java.util.Locale
 /**
  * What the user has told the rule maker so far: the SMS, the words marked in it, and the rule's
  * details. [selection] is the run of words picked but not yet marked, as word indexes.
+ *
+ * Fields are marked one at a time, in [RuleMaker.Field] order: [step] is the one being marked,
+ * and null once each has been marked or skipped.
  */
 data class MakerForm(
     /** Null for a pasted SMS. */
@@ -28,7 +31,10 @@ data class MakerForm(
     val senders: String = "",
     val dateFormat: String? = null,
     /** Re-marking a rule (Settings > Parsers > Edit): its id stays. */
-    val fixedId: String? = null
+    val fixedId: String? = null,
+    val step: RuleMaker.Field? = RuleMaker.Field.AMOUNT,
+    /** The step was opened again from its chip, so finishing it goes back to the rest. */
+    val revisiting: Boolean = false
 ) {
     val words: List<RuleMaker.Word> = RuleMaker.words(body)
 
@@ -68,6 +74,56 @@ data class MakerForm(
         marks = marks.filterNot { it.field == field },
         dateFormat = dateFormat.takeIf { field != RuleMaker.Field.DATE }
     )
+
+    /**
+     * A tap on word [index] while marking [step]: marks the word, or the run from the word tapped
+     * before, as that field. A tap on the only marked word clears it. Words marked as another
+     * field are left alone, and a run that would take them in starts again at [index] instead.
+     */
+    fun tapInStep(index: Int): MakerForm {
+        val field = step
+        val other = fieldAt(index).let { it != null && it != field }
+        val tapped = tap(index).let { tapped ->
+            val takesOthers = tapped.selection?.any { word ->
+                fieldAt(word).let { it != null && it != field }
+            } == true
+            if (takesOthers) copy(selection = index..index) else tapped
+        }
+        val run = tapped.selection
+        return when {
+            field == null || other -> this
+            run == null -> tapped.unmark(field)
+            else -> tapped.mark(field).copy(selection = run)
+        }
+    }
+
+    /** The amount can't be skipped: a rule without one reads nothing. */
+    val canSkip: Boolean get() = step != RuleMaker.Field.AMOUNT
+
+    val canGoOn: Boolean get() = step != RuleMaker.Field.AMOUNT || isMarked(RuleMaker.Field.AMOUNT)
+
+    fun isMarked(field: RuleMaker.Field): Boolean = marks.any { it.field == field }
+
+    /** On to the next field, or back to the rest after a step opened from its chip. */
+    fun next(): MakerForm = copy(
+        step = if (revisiting) null else step?.let { fieldNumber(it.ordinal + 1) },
+        selection = null,
+        revisiting = false
+    )
+
+    /** Leaves the step's field unmarked and goes on. */
+    fun skip(): MakerForm = step?.takeIf { canSkip }?.let { unmark(it).next() } ?: this
+
+    /** The step before, keeping what's marked. From the rest, the last step. */
+    fun back(): MakerForm = copy(
+        step = step?.let { fieldNumber(it.ordinal - 1) ?: it } ?: RuleMaker.Field.entries.last(),
+        selection = null,
+        revisiting = false
+    )
+
+    /** Opens [field]'s step again from its chip. */
+    fun revisit(field: RuleMaker.Field): MakerForm =
+        copy(step = field, selection = null, revisiting = true)
 
     /** The field word [index] is marked as, if any. */
     fun fieldAt(index: Int): RuleMaker.Field? {
@@ -125,3 +181,5 @@ data class MakerForm(
         }
     }
 }
+
+private fun fieldNumber(ordinal: Int): RuleMaker.Field? = RuleMaker.Field.entries.getOrNull(ordinal)

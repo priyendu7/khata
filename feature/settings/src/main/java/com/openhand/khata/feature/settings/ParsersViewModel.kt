@@ -142,6 +142,9 @@ sealed interface SaveStep {
     data object Reading : SaveStep
 
     data object Done : SaveStep
+
+    /** Saved, and [recorded] SMS waiting in To review were read with it at once. */
+    data class Recorded(val recorded: Int) : SaveStep
 }
 
 /** Settings > Parsers > Add: paste a code, test it on an SMS, save it. */
@@ -198,6 +201,16 @@ internal class RuleSaving(
             parsers.save(rule.rule.id, rule.rule.bank, RuleCode.encode(rule.rule), now)
             val readable = ingestor.unparsedReadableBy(rule)
             _step.value = if (readable > 0) SaveStep.Offer(readable) else SaveStep.Done
+        }
+    }
+
+    /** Saves, then reads the waiting SMS without asking: what the rule maker does. */
+    fun saveAndRead(rule: CompiledRule, now: Long) {
+        if (_step.value != SaveStep.Editing) return
+        _step.value = SaveStep.Reading
+        scope.launch {
+            parsers.save(rule.rule.id, rule.rule.bank, RuleCode.encode(rule.rule), now)
+            _step.value = SaveStep.Recorded(ingestor.retryUnparsed())
         }
     }
 

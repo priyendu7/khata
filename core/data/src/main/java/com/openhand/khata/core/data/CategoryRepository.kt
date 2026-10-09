@@ -2,6 +2,7 @@ package com.openhand.khata.core.data
 
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.model.Category
+import com.openhand.khata.core.model.hasNameOf
 import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,14 +23,23 @@ class CategoryRepository @Inject constructor(private val db: Lazy<KhataDatabase>
 
     /**
      * Adds a new category (id 0) or updates one. A default category may have no name (it's shown
-     * in the current language); any other category needs one.
+     * in the current language); any other category needs one. A name another category is already
+     * shown by is refused with [DuplicateCategoryNameException]. [defaultNames] maps each default
+     * category's seed key to its name in the current language, for those without a name of their
+     * own.
      */
-    suspend fun save(category: Category): Long {
+    suspend fun save(category: Category, defaultNames: Map<String, String> = emptyMap()): Long {
         val clean = category.copy(name = category.name?.trim()?.ifEmpty { null })
         require(clean.name != null || clean.seedKey != null) { "Category name is empty" }
         require(!(clean.isUncategorized && clean.archived)) { "Uncategorized can't be archived" }
         return db.io { database ->
             val dao = database.categoryDao()
+            // Only a new name is checked, so duplicates from before this check can still be edited.
+            val before = dao.getById(clean.id)?.toModel()?.shownName(defaultNames)
+            val renamed = !clean.shownName(defaultNames).equals(before, ignoreCase = true)
+            if (renamed && dao.getAll().map { it.toModel() }.hasNameOf(clean, defaultNames)) {
+                throw DuplicateCategoryNameException(clean.shownName(defaultNames).orEmpty())
+            }
             if (clean.id == 0L) {
                 dao.insert(clean.copy(seedKey = null).toEntity())
             } else {
@@ -76,3 +86,7 @@ class CategoryRepository @Inject constructor(private val db: Lazy<KhataDatabase>
         }
     }
 }
+
+/** Another category is already called [name]. */
+class DuplicateCategoryNameException(val name: String) :
+    IllegalArgumentException("A category is already called $name")

@@ -2,7 +2,7 @@
 <resources>
     <!-- Transactions list -->
     <string name="transactions_empty_title">Nothing here yet</string>
-    <string name="transactions_empty_body">Tap + to add an expense or income. Everything you add appears here, grouped by day.</string>
+    <string name="transactions_empty_body">Tap + to add an expense or income, or turn on SMS import in Settings to record bank SMS automatically. Everything appears here, grouped by day.</string>
     <string name="transactions_no_match_title">No matching transactions</string>
     <string name="transactions_no_match_body">Try a different search, or clear the filters.</string>
     <string name="transactions_search">Search payee or note</string>
@@ -70,8 +70,8 @@
         <item quantity="one">%d transaction to review</item>
         <item quantity="other">%d transactions to review</item>
     </plurals>
-    <string name="review_unparsed_title">An SMS Khata couldn\'t read</string>
-    <string name="review_unparsed_body">It has an amount, but its format is new to Khata. Add it by hand, make a parser so Khata reads SMS like it from now on, or dismiss it if it isn\'t a transaction.</string>
+    <string name="review_unparsed_title">Khata found a transaction but couldn\'t read it</string>
+    <string name="review_unparsed_body">It has an amount, but its format is new to Khata.</string>
     <string name="review_add_by_hand">Add by hand</string>
     <string name="review_make_parser">Make a parser</string>
     <string name="review_dismiss">Dismiss</string>
@@ -83,10 +83,10 @@
     <string name="review_ignore_sender">Ignore this sender</string>
     <string name="review_ignore_like_this">Ignore messages like this</string>
     <string name="review_ignore_sender_title">Ignore all SMS from %1$s?</string>
-    <string name="review_ignore_sender_body">Waiting ones are removed. You can undo this in Settings &gt; SMS import &gt; Filters.</string>
+    <string name="review_ignore_sender_body">Waiting ones are removed. You can undo this in Settings &gt; Filters.</string>
     <string name="review_ignore_confirm">Ignore</string>
-    <string name="review_unparsed_title_many">SMS Khata couldn\'t read</string>
-    <string name="review_unparsed_body_many">They have an amount, but their format is new to Khata. Make a parser for a sender so Khata reads its SMS from now on, add them by hand, or dismiss the ones that aren\'t transactions.</string>
+    <string name="review_unparsed_title_many">Khata found transactions but couldn\'t read them</string>
+    <string name="review_unparsed_body_many">They have an amount, but their format is new to Khata.</string>
     <plurals name="review_group_title">
         <item quantity="one">%1$s · %2$d message</item>
         <item quantity="other">%1$s · %2$d messages</item>
@@ -102,4 +102,7 @@
         <item quantity="other">Dismiss all %1$d SMS from %2$s?</item>
     </plurals>
     <string name="review_dismiss_all_body">They\'re deleted and can\'t be brought back. New SMS from this sender still come here.</string>
+    <string name="review_unparsed_how_parser">Make a parser, so Khata reads SMS like this automatically next time</string>
+    <string name="review_unparsed_how_dismiss">Dismiss, if it isn\'t a transaction</string>
+    <string name="review_more">More actions</string>
 </resources>

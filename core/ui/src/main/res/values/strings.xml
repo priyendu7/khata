@@ -38,4 +38,7 @@
     <string name="categories_colour">Colour</string>
     <string name="categories_icon">Icon</string>
     <string name="category_new">New category</string>
+    <string name="categories_name_taken">A category with this name already exists</string>
+    <string name="date_range_start">Start date</string>
+    <string name="date_range_end">End date</string>
 </resources>

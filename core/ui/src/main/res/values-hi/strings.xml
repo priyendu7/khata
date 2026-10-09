@@ -37,4 +37,7 @@
     <string name="categories_colour">रंग</string>
     <string name="categories_icon">आइकन</string>
     <string name="category_new">नई श्रेणी</string>
+    <string name="categories_name_taken">इस नाम की श्रेणी पहले से है</string>
+    <string name="date_range_start">शुरू की तारीख़</string>
+    <string name="date_range_end">आख़िरी तारीख़</string>
 </resources>

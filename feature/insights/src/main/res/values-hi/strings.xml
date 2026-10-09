@@ -7,7 +7,7 @@
     <string name="home_spent_today">आज का खर्च</string>
     <string name="home_top_category">इस महीने सबसे ज़्यादा खर्च</string>
     <string name="home_empty_title">अभी कोई लेन-देन नहीं</string>
-    <string name="home_empty_body">आय या खर्च जोड़ने के लिए + दबाएँ। आप जो भी जोड़ेंगे, वह इसी फ़ोन पर रहेगा।</string>
+    <string name="home_empty_body">आय या खर्च जोड़ने के लिए + दबाएँ, या बैंक SMS अपने-आप दर्ज करने के लिए सेटिंग में SMS इम्पोर्ट चालू करें। सब कुछ इसी फ़ोन पर रहता है।</string>
     <string name="insights_period_week">हफ़्ता</string>
     <string name="insights_period_month">महीना</string>
     <string name="insights_period_year">साल</string>
