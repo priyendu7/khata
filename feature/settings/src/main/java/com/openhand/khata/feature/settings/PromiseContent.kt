@@ -85,7 +85,7 @@ fun PromiseContent(
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.semantics { heading() }
+                modifier = Modifier.padding(bottom = 12.dp).semantics { heading() }
             )
             Text(
                 stringResource(R.string.welcome_subtitle),
