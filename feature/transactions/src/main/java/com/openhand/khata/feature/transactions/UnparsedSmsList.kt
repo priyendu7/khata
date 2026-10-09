@@ -33,7 +33,9 @@ import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.UnparsedSms
 import com.openhand.khata.core.model.UnparsedSmsGroup
+import com.openhand.khata.core.ui.dateLabel
 import com.openhand.khata.core.ui.segment
+import com.openhand.khata.core.ui.timeLabel
 import java.time.Instant
 import java.time.ZoneId
 

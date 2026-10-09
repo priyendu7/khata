@@ -8,52 +8,54 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.Money
-import com.openhand.khata.core.ui.CategoryBadge
-import com.openhand.khata.core.ui.EmptyState
+import com.openhand.khata.core.model.TransactionListItem
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
 import com.openhand.khata.core.ui.Segments
-import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.core.ui.TransactionRow
 import com.openhand.khata.core.ui.incomeColor
 import com.openhand.khata.core.ui.segmentCardColors
-import com.openhand.khata.core.ui.segmentShape
 
 /** Home tab, wired to its [HomeViewModel] through Hilt. */
 @Composable
 fun HomeScreen(
     title: String,
     modifier: Modifier = Modifier,
-    onBackup: () -> Unit = {},
-    onReview: () -> Unit = {},
+    actions: HomeActions = HomeActions(),
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val backupDueDays by viewModel.backupDueDays.collectAsStateWithLifecycle()
     val reviewCount by viewModel.reviewCount.collectAsStateWithLifecycle()
-    HomeContent(title, summary, modifier, backupDueDays, onBackup, reviewCount, onReview)
+    HomeContent(title, summary, modifier, backupDueDays, reviewCount, actions)
 }
 
 /**
- * This month's spending and income, today's spending and the top category, with the backup
- * reminder on top while [backupDueDays] is set, and the To review count while [reviewCount] > 0.
+ * Top to bottom (#130): the To review count while [reviewCount] > 0; this month against last;
+ * the top categories; the latest transactions; and the backup reminder while [backupDueDays] is
+ * set. With no transactions at all, a card on how to start takes the middle three's place.
  */
 @Composable
 fun HomeContent(
@@ -61,45 +63,45 @@ fun HomeContent(
     summary: HomeSummary?,
     modifier: Modifier = Modifier,
     backupDueDays: Int? = null,
-    onBackup: () -> Unit = {},
     reviewCount: Int = 0,
-    onReview: () -> Unit = {}
+    actions: HomeActions = HomeActions()
 ) {
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenTitle(title)
         // Nothing until the first load, so the totals never flash ₹0.
         if (summary == null) return@Column
-        // The cards are one segmented group; each is given its shape in the group.
-        val cards = buildList<@Composable (Shape) -> Unit> {
-            if (reviewCount > 0) add { ReviewCard(reviewCount, onReview, it) }
-            backupDueDays?.let { days -> add { BackupReminderCard(days, onBackup, it) } }
-            add { MonthCard(summary, it) }
-            add { TodayCard(summary.spentTodayPaise, it) }
-            summary.topCategory?.let { top -> add { TopCategoryCard(top, it) } }
-        }
         Column(
-            verticalArrangement = Arrangement.spacedBy(Segments.Gap),
-            modifier = Modifier.padding(horizontal = Segments.Inset)
-        ) {
-            cards.forEachIndexed { index, card -> card(segmentShape(index, cards.size)) }
-        }
-        if (!summary.hasTransactions) {
-            EmptyState(
-                icon = painterResource(UiR.drawable.ic_ledger),
-                title = stringResource(R.string.home_empty_title),
-                body = stringResource(R.string.home_empty_body)
+            verticalArrangement = Arrangement.spacedBy(SECTION_GAP),
+            // Room for the "+" button so it never covers the last card.
+            modifier = Modifier.padding(
+                start = Segments.Inset,
+                end = Segments.Inset,
+                bottom = 88.dp
             )
+        ) {
+            if (reviewCount > 0) ReviewCard(reviewCount, actions.onReview)
+            if (summary.hasTransactions) {
+                MonthCard(summary)
+                TopCategoriesCard(summary, actions.onSeeAllInsights)
+                RecentTransactions(
+                    summary.recent,
+                    actions.onOpenTransaction,
+                    actions.onSeeAllTransactions
+                )
+            } else {
+                StartCard(actions.onAddTransaction, actions.onTurnOnSms)
+            }
+            backupDueDays?.let { BackupReminderCard(it, actions.onBackup) }
         }
     }
 }
 
-/** Android backup is off, so a CSV export is the only copy of the data (PRD feature 6). */
 @Composable
-private fun ReviewCard(count: Int, onReview: () -> Unit, shape: Shape) {
+private fun ReviewCard(count: Int, onReview: () -> Unit) {
     Card(
         onClick = onReview,
         modifier = Modifier.fillMaxWidth(),
-        shape = shape,
+        shape = Segments.Single,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         )
@@ -119,12 +121,13 @@ private fun ReviewCard(count: Int, onReview: () -> Unit, shape: Shape) {
     }
 }
 
+/** Android backup is off, so a CSV export is the only copy of the data (PRD feature 6). */
 @Composable
-private fun BackupReminderCard(days: Int, onBackup: () -> Unit, shape: Shape) {
+private fun BackupReminderCard(days: Int, onBackup: () -> Unit) {
     Card(
         onClick = onBackup,
         modifier = Modifier.fillMaxWidth(),
-        shape = shape,
+        shape = Segments.Single,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer
         )
@@ -144,11 +147,49 @@ private fun BackupReminderCard(days: Int, onBackup: () -> Unit, shape: Shape) {
     }
 }
 
+/** No transactions yet: the two ways to get some. */
 @Composable
-private fun MonthCard(summary: HomeSummary, shape: Shape) {
+private fun StartCard(onAddTransaction: () -> Unit, onTurnOnSms: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = shape,
+        shape = Segments.Single,
+        colors = segmentCardColors()
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                painterResource(UiR.drawable.ic_ledger),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            Text(
+                stringResource(R.string.home_empty_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+            Text(
+                stringResource(R.string.home_empty_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Button(onClick = onAddTransaction, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.home_add_transaction))
+            }
+            OutlinedButton(onClick = onTurnOnSms, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.home_turn_on_sms))
+            }
+        }
+    }
+}
+
+@Composable
+private fun MonthCard(summary: HomeSummary) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = Segments.Single,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )
@@ -159,6 +200,9 @@ private fun MonthCard(summary: HomeSummary, shape: Shape) {
                 style = MaterialTheme.typography.titleMedium
             )
             AmountLine(stringResource(R.string.home_spent), summary.month.spentPaise)
+            summary.change?.let {
+                Text(changeText(it), style = MaterialTheme.typography.bodyMedium)
+            }
             AmountLine(
                 stringResource(R.string.home_income),
                 summary.month.incomePaise,
@@ -169,34 +213,38 @@ private fun MonthCard(summary: HomeSummary, shape: Shape) {
 }
 
 @Composable
-private fun TodayCard(spentPaise: Long, shape: Shape) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = shape, colors = segmentCardColors()) {
-        Column(Modifier.padding(20.dp)) {
-            AmountLine(stringResource(R.string.home_spent_today), spentPaise)
-        }
-    }
+private fun changeText(change: MonthChange): String = when (change) {
+    is MonthChange.More -> stringResource(
+        R.string.home_more_than_last_month,
+        Money.format(change.paise),
+        change.percent
+    )
+    is MonthChange.Less -> stringResource(
+        R.string.home_less_than_last_month,
+        Money.format(change.paise),
+        change.percent
+    )
+    MonthChange.Same -> stringResource(R.string.home_same_as_last_month)
 }
 
+/** The last few transactions as the Transactions tab draws them, with their days. */
 @Composable
-private fun TopCategoryCard(top: CategorySpend, shape: Shape) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = shape, colors = segmentCardColors()) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+private fun RecentTransactions(
+    recent: List<TransactionListItem>,
+    onOpen: (Long) -> Unit,
+    onSeeAll: () -> Unit
+) {
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                stringResource(R.string.home_top_category),
-                style = MaterialTheme.typography.titleMedium
+                stringResource(R.string.home_recent),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f).padding(start = 16.dp).semantics { heading() }
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                CategoryBadge(top.category.icon, top.category.color)
-                Text(
-                    categoryName(top.category.name, top.category.seedKey),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(Money.format(top.spentPaise), style = MaterialTheme.typography.titleMedium)
-            }
+            TextButton(onClick = onSeeAll) { Text(stringResource(R.string.home_see_all)) }
+        }
+        recent.forEachIndexed { index, item ->
+            TransactionRow(item, index, recent.size, showDay = true) { onOpen(item.id) }
         }
     }
 }
@@ -219,3 +267,5 @@ private fun AmountLine(label: String, paise: Long, color: Color = Color.Unspecif
         )
     }
 }
+
+private val SECTION_GAP = 16.dp

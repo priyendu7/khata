@@ -40,4 +40,13 @@
     <string name="categories_name_taken">इस नाम की श्रेणी पहले से है</string>
     <string name="date_range_start">शुरू की तारीख़</string>
     <string name="date_range_end">आख़िरी तारीख़</string>
+
+    <!-- Transaction rows (TransactionRow, TransactionLabels). -->
+    <string name="day_today">आज</string>
+    <string name="day_yesterday">कल</string>
+    <string name="direction_debit">खर्च</string>
+    <string name="direction_credit">आय</string>
+    <string name="direction_refund">रिफ़ंड</string>
+    <string name="direction_transfer">ट्रांसफ़र</string>
+    <string name="counts_in_label">%1$s में गिना गया</string>
 </resources>

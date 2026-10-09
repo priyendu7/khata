@@ -55,9 +55,13 @@ import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.TagInput
 import com.openhand.khata.core.ui.TimeDialog
 import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.core.ui.dateLabel
 import com.openhand.khata.core.ui.defaultCategoryNames
 import com.openhand.khata.core.ui.focusOnAppear
+import com.openhand.khata.core.ui.label
+import com.openhand.khata.core.ui.monthLabel
 import com.openhand.khata.core.ui.newCategory
+import com.openhand.khata.core.ui.timeLabel
 import java.time.YearMonth
 
 /** Add (transaction id 0) or edit a transaction; [onDone] closes the screen. */

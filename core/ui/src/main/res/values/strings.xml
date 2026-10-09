@@ -41,4 +41,13 @@
     <string name="categories_name_taken">A category with this name already exists</string>
     <string name="date_range_start">Start date</string>
     <string name="date_range_end">End date</string>
+
+    <!-- Transaction rows (TransactionRow, TransactionLabels). -->
+    <string name="day_today">Today</string>
+    <string name="day_yesterday">Yesterday</string>
+    <string name="direction_debit">Expense</string>
+    <string name="direction_credit">Income</string>
+    <string name="direction_refund">Refund</string>
+    <string name="direction_transfer">Transfer</string>
+    <string name="counts_in_label">Counts in %1$s</string>
 </resources>

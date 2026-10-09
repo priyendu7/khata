@@ -2,6 +2,7 @@ package com.openhand.khata.core.data
 
 import androidx.room.withTransaction
 import com.openhand.khata.core.database.KhataDatabase
+import com.openhand.khata.core.database.dao.TransactionDao
 import com.openhand.khata.core.database.dao.TransactionRow
 import com.openhand.khata.core.database.dao.TransferRow
 import com.openhand.khata.core.database.entity.PayeeEntity
@@ -35,11 +36,13 @@ import kotlinx.coroutines.flow.map
 class TransactionRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
     /**
      * The transactions matching [filter], newest first by their real date, updated whenever the
-     * data changes. The date range uses the month each one counts in.
+     * data changes. The date range uses the month each one counts in. [limit] keeps only the
+     * newest ones (Home's recent transactions).
      */
     fun observe(
         filter: TransactionFilter = TransactionFilter(),
-        zone: ZoneId = ZoneId.systemDefault()
+        zone: ZoneId = ZoneId.systemDefault(),
+        limit: Int? = null
     ): Flow<List<TransactionListItem>> {
         val query = filter.query.trim().ifEmpty { null }?.let(::escapeLike)
         return db.observe {
@@ -51,7 +54,8 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
                 accountId = filter.accountId,
                 noAccount = filter.noAccount,
                 from = filter.from,
-                until = filter.until
+                until = filter.until,
+                limit = limit ?: TransactionDao.NO_LIMIT
             )
         }.map { rows -> rows.map { it.toModel(zone) } }
     }
