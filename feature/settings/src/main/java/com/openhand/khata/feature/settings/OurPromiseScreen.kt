@@ -9,7 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import com.openhand.khata.core.ui.KhataTheme
 import com.openhand.khata.core.ui.SubScreen
@@ -31,7 +30,6 @@ private fun Promise(
     onLanguage: (AppLanguage) -> Unit
 ) {
     val context = LocalContext.current
-    val uriHandler = LocalUriHandler.current
     SubScreen(title = stringResource(R.string.promise_title), onBack = onBack) { padding ->
         PromiseContent(
             appIcon = appIcon,
@@ -41,8 +39,7 @@ private fun Promise(
                 it.applyToApp()
             },
             animate = remember { !context.animationsOff() },
-            modifier = Modifier.padding(padding),
-            onOpenLink = { runCatching { uriHandler.openUri(it) } }
+            modifier = Modifier.padding(padding)
         )
     }
 }
