@@ -34,6 +34,7 @@ import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.ui.DateRangeDialog
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
+import com.openhand.khata.core.ui.segmentCardColors
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -180,7 +181,10 @@ fun InsightsContent(
 /** A titled card holding one chart. */
 @Composable
 internal fun ChartCard(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        colors = segmentCardColors()
+    ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             content()

@@ -4,20 +4,25 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.data.MatchCounts
 import com.openhand.khata.core.data.RuleComparison
 import com.openhand.khata.core.data.RuleStatus
+import com.openhand.khata.core.ui.SegmentListItem
+import com.openhand.khata.core.ui.segment
 
 /** What importing a settings file will change, before anything is saved. */
 @Composable
@@ -75,11 +80,11 @@ internal fun SettingsPreviewStep(
         }
     }
     Section(stringResource(R.string.import_settings_setup)) {
-        CountsRow(R.string.import_settings_ignore_rules, preview.ignoreRules)
-        CountsRow(R.string.settings_categories, preview.categories)
-        CountsRow(R.string.settings_accounts, preview.accounts)
-        CountsRow(R.string.settings_payees, preview.payees)
-        CountsRow(R.string.settings_events, preview.events)
+        CountsRow(R.string.import_settings_ignore_rules, preview.ignoreRules, 0)
+        CountsRow(R.string.settings_categories, preview.categories, 1)
+        CountsRow(R.string.settings_accounts, preview.accounts, 2)
+        CountsRow(R.string.settings_payees, preview.payees, 3)
+        CountsRow(R.string.settings_events, preview.events, 4)
     }
     Section(stringResource(R.string.import_settings_preferences)) {
         PreferenceRows(state.current, state.file)
@@ -92,7 +97,11 @@ internal fun SettingsPreviewStep(
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
     Column {
-        Text(title, style = MaterialTheme.typography.titleMedium)
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
         content()
     }
 }
@@ -113,26 +122,40 @@ private fun RuleRows(
     onKeep: (ruleId: String, keep: Boolean) -> Unit
 ) {
     if (rules.isEmpty()) PreviewNote(stringResource(R.string.import_settings_none))
-    rules.forEach { rule ->
-        ListItem(
-            headlineContent = { Text(rule.ruleId) },
-            supportingContent = { Text(ruleStatus(rule)) }
-        )
-        if (rule.status == RuleStatus.CHANGED) {
-            val keep = rule.ruleId in kept
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = !keep,
-                    onClick = { onKeep(rule.ruleId, false) },
-                    label = { Text(stringResource(R.string.import_settings_replace)) }
-                )
-                FilterChip(
-                    selected = keep,
-                    onClick = { onKeep(rule.ruleId, true) },
-                    label = { Text(stringResource(R.string.import_settings_keep_mine)) }
-                )
-            }
+    rules.forEachIndexed { index, rule ->
+        // A rule and its choice, as one segment.
+        Column(Modifier.segment(index, rules.size)) {
+            ListItem(
+                headlineContent = { Text(rule.ruleId) },
+                supportingContent = { Text(ruleStatus(rule)) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+            if (rule.status == RuleStatus.CHANGED) RuleChoice(rule, kept, onKeep)
         }
+    }
+}
+
+@Composable
+private fun RuleChoice(
+    rule: RuleComparison,
+    kept: Set<String>,
+    onKeep: (ruleId: String, keep: Boolean) -> Unit
+) {
+    val keep = rule.ruleId in kept
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+    ) {
+        FilterChip(
+            selected = !keep,
+            onClick = { onKeep(rule.ruleId, false) },
+            label = { Text(stringResource(R.string.import_settings_replace)) }
+        )
+        FilterChip(
+            selected = keep,
+            onClick = { onKeep(rule.ruleId, true) },
+            label = { Text(stringResource(R.string.import_settings_keep_mine)) }
+        )
     }
 }
 
@@ -147,8 +170,10 @@ private fun ruleStatus(rule: RuleComparison): String {
 }
 
 @Composable
-private fun CountsRow(title: Int, counts: MatchCounts) {
-    ListItem(
+private fun CountsRow(title: Int, counts: MatchCounts, index: Int) {
+    SegmentListItem(
+        index = index,
+        count = SETUP_ROWS,
         headlineContent = { Text(stringResource(title)) },
         supportingContent = {
             Text(
@@ -166,3 +191,6 @@ private fun CountsRow(title: Int, counts: MatchCounts) {
 }
 
 private const val SEPARATOR = " · "
+
+/** The rows of the "Setup" section, for their segment shapes. */
+private const val SETUP_ROWS = 5

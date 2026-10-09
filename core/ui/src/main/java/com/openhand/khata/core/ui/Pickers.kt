@@ -13,6 +13,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,7 +35,12 @@ fun PickerField(
     modifier: Modifier = Modifier,
     leading: (@Composable () -> Unit)? = null
 ) {
-    OutlinedCard(onClick = onClick, modifier = modifier.fillMaxWidth()) {
+    // Shaped like the text fields beside it, not like a card.
+    OutlinedCard(
+        onClick = onClick,
+        shape = OutlinedTextFieldDefaults.shape,
+        modifier = modifier.fillMaxWidth()
+    ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),

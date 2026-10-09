@@ -19,7 +19,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -46,7 +45,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.SubScreen
+import com.openhand.khata.core.ui.segmentCardColors
 import com.openhand.khata.sms.ingest.SmsInbox
 import com.openhand.khata.sms.parser.CompiledRule
 import com.openhand.khata.sms.parser.DateFormats
@@ -160,14 +161,19 @@ fun PickSmsContent(
                 )
                 else -> {
                     ParserHint(stringResource(R.string.parser_make_pick_recent))
-                    candidates.forEach { sms ->
-                        ListItem(
-                            headlineContent = {
-                                Text(sms.body, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                            },
-                            overlineContent = { Text(sms.sender) },
-                            modifier = Modifier.clickable { onPick(sms) }
-                        )
+                    // One group, without the form's spacing between its items.
+                    Column {
+                        candidates.forEachIndexed { index, sms ->
+                            SegmentListItem(
+                                index = index,
+                                count = candidates.size,
+                                headlineContent = {
+                                    Text(sms.body, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                                },
+                                overlineContent = { Text(sms.sender) },
+                                modifier = Modifier.clickable { onPick(sms) }
+                            )
+                        }
                     }
                 }
             }
@@ -231,7 +237,7 @@ fun MakeParserContent(
 /** The SMS as tappable words, coloured by what they're marked as. */
 @Composable
 private fun SmsWords(form: MakerForm, onTap: (Int) -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
+    Card(Modifier.fillMaxWidth(), colors = segmentCardColors()) {
         FlowRow(
             modifier = Modifier.padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -460,7 +466,7 @@ fun SavedRuleContent(onDone: () -> Unit, rule: CompiledRule, onCopy: (String) ->
                 stringResource(R.string.parser_share_title),
                 style = MaterialTheme.typography.titleMedium
             )
-            Card(Modifier.fillMaxWidth()) {
+            Card(Modifier.fillMaxWidth(), colors = segmentCardColors()) {
                 SelectionContainer {
                     Text(
                         code,

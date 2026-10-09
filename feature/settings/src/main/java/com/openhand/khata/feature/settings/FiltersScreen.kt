@@ -10,10 +10,8 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -24,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -34,6 +33,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.model.IgnoreKind
 import com.openhand.khata.core.model.SmsIgnoreRule
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.SegmentListItem
+import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.sms.parser.SmsFilters
 
@@ -72,26 +73,31 @@ fun FiltersContent(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
+                .padding(horizontal = Segments.Inset)
         ) {
+            val before = FilterSwitch.entries.filter { it.beforeReading }
             Section(R.string.filters_before_reading)
             // Not a switch: people's messages are never read.
-            ListItem(
+            SegmentListItem(
+                index = 0,
+                count = before.size + 1,
                 headlineContent = { Text(stringResource(R.string.filter_phone_numbers)) },
                 supportingContent = { Text(stringResource(R.string.filter_phone_numbers_note)) }
             )
-            Switches(FilterSwitch.entries.filter { it.beforeReading }, filters, onChange, shown)
-            HorizontalDivider(Modifier.padding(top = 8.dp))
+            Switches(before, filters, onChange, shown, first = 1)
             Section(R.string.filters_no_parser)
             Switches(FilterSwitch.entries.filterNot { it.beforeReading }, filters, onChange, shown)
-            HorizontalDivider(Modifier.padding(top = 8.dp))
             Section(R.string.filters_ignore_rules)
             if (rules.isEmpty()) {
-                ListItem(
+                SegmentListItem(
+                    index = 0,
+                    count = 1,
                     headlineContent = { Text(stringResource(R.string.filters_no_ignore_rules)) }
                 )
             }
-            rules.forEach { IgnoreRuleRow(it, onRuleEnabled, onDeleteRule) }
-            HorizontalDivider(Modifier.padding(top = 8.dp))
+            rules.forEachIndexed { index, rule ->
+                IgnoreRuleRow(rule, index, rules.size, onRuleEnabled, onDeleteRule)
+            }
             Text(
                 stringResource(R.string.filters_note),
                 style = MaterialTheme.typography.bodyMedium,
@@ -108,7 +114,7 @@ private fun Section(title: Int) {
         stringResource(title),
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp)
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp)
     )
 }
 
@@ -118,13 +124,17 @@ private fun Switches(
     switches: List<FilterSwitch>,
     filters: SmsFilters,
     onChange: (FilterSwitch, Boolean) -> Unit,
-    shown: FilterSwitch?
+    shown: FilterSwitch?,
+    /** Rows above these in the same group. */
+    first: Int = 0
 ) {
-    switches.forEach { switch ->
+    switches.forEachIndexed { i, switch ->
         val on = switch.isOn(filters)
         val requester = remember { BringIntoViewRequester() }
         if (switch == shown) LaunchedEffect(Unit) { requester.bringIntoView() }
-        ListItem(
+        SegmentListItem(
+            index = first + i,
+            count = first + switches.size,
             headlineContent = { Text(stringResource(switch.title)) },
             supportingContent = { Text(stringResource(switch.summary)) },
             trailingContent = { Switch(checked = on, onCheckedChange = null) },
@@ -134,7 +144,7 @@ private fun Switches(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer
                 )
             } else {
-                ListItemDefaults.colors()
+                ListItemDefaults.colors(containerColor = Color.Transparent)
             },
             modifier = Modifier
                 .bringIntoViewRequester(requester)
@@ -146,6 +156,8 @@ private fun Switches(
 @Composable
 private fun IgnoreRuleRow(
     rule: SmsIgnoreRule,
+    index: Int,
+    count: Int,
     onEnabled: (SmsIgnoreRule, Boolean) -> Unit,
     onDelete: (SmsIgnoreRule) -> Unit
 ) {
@@ -153,7 +165,9 @@ private fun IgnoreRuleRow(
         IgnoreKind.SENDER -> stringResource(R.string.filters_ignored_sender, rule.header)
         IgnoreKind.TEMPLATE -> stringResource(R.string.filters_ignored_like, rule.header)
     }
-    ListItem(
+    SegmentListItem(
+        index = index,
+        count = count,
         headlineContent = { Text(title) },
         supportingContent = {
             Text(rule.sample, maxLines = SAMPLE_LINES, overflow = TextOverflow.Ellipsis)

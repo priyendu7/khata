@@ -8,7 +8,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -23,15 +22,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.sms.parser.ParserRule
 
 // A rule's row in Settings > Parsers, with its switch and menu.
 
 /** A rule: its id, bank and senders, what it reads, its state, a switch and a menu. */
 @Composable
-internal fun RuleListItem(row: RuleRow, actions: RuleActions) {
+internal fun RuleListItem(row: RuleRow, index: Int, count: Int, actions: RuleActions) {
     val rule = row.rule
-    ListItem(
+    SegmentListItem(
+        index = index,
+        count = count,
         headlineContent = { Text(rule.id) },
         supportingContent = {
             Column {

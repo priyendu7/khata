@@ -45,6 +45,7 @@ import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.TagInput
 import com.openhand.khata.core.ui.categoryName
+import com.openhand.khata.core.ui.segmentCardColors
 import java.time.Instant
 import java.time.ZoneId
 
@@ -256,7 +257,7 @@ private fun ReviewCard(
 @Composable
 private fun TransactionFacts(item: ReviewItem, showSms: Boolean, onToggleSms: () -> Unit) {
     val at = Instant.ofEpochMilli(item.timestamp).atZone(ZoneId.systemDefault())
-    Card(Modifier.fillMaxWidth()) {
+    Card(Modifier.fillMaxWidth(), colors = segmentCardColors()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 signedAmount(item.direction, item.amountPaise),

@@ -2,7 +2,6 @@ package com.openhand.khata.feature.lock
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,6 +13,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.security.lock.LockMethod
 import com.openhand.khata.core.security.lock.LockTimeout
+import com.openhand.khata.core.ui.SegmentListItem
 
 /** The Security rows of Settings: App lock, which opens [LockSettingsPage], and Block screenshots. */
 @Composable
@@ -28,7 +28,9 @@ fun LockSettingsRows(
     onOpenLock: () -> Unit,
     onBlockScreenshots: (Boolean) -> Unit
 ) {
-    ListItem(
+    SegmentListItem(
+        index = 0,
+        count = 2,
         headlineContent = { Text(stringResource(R.string.settings_app_lock)) },
         supportingContent = { Text(lockSummary(state)) },
         modifier = Modifier.clickable(onClick = onOpenLock)
@@ -37,7 +39,9 @@ fun LockSettingsRows(
         title = stringResource(R.string.settings_block_screenshots),
         summary = stringResource(R.string.settings_block_screenshots_summary),
         checked = state.blockScreenshots,
-        onCheckedChange = onBlockScreenshots
+        onCheckedChange = onBlockScreenshots,
+        index = 1,
+        count = 2
     )
 }
 
@@ -66,9 +70,13 @@ internal fun SwitchRow(
     title: String,
     summary: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    index: Int,
+    count: Int
 ) {
-    ListItem(
+    SegmentListItem(
+        index = index,
+        count = count,
         headlineContent = { Text(title) },
         supportingContent = { Text(summary) },
         trailingContent = { Switch(checked = checked, onCheckedChange = null) },

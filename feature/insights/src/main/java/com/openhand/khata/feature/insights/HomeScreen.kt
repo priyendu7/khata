@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -29,8 +30,11 @@ import com.openhand.khata.core.ui.CategoryBadge
 import com.openhand.khata.core.ui.EmptyState
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
+import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.categoryName
 import com.openhand.khata.core.ui.incomeColor
+import com.openhand.khata.core.ui.segmentCardColors
+import com.openhand.khata.core.ui.segmentShape
 
 /** Home tab, wired to its [HomeViewModel] through Hilt. */
 @Composable
@@ -65,19 +69,19 @@ fun HomeContent(
         ScreenTitle(title)
         // Nothing until the first load, so the totals never flash ₹0.
         if (summary == null) return@Column
+        // The cards are one segmented group; each is given its shape in the group.
+        val cards = buildList<@Composable (Shape) -> Unit> {
+            if (reviewCount > 0) add { ReviewCard(reviewCount, onReview, it) }
+            backupDueDays?.let { days -> add { BackupReminderCard(days, onBackup, it) } }
+            add { MonthCard(summary, it) }
+            add { TodayCard(summary.spentTodayPaise, it) }
+            summary.topCategory?.let { top -> add { TopCategoryCard(top, it) } }
+        }
         Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(horizontal = 16.dp)
+            verticalArrangement = Arrangement.spacedBy(Segments.Gap),
+            modifier = Modifier.padding(horizontal = Segments.Inset)
         ) {
-            if (reviewCount > 0) ReviewCard(reviewCount, onReview)
-            backupDueDays?.let { BackupReminderCard(it, onBackup) }
-            MonthCard(summary)
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(20.dp)) {
-                    AmountLine(stringResource(R.string.home_spent_today), summary.spentTodayPaise)
-                }
-            }
-            summary.topCategory?.let { TopCategoryCard(it) }
+            cards.forEachIndexed { index, card -> card(segmentShape(index, cards.size)) }
         }
         if (!summary.hasTransactions) {
             EmptyState(
@@ -91,10 +95,11 @@ fun HomeContent(
 
 /** Android backup is off, so a CSV export is the only copy of the data (PRD feature 6). */
 @Composable
-private fun ReviewCard(count: Int, onReview: () -> Unit) {
+private fun ReviewCard(count: Int, onReview: () -> Unit, shape: Shape) {
     Card(
         onClick = onReview,
         modifier = Modifier.fillMaxWidth(),
+        shape = shape,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         )
@@ -115,10 +120,11 @@ private fun ReviewCard(count: Int, onReview: () -> Unit) {
 }
 
 @Composable
-private fun BackupReminderCard(days: Int, onBackup: () -> Unit) {
+private fun BackupReminderCard(days: Int, onBackup: () -> Unit, shape: Shape) {
     Card(
         onClick = onBackup,
         modifier = Modifier.fillMaxWidth(),
+        shape = shape,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer
         )
@@ -139,9 +145,10 @@ private fun BackupReminderCard(days: Int, onBackup: () -> Unit) {
 }
 
 @Composable
-private fun MonthCard(summary: HomeSummary) {
+private fun MonthCard(summary: HomeSummary, shape: Shape) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = shape,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )
@@ -162,8 +169,17 @@ private fun MonthCard(summary: HomeSummary) {
 }
 
 @Composable
-private fun TopCategoryCard(top: CategorySpend) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun TodayCard(spentPaise: Long, shape: Shape) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = shape, colors = segmentCardColors()) {
+        Column(Modifier.padding(20.dp)) {
+            AmountLine(stringResource(R.string.home_spent_today), spentPaise)
+        }
+    }
+}
+
+@Composable
+private fun TopCategoryCard(top: CategorySpend, shape: Shape) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = shape, colors = segmentCardColors()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 stringResource(R.string.home_top_category),

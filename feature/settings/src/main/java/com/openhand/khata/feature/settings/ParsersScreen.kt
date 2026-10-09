@@ -4,9 +4,8 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -23,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
 
 /** Settings > Parsers (PRD feature 8). */
@@ -88,7 +88,7 @@ fun ParsersContent(onBack: () -> Unit, onAdd: () -> Unit, rows: ParserRows?, act
         onAdd = onAdd,
         addLabel = stringResource(R.string.parser_add_title)
     ) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = Segments.ListPadding) {
             item {
                 Text(
                     stringResource(R.string.parsers_intro),
@@ -100,18 +100,18 @@ fun ParsersContent(onBack: () -> Unit, onAdd: () -> Unit, rows: ParserRows?, act
             if (rows?.custom?.isEmpty() == true) {
                 item { Note(stringResource(R.string.parsers_custom_empty)) }
             }
-            items(rows?.custom.orEmpty(), key = { "custom-" + it.rule.id }) { row ->
-                RuleListItem(row, rowActions)
+            val custom = rows?.custom.orEmpty()
+            itemsIndexed(custom, key = { _, row -> "custom-" + row.rule.id }) { index, row ->
+                RuleListItem(row, index, custom.size, rowActions)
             }
             item {
-                HorizontalDivider(Modifier.padding(top = 8.dp))
                 Header(stringResource(R.string.parsers_builtin_header))
                 Note(stringResource(R.string.parsers_builtin_note))
             }
             rows?.builtIn.orEmpty().groupBy { it.rule.bank }.forEach { (bank, bankRows) ->
                 item(key = "bank-$bank") { BankHeader(bank) }
-                items(bankRows, key = { "builtin-" + it.rule.id }) { row ->
-                    RuleListItem(row, rowActions)
+                itemsIndexed(bankRows, key = { _, row -> "builtin-" + row.rule.id }) { index, row ->
+                    RuleListItem(row, index, bankRows.size, rowActions)
                 }
             }
         }
@@ -179,7 +179,7 @@ private fun BankHeader(bank: String) {
     Text(
         bank,
         style = MaterialTheme.typography.labelLarge,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp)
     )
 }
 

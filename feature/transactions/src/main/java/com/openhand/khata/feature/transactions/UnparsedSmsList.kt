@@ -12,9 +12,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -32,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.UnparsedSms
 import com.openhand.khata.core.model.UnparsedSmsGroup
+import com.openhand.khata.core.ui.segment
 import java.time.Instant
 import java.time.ZoneId
 
@@ -65,17 +65,26 @@ internal fun UnparsedSmsList(
             onIgnoreLikeThis = { onIgnoreLikeThis(sms) }
         )
     }
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    // One segmented list: each sender's card, followed by its messages while it's open.
+    val rows = groups.flatMap { group ->
+        val open = group.count > 1 && group.header in expanded
+        listOf<Pair<UnparsedSmsGroup, UnparsedSms?>>(group to null) +
+            if (open) group.messages.map { group to it } else emptyList()
+    }
+    LazyColumn(contentPadding = PaddingValues(16.dp)) {
         item(key = "intro") { UnparsedIntro(left, single) }
-        groups.forEach { group ->
+        itemsIndexed(
+            rows,
+            key = { _, (group, sms) -> sms?.let { "sms:" + it.id } ?: ("group:" + group.header) }
+        ) { index, (group, sms) ->
             val open = group.header in expanded
-            item(key = "group:" + group.header) {
-                if (group.count == 1) {
-                    SmsCard(group.newest) { smsActions(group.newest, true) }
-                } else {
+            val segment = Modifier.segment(index, rows.size)
+            when {
+                sms != null -> SmsCard(sms, segment) { smsActions(sms, false) }
+                group.count == 1 -> SmsCard(group.newest, segment) {
+                    smsActions(group.newest, true)
+                }
+                else -> {
                     GroupCard(
                         group = group,
                         expanded = open,
@@ -85,13 +94,9 @@ internal fun UnparsedSmsList(
                         },
                         onMakeParser = { onMakeParser(group.newest) },
                         onIgnoreSender = { onIgnoreSender(group.newest) },
-                        onDismissAll = { dismissing = group }
+                        onDismissAll = { dismissing = group },
+                        modifier = segment
                     )
-                }
-            }
-            if (open && group.count > 1) {
-                items(group.messages, key = { "sms:" + it.id }) { sms ->
-                    SmsCard(sms, Modifier.padding(start = 16.dp)) { smsActions(sms, false) }
                 }
             }
         }
@@ -108,7 +113,10 @@ internal fun UnparsedSmsList(
 
 @Composable
 private fun UnparsedIntro(left: Int, single: Boolean) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
         Text(
             pluralStringResource(R.plurals.review_left, left, left),
             style = MaterialTheme.typography.labelLarge,
@@ -137,39 +145,41 @@ private fun GroupCard(
     onToggle: () -> Unit,
     onMakeParser: () -> Unit,
     onIgnoreSender: () -> Unit,
-    onDismissAll: () -> Unit
+    onDismissAll: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        modifier.fillMaxWidth().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            pluralStringResource(
+                R.plurals.review_group_title,
+                group.count,
+                group.header,
+                group.count
+            ),
+            style = MaterialTheme.typography.titleSmall
+        )
+        // Expanded, the newest is the first in the list below.
+        if (!expanded) SmsText(group.newest)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = onMakeParser) { Text(stringResource(R.string.review_make_parser)) }
+            OutlinedButton(onClick = onIgnoreSender) {
+                Text(stringResource(R.string.review_ignore_sender))
+            }
+            OutlinedButton(onClick = onDismissAll) {
+                Text(stringResource(R.string.review_dismiss_all))
+            }
+        }
+        TextButton(onClick = onToggle) {
             Text(
-                pluralStringResource(
-                    R.plurals.review_group_title,
-                    group.count,
-                    group.header,
-                    group.count
-                ),
-                style = MaterialTheme.typography.titleSmall
+                if (expanded) {
+                    stringResource(R.string.review_group_hide)
+                } else {
+                    pluralStringResource(R.plurals.review_group_show, group.count, group.count)
+                }
             )
-            // Expanded, the newest is the first in the list below.
-            if (!expanded) SmsText(group.newest)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onMakeParser) { Text(stringResource(R.string.review_make_parser)) }
-                OutlinedButton(onClick = onIgnoreSender) {
-                    Text(stringResource(R.string.review_ignore_sender))
-                }
-                OutlinedButton(onClick = onDismissAll) {
-                    Text(stringResource(R.string.review_dismiss_all))
-                }
-            }
-            TextButton(onClick = onToggle) {
-                Text(
-                    if (expanded) {
-                        stringResource(R.string.review_group_hide)
-                    } else {
-                        pluralStringResource(R.plurals.review_group_show, group.count, group.count)
-                    }
-                )
-            }
         }
     }
 }
@@ -180,11 +190,12 @@ private fun SmsCard(
     modifier: Modifier = Modifier,
     actions: @Composable () -> Unit
 ) {
-    Card(modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SmsText(sms)
-            actions()
-        }
+    Column(
+        modifier.fillMaxWidth().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        SmsText(sms)
+        actions()
     }
 }
 
