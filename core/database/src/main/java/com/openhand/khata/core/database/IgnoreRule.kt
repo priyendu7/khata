@@ -30,6 +30,9 @@ interface IgnoreRuleDao {
     @Query("SELECT * FROM ignore_rules ORDER BY created_at DESC, id DESC")
     fun observeAll(): Flow<List<IgnoreRuleEntity>>
 
+    @Query("SELECT * FROM ignore_rules ORDER BY created_at DESC, id DESC")
+    suspend fun getAll(): List<IgnoreRuleEntity>
+
     @Query("SELECT * FROM ignore_rules WHERE enabled = 1 ORDER BY created_at DESC, id DESC")
     suspend fun enabled(): List<IgnoreRuleEntity>
 

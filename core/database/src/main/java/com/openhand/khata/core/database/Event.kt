@@ -56,6 +56,13 @@ interface EventDao {
     )
     fun observeAll(): Flow<List<EventRow>>
 
+    @Query(
+        "SELECT e.id AS id, e.tag_id AS tag_id, g.name AS name, e.start_day AS start_day, " +
+            "e.end_day AS end_day FROM events e JOIN tags g ON g.id = e.tag_id " +
+            "ORDER BY e.start_day DESC, e.id DESC"
+    )
+    suspend fun getAll(): List<EventRow>
+
     @Query("SELECT * FROM events WHERE id = :id")
     suspend fun getById(id: Long): EventEntity?
 

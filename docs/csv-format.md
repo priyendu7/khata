@@ -6,6 +6,8 @@ Code: `KhataCsvFormat` and `Csv` in [`feature/csv`](../feature/csv/src/main/java
 
 > **The file is not encrypted.** Khata's own database is, but anyone who can open the CSV file can read every transaction in it. Keep it somewhere safe.
 
+The CSV holds transactions and the names they use, not the setup behind them (category colours and icons, account types, payee memory, events) or parser rules and preferences. Those go in the password-protected [settings file](settings-format.md). To restore a phone, import settings first, then transactions. Both match by name, so the other order works too.
+
 ## File
 
 - **Encoding:** UTF-8, starting with a byte order mark (BOM, `EF BB BF`). Excel needs the BOM to show Hindi and the ₹ sign correctly when you double-click the file. Most other programs ignore it. On import, a BOM is optional.

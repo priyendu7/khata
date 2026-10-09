@@ -162,6 +162,9 @@ interface AccountDao {
     @Query("SELECT * FROM accounts ORDER BY name")
     fun observeAll(): Flow<List<AccountEntity>>
 
+    @Query("SELECT * FROM accounts ORDER BY name, id")
+    suspend fun getAll(): List<AccountEntity>
+
     @Query("SELECT * FROM accounts WHERE name = :name COLLATE NOCASE ORDER BY id LIMIT 1")
     suspend fun getByName(name: String): AccountEntity?
 
@@ -334,6 +337,9 @@ interface PayeeDao {
 
     @Query("SELECT * FROM payees WHERE id = :id")
     suspend fun getById(id: Long): PayeeEntity?
+
+    @Query("SELECT * FROM payees ORDER BY display_name COLLATE NOCASE, id")
+    suspend fun getAll(): List<PayeeEntity>
 
     /**
      * The payee a typed name refers to, ignoring case: one with that display name first, else one
