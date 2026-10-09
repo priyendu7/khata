@@ -11,6 +11,7 @@ import com.openhand.khata.core.database.dao.ReviewDao
 import com.openhand.khata.core.database.dao.SmsImportDao
 import com.openhand.khata.core.database.dao.TagDao
 import com.openhand.khata.core.database.dao.TransactionDao
+import com.openhand.khata.core.database.dao.TransferDao
 import com.openhand.khata.core.database.entity.AccountEntity
 import com.openhand.khata.core.database.entity.CategoryEntity
 import com.openhand.khata.core.database.entity.EnumConverters
@@ -41,7 +42,7 @@ import com.openhand.khata.core.database.entity.TransactionTagEntity
         EventEntity::class,
         BuiltInRuleOverrideEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 @TypeConverters(EnumConverters::class)
@@ -55,6 +56,8 @@ abstract class KhataDatabase : RoomDatabase() {
     abstract fun payeeDao(): PayeeDao
 
     abstract fun transactionDao(): TransactionDao
+
+    abstract fun transferDao(): TransferDao
 
     abstract fun metadataDao(): MetadataDao
 

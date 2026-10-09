@@ -380,7 +380,7 @@ private fun MainTabs(
                 modifier,
                 onReview = onReview
             )
-            Destination.INSIGHTS -> InsightsScreen(onOpenTransactions, modifier)
+            Destination.INSIGHTS -> InsightsScreen(onOpenTransactions, onOpenTransaction, modifier)
             Destination.SETTINGS -> SettingsRoute(modifier, lockSettings = {
                 LockSettingsSection()
             }, onOpen = onOpen)

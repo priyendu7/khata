@@ -17,6 +17,8 @@ import com.openhand.khata.core.database.entity.TagEntity
 import com.openhand.khata.core.database.entity.TransactionEntity
 import com.openhand.khata.core.database.entity.TransactionTagEntity
 import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.TransferKind
+import com.openhand.khata.core.model.TransferSide
 import kotlinx.coroutines.flow.Flow
 
 // Basic CRUD for the first schema. Feature issues add the queries their screens need.
@@ -85,6 +87,22 @@ data class AmountRow(
     val direction: Direction,
     @ColumnInfo(name = "amount_paise") val amountPaise: Long,
     @ColumnInfo(name = "category_id") val categoryId: Long
+)
+
+/**
+ * A transfer for the Insights Transfers card (#113), with its account, its payee's name and the
+ * account of its other side, when that's saved.
+ */
+data class TransferRow(
+    val id: Long,
+    @ColumnInfo(name = "amount_paise") val amountPaise: Long,
+    val timestamp: Long,
+    @ColumnInfo(name = "transfer_side") val side: TransferSide?,
+    @ColumnInfo(name = "transfer_kind") val kind: TransferKind?,
+    @ColumnInfo(name = "transfer_pair_id") val pairId: Long?,
+    @Embedded(prefix = "account_") val account: AccountEntity?,
+    @Embedded(prefix = "pair_account_") val pairAccount: AccountEntity?,
+    @ColumnInfo(name = "payee_name") val payeeName: String?
 )
 
 /** One transaction with everything a CSV row needs, oldest first (`docs/csv-format.md`). */
@@ -570,6 +588,67 @@ interface TransactionDao {
     ): Flow<List<TransactionRow>>
 }
 
+/**
+ * Transfers' details (#113): which side of a move each is, why, and its other side. Both sides
+ * of a move point at each other; nothing else does, so deleting one unlinks the other here.
+ */
+@Dao
+interface TransferDao {
+    /** Unlinks the transfer whose other side is [id]; it stays a transfer, now on its own. */
+    @Query("UPDATE transactions SET transfer_pair_id = NULL WHERE transfer_pair_id = :id")
+    suspend fun unlinkPairOf(id: Long)
+
+    @Query("DELETE FROM transactions WHERE id = :id")
+    suspend fun deleteTransaction(id: Long)
+
+    /** Deletes transaction [id], and unlinks its other side if it was half of a transfer. */
+    @Transaction
+    suspend fun deleteUnlinking(id: Long) {
+        unlinkPairOf(id)
+        deleteTransaction(id)
+    }
+
+    /**
+     * Every transfer for timestamps in [from, until), newest first (#113). Both sides of one move
+     * are separate rows; the caller counts each move once.
+     */
+    @Query(
+        "SELECT t.id, t.amount_paise, t.timestamp, t.transfer_side, t.transfer_kind, " +
+            "t.transfer_pair_id, a.id AS account_id, a.name AS account_name, " +
+            "a.type AS account_type, a.bank AS account_bank, a.last4 AS account_last4, " +
+            "pa.id AS pair_account_id, pa.name AS pair_account_name, " +
+            "pa.type AS pair_account_type, pa.bank AS pair_account_bank, " +
+            "pa.last4 AS pair_account_last4, p.display_name AS payee_name " +
+            "FROM transactions t " +
+            "LEFT JOIN accounts a ON a.id = t.account_id " +
+            "LEFT JOIN transactions o ON o.id = t.transfer_pair_id " +
+            "LEFT JOIN accounts pa ON pa.id = o.account_id " +
+            "LEFT JOIN payees p ON p.id = t.payee_id " +
+            "WHERE t.direction = 'transfer' " +
+            "AND COALESCE(t.counts_at, t.timestamp) >= :from " +
+            "AND COALESCE(t.counts_at, t.timestamp) < :until " +
+            "ORDER BY t.timestamp DESC, t.id DESC"
+    )
+    fun observeTransfers(from: Long, until: Long): Flow<List<TransferRow>>
+
+    /** Every transfer, oldest first, for the one-time back-fill of #113. */
+    @Query("SELECT * FROM transactions WHERE direction = 'transfer' ORDER BY timestamp, id")
+    suspend fun getTransfers(): List<TransactionEntity>
+
+    @Query("UPDATE transactions SET transfer_side = :side, transfer_kind = :kind WHERE id = :id")
+    suspend fun setTransferDetails(id: Long, side: TransferSide?, kind: TransferKind?)
+
+    @Query("UPDATE transactions SET transfer_pair_id = :pairId WHERE id = :id")
+    suspend fun setTransferPair(id: Long, pairId: Long?)
+
+    /** Makes [a] and [b] the two sides of one move. */
+    @Transaction
+    suspend fun linkTransfers(a: Long, b: Long) {
+        setTransferPair(a, b)
+        setTransferPair(b, a)
+    }
+}
+
 /** The queries CSV export and import need (`docs/csv-format.md`). */
 @Dao
 interface BackupDao {
@@ -641,11 +720,14 @@ interface SmsImportDao {
     /**
      * The other side of a move between the user's own accounts (#56): the transaction nearest
      * [at] within [from, until] with this amount, going the [other] way, on a different account
-     * ([accountId] null is an account not saved yet, so every saved one is different).
+     * ([accountId] null is an account not saved yet, so every saved one is different). A transfer
+     * whose side is [otherSide] counts too, such as a CRED payment for a card's "payment
+     * received", unless it's already linked to its other side (#113).
      */
     @Query(
         "SELECT id FROM transactions WHERE amount_paise = :amountPaise " +
-            "AND direction = :other " +
+            "AND (direction = :other OR direction = 'transfer' AND transfer_side = :otherSide) " +
+            "AND transfer_pair_id IS NULL " +
             "AND account_id IS NOT NULL AND account_id IS NOT :accountId " +
             "AND timestamp BETWEEN :from AND :until " +
             "ORDER BY ABS(timestamp - :at), id LIMIT 1"
@@ -655,15 +737,26 @@ interface SmsImportDao {
     suspend fun findTransferSide(
         amountPaise: Long,
         other: Direction,
+        otherSide: TransferSide,
         accountId: Long?,
         at: Long,
         from: Long,
         until: Long
     ): Long?
 
-    /** Marks [id] as a transfer; it no longer needs a category, so it leaves the review inbox. */
-    @Query("UPDATE transactions SET direction = 'transfer', needs_review = 0 WHERE id = :id")
-    suspend fun markTransfer(id: Long)
+    /**
+     * Marks [id] as a transfer whose other side is [pairId]; it no longer needs a category, so it
+     * leaves the review inbox. A debit or credit gets its side from its direction and the kind
+     * "other side"; one that was a transfer already keeps its own (#113).
+     */
+    @Query(
+        "UPDATE transactions SET direction = 'transfer', needs_review = 0, " +
+            "transfer_side = COALESCE(transfer_side, " +
+            "CASE direction WHEN 'debit' THEN 'out' WHEN 'credit' THEN 'in' END), " +
+            "transfer_kind = COALESCE(transfer_kind, 'other_side'), " +
+            "transfer_pair_id = :pairId WHERE id = :id"
+    )
+    suspend fun markTransfer(id: Long, pairId: Long)
 }
 
 /** A waiting transaction with what its review card shows, joined in. */

@@ -202,4 +202,35 @@ class MigrationsTest {
             }
         }
     }
+
+    @Test
+    fun version8To9AddsTransferDetailsAndKeepsTransfers() {
+        helper.createDatabase(dbName, 8).use { db ->
+            db.execSQL(
+                "INSERT INTO categories (id, name, seed_key, color, icon, archived) " +
+                    "VALUES (1, NULL, 'uncategorized', 0, 'category', 0)"
+            )
+            db.execSQL(
+                "INSERT INTO transactions (id, amount_paise, direction, timestamp, category_id, " +
+                    "source, raw_sms, needs_review) VALUES (7, 500000, 'transfer', " +
+                    "1790000000000, 1, 'sms', 'Sent Rs 5000 to CRED', 0)"
+            )
+        }
+
+        helper.runMigrationsAndValidate(dbName, 9, true, *KhataMigrations.ALL).use { db ->
+            db.query(
+                "SELECT amount_paise, direction, raw_sms, transfer_side, transfer_pair_id, " +
+                    "transfer_kind FROM transactions WHERE id = 7"
+            ).use {
+                it.moveToFirst()
+                assertEquals(500000L, it.getLong(0))
+                assertEquals("transfer", it.getString(1))
+                assertEquals("Sent Rs 5000 to CRED", it.getString(2))
+                // Filled in later by the back-fill, from the SMS.
+                assertTrue(it.isNull(3))
+                assertTrue(it.isNull(4))
+                assertTrue(it.isNull(5))
+            }
+        }
+    }
 }

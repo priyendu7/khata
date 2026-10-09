@@ -11,6 +11,8 @@ import com.openhand.khata.core.model.DefaultCategory
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.SmsTransaction
 import com.openhand.khata.core.model.TransactionSource
+import com.openhand.khata.core.model.TransferKind
+import com.openhand.khata.core.model.TransferSide
 import dagger.Lazy
 import java.time.ZoneId
 import java.util.concurrent.TimeUnit
@@ -160,7 +162,6 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
         val payee = plan.payee ?: payeeIdentifier(sms.payee)?.let { newPayee(database, it) }
         val memory = plan.memory
         val transfer = plan.transfer != null
-        plan.otherSide?.let { database.smsImportDao().markTransfer(it) }
         val uncategorizedId =
             database.categoryDao().getBySeedKey(DefaultCategory.UNCATEGORIZED.key)!!.id
         val entity = TransactionEntity(
@@ -175,17 +176,22 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
             source = TransactionSource.SMS,
             rawSms = sms.rawSms,
             // A transfer has no category to ask about.
-            needsReview = memory == null && !transfer
+            needsReview = memory == null && !transfer,
+            transferSide = if (transfer) sideOf(sms.direction) else null,
+            transferPairId = plan.otherSide,
+            transferKind = plan.transfer?.kind
         )
         val id = database.transactionDao().saveWithTags(entity, tagIds(database, sms, memory))
+        plan.otherSide?.let { database.smsImportDao().markTransfer(it, pairId = id) }
         return SmsImportResult.Saved(id, needsReview = entity.needsReview)
     }
 
     /**
      * The saved transaction on another account that this SMS is the other side of, if it is a
      * debit or credit: one with the same reference number, or else the nearest one within
-     * [TRANSFER_WINDOW] with the same amount going the other way. [accountId] is null for an
-     * account import would make, which is different from every saved one.
+     * [TRANSFER_WINDOW] with the same amount going the other way. A transfer counts when it went
+     * the other way and isn't linked to its other side yet. [accountId] is null for an account
+     * import would make, which is different from every saved one.
      */
     private suspend fun otherSideOfTransfer(
         database: KhataDatabase,
@@ -197,17 +203,24 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
             Direction.CREDIT -> Direction.DEBIT
             Direction.REFUND, Direction.TRANSFER -> return null
         }
+        val otherSide = requireNotNull(sideOf(other))
         val byReference = sms.referenceNo
             ?.let { database.transactionDao().getByReferenceNo(it) }
             ?.firstOrNull {
                 it.accountId != null &&
                     it.accountId != accountId &&
-                    (it.direction == other || it.direction == Direction.TRANSFER)
+                    it.transferPairId == null &&
+                    (
+                        it.direction == other ||
+                            it.direction == Direction.TRANSFER &&
+                            it.transferSide != sideOf(sms.direction)
+                        )
             }
         val at = sms.timestamp
         return byReference?.id ?: database.smsImportDao().findTransferSide(
             amountPaise = sms.amountPaise,
             other = other,
+            otherSide = otherSide,
             accountId = accountId,
             at = at,
             from = at - TRANSFER_WINDOW,
@@ -223,6 +236,13 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
     ): List<Long> {
         val day = EventRepository.dayOf(sms.timestamp, ZoneId.systemDefault())
         return (memory?.tagIds.orEmpty() + database.eventDao().tagIdsOn(day)).distinct()
+    }
+
+    /** Money out of the account for a debit, into it for a credit or refund (#113). */
+    private fun sideOf(direction: Direction): TransferSide? = when (direction) {
+        Direction.DEBIT -> TransferSide.OUT
+        Direction.CREDIT, Direction.REFUND -> TransferSide.IN
+        Direction.TRANSFER -> null
     }
 
     private fun payeeIdentifier(text: String?): String? =
@@ -316,5 +336,13 @@ enum class TransferMatch {
      * The other side of a saved debit or credit on another account: same reference number, or
      * same amount within 30 minutes. That one becomes a transfer too.
      */
-    OTHER_SIDE
+    OTHER_SIDE;
+
+    /** How the transaction keeps it. */
+    val kind: TransferKind
+        get() = when (this) {
+            CARD_PAYMENT -> TransferKind.CARD_PAYMENT
+            OWN_ACCOUNT -> TransferKind.OWN_ACCOUNT
+            OTHER_SIDE -> TransferKind.OTHER_SIDE
+        }
 }

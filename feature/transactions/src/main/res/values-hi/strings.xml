@@ -26,6 +26,8 @@
     <string name="direction_credit">आय</string>
     <string name="direction_refund">रिफ़ंड</string>
     <string name="direction_transfer">ट्रांसफ़र</string>
+    <string name="transfer_side_out">इस खाते से पैसे गए</string>
+    <string name="transfer_side_in">इस खाते में पैसे आए</string>
     <string name="field_amount">रक़म</string>
     <string name="amount_error_empty">रक़म डालें</string>
     <string name="amount_error_invalid">250 या 99.50 जैसी रक़म डालें</string>

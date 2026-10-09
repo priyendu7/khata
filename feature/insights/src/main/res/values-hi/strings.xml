@@ -74,4 +74,21 @@
     </plurals>
     <string name="home_review_body">ऐसे पाने वालों से जिनका नाम आपने अभी नहीं रखा। हर एक का नाम एक बार रखें, फिर आगे के भुगतान अपने-आप भर जाएँगे।</string>
     <string name="home_review_action">देखें</string>
+    <string name="insights_transfers">ट्रांसफ़र</string>
+    <string name="insights_transfers_total">कुल ट्रांसफ़र</string>
+    <string name="insights_transfers_not_counted">खर्च या आय में नहीं गिना जाता</string>
+    <string name="insights_transfers_empty_title">इस अवधि में कोई ट्रांसफ़र नहीं</string>
+    <string name="insights_transfers_empty_body">चुकाए गए कार्ड बिल और आपके अपने खातों के बीच ट्रांसफ़र यहाँ दिखते हैं।</string>
+    <string name="insights_card_bills">चुकाए गए कार्ड बिल</string>
+    <string name="insights_card_unknown">कार्ड बिल · कार्ड पता नहीं · %1$s</string>
+    <string name="insights_card_unknown_no_payee">कार्ड बिल</string>
+    <plurals name="insights_payment_count">
+        <item quantity="one">%d भुगतान</item>
+        <item quantity="other">%d भुगतान</item>
+    </plurals>
+    <string name="insights_moves">ट्रांसफ़र की सूची</string>
+    <string name="insights_move_from_to">%1$s → %2$s</string>
+    <string name="insights_move_between">%1$s ↔ %2$s</string>
+    <string name="insights_move_unknown_end">पता नहीं</string>
+    <string name="insights_moves_show_all">सभी %d दिखाएँ</string>
 </resources>

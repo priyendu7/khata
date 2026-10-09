@@ -5,6 +5,7 @@ import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.Payee
 import com.openhand.khata.core.model.Transaction
+import com.openhand.khata.core.model.TransferSide
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -38,8 +39,22 @@ data class EditorForm(
     /** The month totals count it in; null is "same as date" (#93). */
     val countsIn: YearMonth? = null,
     /** Names of the events on [date] (#73), whose tags are filled in like a payee's defaults. */
-    val eventTags: List<String> = emptyList()
+    val eventTags: List<String> = emptyList(),
+    /** For a transfer: money out of the account or into it (#113); null when not known. */
+    val transferSide: TransferSide? = null
 ) {
+    /**
+     * Switching to Transfer starts at "money out", unless a side is already known. A saved
+     * transfer whose side isn't known keeps none until the user picks one.
+     */
+    fun withDirection(direction: Direction): EditorForm {
+        val toTransfer = direction == Direction.TRANSFER && this.direction != Direction.TRANSFER
+        return copy(
+            direction = direction,
+            transferSide = transferSide ?: TransferSide.OUT.takeIf { toTransfer }
+        )
+    }
+
     val dateMonth: YearMonth get() = YearMonth.from(date)
 
     /** Moves to [date], keeping a counts-in month only while it's still next to the new date's. */
@@ -119,7 +134,8 @@ data class EditorForm(
         categoryId = categoryId,
         tags = tags,
         note = note,
-        countsIn = countsIn
+        countsIn = countsIn,
+        transferSide = transferSide.takeIf { direction == Direction.TRANSFER }
     )
 
     companion object {
@@ -141,7 +157,8 @@ data class EditorForm(
                 categoryId = transaction.categoryId,
                 tags = transaction.tags,
                 note = transaction.note.orEmpty(),
-                countsIn = transaction.countsIn
+                countsIn = transaction.countsIn,
+                transferSide = transaction.transferSide
             )
         }
 

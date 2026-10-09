@@ -80,6 +80,20 @@ class SmsParser(
         return Explanation(result, tried)
     }
 
+    /**
+     * Reads [body] without its sender, which a saved transaction doesn't keep (#113): the rules
+     * for [bank] first (either name may be the longer one, as in "Kotak Mahindra Bank"), then
+     * every other rule. No filters: the SMS was saved already.
+     */
+    fun readWithoutSender(body: String, receivedAt: Long, bank: String?): ParsedSms? {
+        val (ofBank, others) = rules.partition { compiled ->
+            val rule = compiled.rule.bank
+            bank != null &&
+                (rule.contains(bank, ignoreCase = true) || bank.contains(rule, ignoreCase = true))
+        }
+        return (ofBank + others).firstNotNullOfOrNull { tryRule(it, body, receivedAt) }
+    }
+
     /** The content filters, then the user's "ignore messages like this" rules. */
     private fun contentReason(header: String, body: String): FilterReason? =
         filters.contentReason(body)
