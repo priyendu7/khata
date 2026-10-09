@@ -142,6 +142,12 @@ This phase is for using the app day to day, testing it, and acting on what comes
 - [ ] Insights: spending by account, with each account's spending by category (#108)
 - [ ] Parsers: switch off, edit and copy every rule, built-in ones too (#111)
 - [ ] Insights: Transfers card, with card bills paid and moves between accounts (#113)
+- [ ] Simplify Settings: one page with sections and current state (#124)
+- [ ] Export and import settings, parsers and setup data in a password-protected file (#125)
+- [ ] Welcome screen: our promise, then an optional SMS import step (#128)
+- [ ] New look: near-black theme and segmented lists like Google's apps (#129)
+- [ ] Home: this month vs last month, top categories and recent transactions (#130)
+- [ ] UI polish from testing: SMS import, To review, Make a parser, categories, date picker (#132)
 
 **SMS filters** (PRD feature 7). The app reads every business sender, not only banks it has rules for, so a bank without a rule shows up in the review inbox instead of being skipped. Filters decide what's worth asking about.
 
