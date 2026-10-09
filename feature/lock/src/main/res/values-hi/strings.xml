@@ -59,4 +59,6 @@
     <string name="settings_remove_pin_title">ऐप PIN इस्तेमाल करना बंद करें?</string>
     <string name="settings_remove_pin_body">Khata इसके बजाय आपके फ़ोन के स्क्रीन लॉक से अनलॉक होगा। आपका PIN और रिकवरी कोड मिटा दिए जाएँगे।</string>
     <string name="settings_remove_pin_confirm">फ़ोन लॉक इस्तेमाल करें</string>
+    <string name="settings_lock_off">बंद</string>
+    <string name="settings_change_pin_note">आपको नया रिकवरी कोड भी मिलेगा</string>
 </resources>
