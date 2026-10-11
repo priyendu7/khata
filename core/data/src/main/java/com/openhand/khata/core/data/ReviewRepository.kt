@@ -3,7 +3,9 @@ package com.openhand.khata.core.data
 import androidx.room.withTransaction
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.database.dao.ReviewRow
+import com.openhand.khata.core.database.dao.TAG_SEPARATOR
 import com.openhand.khata.core.database.entity.PayeeEntity
+import com.openhand.khata.core.database.entity.TransactionTagEntity
 import com.openhand.khata.core.model.DefaultCategory
 import com.openhand.khata.core.model.ReviewItem
 import dagger.Lazy
@@ -33,8 +35,9 @@ class ReviewRepository @Inject constructor(private val db: Lazy<KhataDatabase>) 
      * Names the payee of [transactionId] and saves its default category and tags (payee memory,
      * PRD feature 3), then files every waiting transaction from that payee the same way, so they
      * all leave the inbox and later SMS from it are filled in automatically. Its older
-     * Uncategorized transactions take the category too. No category means Uncategorized. Returns
-     * how many transactions were filed.
+     * Uncategorized transactions take the category too. No category means Uncategorized. [tags]
+     * are added to the tags each transaction already has, such as an event's (#144). Returns how
+     * many transactions were filed.
      */
     suspend fun review(
         transactionId: Long,
@@ -69,7 +72,9 @@ class ReviewRepository @Inject constructor(private val db: Lazy<KhataDatabase>) 
             val others = payee?.let { database.reviewDao().pendingIds(it.id) }.orEmpty()
             val ids = (others + transactionId).distinct()
             database.reviewDao().markReviewed(ids, category)
-            ids.forEach { database.transactionDao().setTags(it, tagIds) }
+            database.transactionDao().addTags(
+                ids.flatMap { id -> tagIds.map { TransactionTagEntity(id, it) } }
+            )
             // Older ones already out of the inbox (skipped, manual, CSV) take the category too.
             val older = if (payee != null && category != uncategorizedId) {
                 payeeDao.categorizeUncategorized(payee.id, category, uncategorizedId)
@@ -104,5 +109,6 @@ private fun ReviewRow.toModel() = ReviewItem(
     payeeIdentifier = payeeIdentifier,
     payeeName = payeeName,
     payeePending = payeePending,
-    rawSms = rawSms
+    rawSms = rawSms,
+    tags = tagNames?.split(TAG_SEPARATOR).orEmpty().sortedWith(String.CASE_INSENSITIVE_ORDER)
 )

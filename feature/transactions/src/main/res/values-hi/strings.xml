@@ -50,6 +50,7 @@
         <item quantity="other">%d बाकी</item>
     </plurals>
     <string name="review_from_sms">SMS में: %1$s</string>
+    <string name="review_existing_tags">पहले से टैग, सेव करने पर बने रहेंगे:</string>
     <string name="review_show_sms">SMS दिखाएँ</string>
     <string name="review_hide_sms">SMS छिपाएँ</string>
     <string name="review_payee_name">पाने वाले का नाम</string>

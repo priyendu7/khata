@@ -48,6 +48,7 @@
         <item quantity="other">%d left</item>
     </plurals>
     <string name="review_from_sms">In the SMS: %1$s</string>
+    <string name="review_existing_tags">Already tagged, kept when you save:</string>
     <string name="review_show_sms">Show the SMS</string>
     <string name="review_hide_sms">Hide the SMS</string>
     <string name="review_payee_name">Payee name</string>

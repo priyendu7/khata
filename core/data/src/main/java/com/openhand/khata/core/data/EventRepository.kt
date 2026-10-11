@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.openhand.khata.core.database.EventEntity
 import com.openhand.khata.core.database.EventRow
 import com.openhand.khata.core.database.KhataDatabase
+import com.openhand.khata.core.database.MetadataEntity
 import com.openhand.khata.core.model.Event
 import dagger.Lazy
 import java.time.Instant
@@ -94,6 +95,25 @@ class EventRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
         db.io { it.eventDao().deleteById(id) }
     }
 
+    /**
+     * Tags every event's dates again, once (#144): reviewing a transaction used to replace its
+     * tags, taking the event's off. Only adds tags. After its first run it does nothing.
+     */
+    suspend fun repairTags(zone: ZoneId) {
+        db.io { database ->
+            val metadata = database.metadataDao()
+            if (metadata.get(REPAIR_KEY) != null) return@io
+            database.withTransaction {
+                val dao = database.eventDao()
+                dao.getEntities().forEach { event ->
+                    val (from, until) = event.span(zone)
+                    dao.tagRange(event.tagId, from, until)
+                }
+                metadata.put(MetadataEntity(REPAIR_KEY, DONE))
+            }
+        }
+    }
+
     /** Dates in order; times only when both are set. */
     private fun Event.toEntity(id: Long, tagId: Long) = EventEntity(
         id = id,
@@ -115,6 +135,8 @@ class EventRepository @Inject constructor(private val db: Lazy<KhataDatabase>) {
 
     internal companion object {
         private const val MINUTES_PER_HOUR = 60
+        private const val REPAIR_KEY = "event_tag_repair_done"
+        private const val DONE = "1"
 
         /** The local day and minute of the day of [timestamp], as events store them. */
         fun dayAndMinuteOf(timestamp: Long, zone: ZoneId): Pair<Long, Int> {

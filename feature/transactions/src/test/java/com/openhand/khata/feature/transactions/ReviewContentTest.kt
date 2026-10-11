@@ -117,6 +117,25 @@ class ReviewContentTest {
     }
 
     @Test
+    fun showsTheTagsItAlreadyHasButDoesNotSaveThemAsTheCardsTags() {
+        show(listOf(item(1).copy(tags = listOf("Kalu waterfall trip"))))
+
+        compose.onNodeWithText("Already tagged, kept when you save:").performScrollTo()
+            .assertExists()
+        compose.onNodeWithText("Kalu waterfall trip").assertExists()
+        compose.onNodeWithText("Save").performScrollTo().performClick()
+
+        assertEquals(listOf(Triple("MCDONALDS", null, emptyList<String>())), saved)
+    }
+
+    @Test
+    fun saysNothingAboutExistingTagsWhenThereAreNone() {
+        show(listOf(item(1)))
+
+        compose.onNodeWithText("Already tagged", substring = true).assertDoesNotExist()
+    }
+
+    @Test
     fun skips() {
         show(listOf(item(7)))
 

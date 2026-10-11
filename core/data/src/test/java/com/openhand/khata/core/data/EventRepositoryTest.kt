@@ -253,6 +253,27 @@ class EventRepositoryTest : RepositoryTest() {
         save(oneDay.copy(end = oct(3), endTime = LocalTime.NOON))
     }
 
+    @Test
+    fun theRepairGivesBackLostEventTagsOnceAndRemovesNothing() = runTest {
+        val inTrip = addOn(oct(3))
+        val outside = addOn(oct(9))
+        save(Event(name = "trip", start = oct(2), end = oct(4)))
+        val gift = tags.getOrCreate(listOf("gift"))
+        // As reviewing used to leave it (#144): the event tag replaced by the card's tags.
+        db.transactionDao().setTags(inTrip, gift)
+        db.transactionDao().setTags(outside, gift)
+
+        events.repairTags(zone)
+
+        assertEquals(listOf("gift", "trip"), tagsOf(inTrip))
+        assertEquals(listOf("gift"), tagsOf(outside))
+
+        // Only once: a tag taken off by hand later stays off.
+        db.transactionDao().setTags(inTrip, gift)
+        events.repairTags(zone)
+        assertEquals(listOf("gift"), tagsOf(inTrip))
+    }
+
     private suspend fun tagsOf(vararg ids: Long) = ids.map { tagsOf(it) }
 
     private val sixPm = LocalTime.of(18, 0)
