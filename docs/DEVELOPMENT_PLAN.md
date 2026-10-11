@@ -150,6 +150,7 @@ This phase is for using the app day to day, testing it, and acting on what comes
 - [ ] UI polish from testing: SMS import, To review, Make a parser, categories, date picker (#132)
 - [ ] Month by month: always by category, and pick categories to compare (#139)
 - [ ] Events: optional start and end times (#141)
+- [ ] Fix: reviewing a transaction removes its event tag and other tags (#144)
 
 **SMS filters** (PRD feature 7). The app reads every business sender, not only banks it has rules for, so a bank without a rule shows up in the review inbox instead of being skipped. Filters decide what's worth asking about.
 
