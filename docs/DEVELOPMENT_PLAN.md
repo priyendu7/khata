@@ -152,6 +152,7 @@ This phase is for using the app day to day, testing it, and acting on what comes
 - [ ] Events: optional start and end times (#141)
 - [ ] Fix: reviewing a transaction removes its event tag and other tags (#144)
 - [ ] Insights: swipe the period cards to change week, month or year (#146)
+- [ ] Smart parser: Khata guesses the fields, you confirm (#150)
 
 **SMS filters** (PRD feature 7). The app reads every business sender, not only banks it has rules for, so a bank without a rule shows up in the review inbox instead of being skipped. Filters decide what's worth asking about.
 
