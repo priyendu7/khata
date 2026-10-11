@@ -38,13 +38,15 @@ internal fun DonutCard(
     ChartCard(stringResource(R.string.insights_by_category)) {
         PeriodChips(donut.period, onSelectPeriod)
         PeriodStepper(donut, onStepPeriod, onSelectPast)
-        if (donut.breakdown.isEmpty) {
-            ChartEmpty(
-                stringResource(R.string.insights_nothing_spent_title),
-                stringResource(R.string.insights_nothing_spent_body)
-            )
-        } else {
-            CategoryBreakdownChart(donut.breakdown, onOpenCategory)
+        PeriodSwipe(donut, onStepPeriod) {
+            if (donut.breakdown.isEmpty) {
+                ChartEmpty(
+                    stringResource(R.string.insights_nothing_spent_title),
+                    stringResource(R.string.insights_nothing_spent_body)
+                )
+            } else {
+                CategoryBreakdownChart(donut.breakdown, onOpenCategory)
+            }
         }
     }
 }
