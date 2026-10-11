@@ -13,5 +13,7 @@ data class ReviewItem(
     val payeeName: String?,
     /** How many waiting transactions this payee has, this one included. */
     val payeePending: Int,
-    val rawSms: String?
+    val rawSms: String?,
+    /** Tags it already has, such as an event's, by name; reviewing keeps them (#144). */
+    val tags: List<String> = emptyList()
 )

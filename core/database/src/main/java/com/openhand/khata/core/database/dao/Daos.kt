@@ -785,8 +785,13 @@ data class ReviewRow(
     @ColumnInfo(name = "payee_id") val payeeId: Long?,
     @ColumnInfo(name = "payee_identifier") val payeeIdentifier: String?,
     @ColumnInfo(name = "payee_name") val payeeName: String?,
-    @ColumnInfo(name = "payee_pending") val payeePending: Int
+    @ColumnInfo(name = "payee_pending") val payeePending: Int,
+    /** Its tags' names joined by [TAG_SEPARATOR], or null when it has none. */
+    @ColumnInfo(name = "tag_names") val tagNames: String?
 )
+
+/** Between the names in [ReviewRow.tagNames]: a control character no tag name can contain. */
+const val TAG_SEPARATOR = "\u001F"
 
 /** The To review inbox (PRD feature 4): transactions with `needs_review` set. */
 @Dao
@@ -800,7 +805,9 @@ interface ReviewDao {
             "a.name AS account_name, p.id AS payee_id, p.identifier AS payee_identifier, " +
             "p.display_name AS payee_name, " +
             "(SELECT COUNT(*) FROM transactions o WHERE o.needs_review = 1 " +
-            "AND o.payee_id = t.payee_id) AS payee_pending " +
+            "AND o.payee_id = t.payee_id) AS payee_pending, " +
+            "(SELECT GROUP_CONCAT(g.name, char(31)) FROM transaction_tags tt " +
+            "JOIN tags g ON g.id = tt.tag_id WHERE tt.transaction_id = t.id) AS tag_names " +
             "FROM transactions t " +
             "LEFT JOIN accounts a ON a.id = t.account_id " +
             "LEFT JOIN payees p ON p.id = t.payee_id " +

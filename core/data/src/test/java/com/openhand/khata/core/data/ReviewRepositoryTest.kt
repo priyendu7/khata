@@ -2,7 +2,10 @@ package com.openhand.khata.core.data
 
 import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.Event
 import com.openhand.khata.core.model.SmsTransaction
+import java.time.Instant
+import java.time.ZoneId
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -149,6 +152,67 @@ class ReviewRepositoryTest : RepositoryTest() {
         const val AT = 1_790_000_000_000L
         const val HOUR = 3_600_000L
         const val DAY = 24 * HOUR
+    }
+
+    /** An event on the day of [at] in the device's time zone, as SMS import reads it. */
+    private suspend fun event(name: String, at: Long) {
+        val day = Instant.ofEpochMilli(at).atZone(ZoneId.systemDefault()).toLocalDate()
+        EventRepository(
+            lazyDb
+        ).save(Event(name = name, start = day, end = day), ZoneId.systemDefault())
+    }
+
+    private suspend fun tagsOf(id: Long) = db.transactionDao().tagNames(id)
+
+    @Test
+    fun reviewingWithNoTagsKeepsTheEventTag() = runTest {
+        event("Kalu waterfall trip", AT)
+        val id = sms("WATERFALL CAFE", "1")
+        assertEquals(listOf("Kalu waterfall trip"), review.observeQueue().first().single().tags)
+
+        review.review(id, "Waterfall cafe", food(), emptyList())
+
+        assertEquals(listOf("Kalu waterfall trip"), tagsOf(id))
+    }
+
+    @Test
+    fun theCardsTagsAreAddedButOnlyTheyBecomeThePayeesDefaults() = runTest {
+        event("trip", AT)
+        val id = sms("WATERFALL CAFE", "1")
+
+        review.review(id, "Waterfall cafe", food(), listOf("food"))
+
+        assertEquals(listOf("food", "trip"), tagsOf(id))
+        val payee = db.payeeDao().getByIdentifier("WATERFALL CAFE")!!
+        assertEquals(
+            listOf(db.tagDao().getByName("food")!!.id),
+            db.payeeDao().defaultTagIds(payee.id)
+        )
+    }
+
+    @Test
+    fun otherWaitingTransactionsKeepTheirOwnEventTags() = runTest {
+        event("first trip", AT)
+        event("second trip", AT + 2 * DAY)
+        val first = sms("CAB CO", "1", at = AT)
+        val second = sms("CAB CO", "2", at = AT + 2 * DAY)
+        val between = sms("CAB CO", "3", at = AT + DAY)
+
+        review.review(first, "Cab co", null, listOf("travel"))
+
+        assertEquals(listOf("first trip", "travel"), tagsOf(first))
+        assertEquals(listOf("second trip", "travel"), tagsOf(second))
+        assertEquals(listOf("travel"), tagsOf(between))
+    }
+
+    @Test
+    fun aTagAddedByHandBeforeReviewingIsKept() = runTest {
+        val id = sms("GENERAL STORE", "1")
+        db.transactionDao().setTags(id, db.tagDao().getOrCreate(listOf("gift")))
+
+        review.review(id, "General Store", food(), listOf("home"))
+
+        assertEquals(listOf("gift", "home"), tagsOf(id))
     }
 
     @Test

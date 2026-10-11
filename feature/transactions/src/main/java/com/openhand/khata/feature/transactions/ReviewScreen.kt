@@ -2,6 +2,8 @@ package com.openhand.khata.feature.transactions
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +17,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -224,6 +227,7 @@ private fun ReviewCard(
             },
             onRemove = { gone -> tags = tags - gone }
         )
+        ExistingTags(item.tags.filterNot { old -> tags.any { it.equals(old, ignoreCase = true) } })
         if (item.payeePending > 1) {
             val others = item.payeePending - 1
             Text(
@@ -256,6 +260,28 @@ private fun ReviewCard(
             },
             onDismiss = { choosingCategory = false }
         )
+    }
+}
+
+/**
+ * Tags the transaction already has, such as an event's: saving keeps them (#144). Read-only, as
+ * they aren't the payee's to remember.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ExistingTags(tags: List<String>) {
+    if (tags.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            stringResource(R.string.review_existing_tags),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            tags.forEach { tag ->
+                SuggestionChip(onClick = {}, enabled = false, label = { Text(tag) })
+            }
+        }
     }
 }
 
