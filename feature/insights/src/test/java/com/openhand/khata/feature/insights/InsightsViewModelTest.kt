@@ -31,6 +31,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -253,6 +254,59 @@ class InsightsViewModelTest {
     }
 
     @Test
+    fun monthlyFollowsPickedCategoriesUntilCleared() = runTest {
+        spend(today, 100_00, "food")
+        spend(today, 40_00, "travel")
+        spend(today, 300_00, "rent")
+        val food = db.categoryDao().getBySeedKey("food")!!.id
+        val travel = db.categoryDao().getBySeedKey("travel")!!.id
+
+        val viewModel = viewModel()
+        viewModel.monthly.test {
+            var state = awaitItem()
+            while (state == null) state = awaitItem()
+            assertEquals(emptySet<Long>(), state.picked)
+            assertEquals(440_00L, state.comparison.bars.last().spentPaise)
+
+            viewModel.pickCategories(setOf(food, travel))
+            do state = awaitItem() while (state?.picked?.isEmpty() != false)
+            assertTrue(state.comparison.picked)
+            assertEquals(listOf(100_00L, 40_00L), state.comparison.bars.last().segments)
+            assertEquals(140_00L, state.comparison.bars.last().spentPaise)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Rotating: the screen stops collecting and starts again; the pick is still there.
+        viewModel.monthly.test {
+            var state = awaitItem()
+            while (state == null) state = awaitItem()
+            assertEquals(setOf(food, travel), state.picked)
+
+            viewModel.pickCategories(emptySet())
+            do state = awaitItem() while (state?.picked?.isNotEmpty() != false)
+            assertEquals(440_00L, state.comparison.bars.last().spentPaise)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun aMonthsBarOpensItsTransactionsInThePickedCategories() = runTest {
+        val viewModel = viewModel()
+        val september = YearMonth.of(2026, 9)
+        val (from, until) = viewModel.rangeOf(september)
+        assertEquals(
+            TransactionFilter(from = from, until = until),
+            viewModel.monthFilter(september)
+        )
+
+        viewModel.pickCategories(setOf(3L, 5L))
+        assertEquals(
+            TransactionFilter(categoryIds = setOf(3L, 5L), from = from, until = until),
+            viewModel.monthFilter(september)
+        )
+    }
+
+    @Test
     fun theTagCardsPeriodIsIndependentOfTheCategoryCards() = runTest {
         spend(today, 100_00, "food", listOf("Office lunch"))
         spend(LocalDate.of(2026, 8, 10), 300_00, "travel", listOf("Goa trip"))
@@ -314,7 +368,7 @@ class InsightsViewModelTest {
             )
             assertEquals(
                 TransactionFilter(
-                    categoryId = 7,
+                    categoryIds = setOf(7),
                     tagId = goa!!.id,
                     from = state.from,
                     until = state.until

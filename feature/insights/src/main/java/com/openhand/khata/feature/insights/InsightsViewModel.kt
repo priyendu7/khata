@@ -13,6 +13,7 @@ import com.openhand.khata.core.model.HeatLevels
 import com.openhand.khata.core.model.MonthlyComparison
 import com.openhand.khata.core.model.Tag
 import com.openhand.khata.core.model.TagSpend
+import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.model.TransferSummary
 import com.openhand.khata.core.model.spendingByDay
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -94,8 +95,17 @@ data class HeatmapState(
     val levels: HeatLevels
 )
 
-/** The monthly comparison over the last [months] months, this one included. */
-data class MonthlyState(val months: Int, val comparison: MonthlyComparison)
+/**
+ * The monthly comparison over the last [months] months, this one included, following the
+ * [picked] categories or, with none, the top ones. [categories] are every one that can be picked,
+ * archived ones too.
+ */
+data class MonthlyState(
+    val months: Int,
+    val comparison: MonthlyComparison,
+    val categories: List<Category> = emptyList(),
+    val picked: Set<Long> = emptySet()
+)
 
 /** Everything both the heatmap and the monthly chart are worked out from. */
 private data class ChartData(
@@ -149,6 +159,9 @@ class InsightsViewModel internal constructor(
     }
     private val openBreakdown = MutableStateFlow<BreakdownOf?>(null)
     private val monthCount = MutableStateFlow(SHORT_MONTHS)
+
+    // Not saved: a fresh start shows every category again (#139).
+    private val pickedCategories = MutableStateFlow(emptySet<Long>())
     private val days = today.distinctUntilChanged()
 
     /** The year of the first transaction: the year list starts there. Null with none. */
@@ -317,17 +330,33 @@ class InsightsViewModel internal constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     /** Null until the first load. */
-    val monthly: StateFlow<MonthlyState?> = combine(chartData, monthCount) { data, count ->
-        val thisMonth = YearMonth.from(data.today)
-        val months = (count - 1 downTo 0).map { thisMonth.minusMonths(it.toLong()) }
-        MonthlyState(count, MonthlyComparison.of(data.amounts, months, zone, data.categories))
-    }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+    val monthly: StateFlow<MonthlyState?> =
+        combine(chartData, monthCount, pickedCategories) { data, count, picked ->
+            val thisMonth = YearMonth.from(data.today)
+            val months = (count - 1 downTo 0).map { thisMonth.minusMonths(it.toLong()) }
+            MonthlyState(
+                count,
+                MonthlyComparison.of(data.amounts, months, zone, data.categories, picked),
+                data.categories,
+                picked
+            )
+        }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     /** Six or twelve months on the monthly chart. */
     fun selectMonths(count: Int) {
         require(count == SHORT_MONTHS || count == LONG_MONTHS) { "6 or 12 months" }
         monthCount.value = count
+    }
+
+    /** Follow just these categories on the monthly chart; empty for all of them. */
+    fun pickCategories(ids: Set<Long>) {
+        pickedCategories.value = ids
+    }
+
+    /** The transactions list for [month]'s bar: that month, and only the picked categories. */
+    fun monthFilter(month: YearMonth): TransactionFilter = rangeOf(month).let { (from, until) ->
+        TransactionFilter(categoryIds = pickedCategories.value, from = from, until = until)
     }
 
     /** [date] as the `[from, until)` milliseconds the transactions list filters by. */

@@ -30,7 +30,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
-/** Navigation arguments that open the list already filtered; [NO_FILTER] (or none) means "any". */
+/**
+ * Navigation arguments that open the list already filtered; [NO_FILTER] (or none) means "any".
+ * Categories are ids joined by commas, and blank means any.
+ */
 const val FILTER_CATEGORY_ARG = "category"
 const val FILTER_TAG_ARG = "tag"
 const val FILTER_ACCOUNT_ARG = "account"
@@ -58,7 +61,8 @@ class TransactionsViewModel @Inject constructor(
 ) : ViewModel() {
     private val _filter = MutableStateFlow(
         TransactionFilter(
-            categoryId = savedState.filterArg(FILTER_CATEGORY_ARG),
+            categoryIds = savedState.get<String>(FILTER_CATEGORY_ARG).orEmpty().split(',')
+                .mapNotNull { it.toLongOrNull() }.toSet(),
             from = savedState.filterArg(FILTER_FROM_ARG),
             until = savedState.filterArg(FILTER_UNTIL_ARG)
         ).withTag(savedState.filterArg(FILTER_TAG_ARG))
@@ -90,7 +94,8 @@ class TransactionsViewModel @Inject constructor(
 
     fun setQuery(query: String) = _filter.update { it.copy(query = query) }
 
-    fun setCategory(id: Long?) = _filter.update { it.copy(categoryId = id) }
+    /** Just one category, or null for any. */
+    fun setCategory(id: Long?) = _filter.update { it.copy(categoryIds = setOfNotNull(id)) }
 
     /** A tag's id, [FILTER_UNTAGGED], or null for any. */
     fun setTag(id: Long?) = _filter.update { it.withTag(id) }

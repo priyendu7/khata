@@ -142,7 +142,12 @@ private fun KhataNavHost(
         composable(
             Route.TRANSACTIONS,
             arguments = listOf(
-                FILTER_CATEGORY_ARG,
+                navArgument(FILTER_CATEGORY_ARG) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            ) + listOf(
                 FILTER_TAG_ARG,
                 FILTER_ACCOUNT_ARG,
                 FILTER_FROM_ARG,
@@ -359,19 +364,22 @@ private object Route {
         "transaction/0?$PREFILL_AMOUNT_ARG=${amountPaise ?: NO_PREFILL}" +
             "&$PREFILL_AT_ARG=$at&$FROM_UNPARSED_ARG=$unparsedId"
 
-    /** The transactions list, filtered by a category, tag, account and dates (each optional). */
+    /**
+     * The transactions list, filtered by categories (ids joined by commas), a tag, an account and
+     * dates (each optional).
+     */
     const val TRANSACTIONS = "transactions?$FILTER_CATEGORY_ARG={$FILTER_CATEGORY_ARG}" +
         "&$FILTER_TAG_ARG={$FILTER_TAG_ARG}&$FILTER_ACCOUNT_ARG={$FILTER_ACCOUNT_ARG}" +
         "&$FILTER_FROM_ARG={$FILTER_FROM_ARG}&$FILTER_UNTIL_ARG={$FILTER_UNTIL_ARG}"
 
     /**
-     * Opens the list with [filter]'s category, tag (or untagged), account (or none) and dates;
+     * Opens the list with [filter]'s categories, tag (or untagged), account (or none) and dates;
      * search isn't kept.
      */
     fun transactions(filter: TransactionFilter): String {
         val tag = if (filter.untagged) FILTER_UNTAGGED else filter.tagId
         val account = if (filter.noAccount) FILTER_NO_ACCOUNT else filter.accountId
-        return "transactions?$FILTER_CATEGORY_ARG=${filter.categoryId ?: NO_FILTER}" +
+        return "transactions?$FILTER_CATEGORY_ARG=${filter.categoryIds.joinToString(",")}" +
             "&$FILTER_TAG_ARG=${tag ?: NO_FILTER}&$FILTER_ACCOUNT_ARG=${account ?: NO_FILTER}" +
             "&$FILTER_FROM_ARG=${filter.from ?: NO_FILTER}" +
             "&$FILTER_UNTIL_ARG=${filter.until ?: NO_FILTER}"

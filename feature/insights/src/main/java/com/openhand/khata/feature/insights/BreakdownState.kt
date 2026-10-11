@@ -38,5 +38,5 @@ data class BreakdownState(
 ) {
     /** The transactions list for it over this period, of one category or of any (null). */
     fun filter(categoryId: Long? = null) =
-        of.filter.copy(categoryId = categoryId, from = from, until = until)
+        of.filter.copy(categoryIds = setOfNotNull(categoryId), from = from, until = until)
 }

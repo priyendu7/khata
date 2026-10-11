@@ -553,6 +553,7 @@ interface TransactionDao {
 
     /**
      * The transactions list, newest first. Each null argument means "any"; the rest combine.
+     * [categoryIds] is ignored when [anyCategory]; SQLite reads an empty `IN ()` as no match.
      * [query] matches the payee name or note and must have `%`, `_` and `\` escaped with `\`.
      * [limit] keeps only the newest ones.
      */
@@ -568,7 +569,7 @@ interface TransactionDao {
             "JOIN categories c ON c.id = t.category_id " +
             "LEFT JOIN payees p ON p.id = t.payee_id " +
             "LEFT JOIN accounts a ON a.id = t.account_id " +
-            "WHERE (:categoryId IS NULL OR t.category_id = :categoryId) " +
+            "WHERE (:anyCategory OR t.category_id IN (:categoryIds)) " +
             "AND (:accountId IS NULL OR t.account_id = :accountId) " +
             "AND (NOT :noAccount OR t.account_id IS NULL) " +
             "AND (:tagId IS NULL OR EXISTS (SELECT 1 FROM transaction_tags x " +
@@ -585,7 +586,8 @@ interface TransactionDao {
     @Suppress("LongParameterList")
     fun observeList(
         query: String?,
-        categoryId: Long?,
+        anyCategory: Boolean,
+        categoryIds: Set<Long>,
         tagId: Long?,
         untagged: Boolean,
         accountId: Long?,

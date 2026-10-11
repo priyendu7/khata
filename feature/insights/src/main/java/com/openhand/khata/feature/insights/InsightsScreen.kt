@@ -80,13 +80,18 @@ fun InsightsScreen(
         onOpenCategory = { id ->
             donut?.let {
                 onOpenTransactions(
-                    TransactionFilter(categoryId = id, from = it.from, until = it.until)
+                    TransactionFilter(
+                        categoryIds = setOfNotNull(id),
+                        from = it.from,
+                        until = it.until
+                    )
                 )
             }
         },
         onOpenDay = { openRange(viewModel.rangeOf(it)) },
         onSelectMonths = viewModel::selectMonths,
-        onOpenMonth = { openRange(viewModel.rangeOf(it)) },
+        onOpenMonth = { onOpenTransactions(viewModel.monthFilter(it)) },
+        onPickCategories = viewModel::pickCategories,
         tags = tags,
         accounts = accounts,
         breakdown = breakdown,
@@ -135,7 +140,8 @@ fun InsightsScreen(
 /**
  * The charts: spending by category for a period ([onOpenCategory] gets null for "Other";
  * [onStepPeriod] gets -1 for back and 1 for forward, [onSelectPast] how many periods back), by
- * tag, by account, by day over the last 12 months, and month by month, then the transfers. The
+ * tag, by account, by day over the last 12 months, and month by month ([onPickCategories] follows
+ * just some categories there), then the transfers. The
  * tag, account and transfer cards have their own periods, and [breakdown] is the sheet open over
  * the tag or account card. Each shows nothing until its first load.
  */
@@ -160,7 +166,8 @@ fun InsightsContent(
     transfers: TransfersState? = null,
     transferActions: CardActions<Long> = CardActions(),
     onCloseBreakdown: () -> Unit = {},
-    onOpenTransactions: (TransactionFilter) -> Unit = {}
+    onOpenTransactions: (TransactionFilter) -> Unit = {},
+    onPickCategories: (Set<Long>) -> Unit = {}
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -171,7 +178,7 @@ fun InsightsContent(
         tags?.let { TagCard(it, tagActions) }
         accounts?.let { AccountCard(it, accountActions) }
         heatmap?.let { HeatmapCard(it, onOpenDay) }
-        monthly?.let { MonthlyCard(it, onSelectMonths, onOpenMonth) }
+        monthly?.let { MonthlyCard(it, onSelectMonths, onPickCategories, onOpenMonth) }
         transfers?.let { TransferCard(it, transferActions) }
         Spacer(Modifier.height(8.dp))
     }

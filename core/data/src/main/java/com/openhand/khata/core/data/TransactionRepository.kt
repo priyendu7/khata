@@ -48,7 +48,8 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
         return db.observe {
             it.transactionDao().observeList(
                 query = query,
-                categoryId = filter.categoryId,
+                anyCategory = filter.categoryIds.isEmpty(),
+                categoryIds = filter.categoryIds,
                 tagId = filter.tagId,
                 untagged = filter.untagged,
                 accountId = filter.accountId,

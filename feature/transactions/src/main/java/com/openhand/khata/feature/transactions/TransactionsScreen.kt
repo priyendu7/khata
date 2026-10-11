@@ -52,6 +52,7 @@ import com.openhand.khata.core.ui.ScreenTitle
 import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.TransactionRow
+import com.openhand.khata.core.ui.categoriesLabel
 import com.openhand.khata.core.ui.categoryName
 import com.openhand.khata.core.ui.dateLabel
 import com.openhand.khata.core.ui.dayLabel
@@ -161,7 +162,8 @@ private fun FilterRow(filter: TransactionFilter, viewModel: TransactionsViewMode
     var dialog by rememberSaveable { mutableStateOf<FilterDialog?>(null) }
     val close = { dialog = null }
 
-    val category = categories.firstOrNull { it.id == filter.categoryId }
+    // Several categories come only from the monthly chart on Insights (#139).
+    val picked = categories.filter { it.id in filter.categoryIds }
     val zone = ZoneId.systemDefault()
     val first = filter.from?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }
     val last = filter.until?.let {
@@ -177,9 +179,8 @@ private fun FilterRow(filter: TransactionFilter, viewModel: TransactionsViewMode
             .padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
         FilterButton(
-            label = category?.let { categoryName(it.name, it.seedKey) }
-                ?: stringResource(R.string.field_category),
-            selected = category != null
+            label = categoriesLabel(picked) ?: stringResource(R.string.field_category),
+            selected = picked.isNotEmpty()
         ) { dialog = FilterDialog.CATEGORY }
         FilterButton(
             label = tagLabel(filter, tags),
@@ -217,7 +218,8 @@ private fun FilterRow(filter: TransactionFilter, viewModel: TransactionsViewMode
                         leading = { CategoryBadge(it.icon, it.color, size = 32.dp) }
                     )
                 },
-            selected = filter.categoryId,
+            // With several picked, no row is ticked; picking one replaces them.
+            selected = if (picked.size > 1) NO_FILTER else filter.categoryIds.singleOrNull(),
             onSelect = {
                 viewModel.setCategory(it)
                 close()

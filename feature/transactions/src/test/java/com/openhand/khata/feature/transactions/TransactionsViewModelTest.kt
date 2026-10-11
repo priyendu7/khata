@@ -54,21 +54,28 @@ class TransactionsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private suspend fun add(at: Long, tags: List<String> = emptyList(), accountId: Long? = null) =
-        transactions.save(
-            Transaction(
-                amountPaise = 100_00,
-                direction = Direction.DEBIT,
-                timestamp = at,
-                accountId = accountId,
-                tags = tags
-            )
+    private suspend fun add(
+        at: Long,
+        tags: List<String> = emptyList(),
+        accountId: Long? = null,
+        categoryId: Long? = null
+    ) = transactions.save(
+        Transaction(
+            amountPaise = 100_00,
+            direction = Direction.DEBIT,
+            timestamp = at,
+            accountId = accountId,
+            categoryId = categoryId,
+            tags = tags
         )
+    )
+
+    private suspend fun category(seedKey: String) = db.categoryDao().getBySeedKey(seedKey)!!.id
 
     private suspend fun account(name: String) =
         AccountRepository(lazyDb).save(Account(name = name, type = AccountType.CREDIT_CARD))
 
-    private fun list(args: Map<String, Long>) = TransactionsViewModel(
+    private fun list(args: Map<String, Any>) = TransactionsViewModel(
         SavedStateHandle(args),
         transactions,
         CategoryRepository(lazyDb),
@@ -155,6 +162,31 @@ class TransactionsViewModelTest {
         viewModel.setAccount(card)
         assertEquals(false, viewModel.filter.value.noAccount)
         assertEquals(card, viewModel.filter.value.accountId)
+    }
+
+    @Test
+    fun opensWithSeveralCategoriesFromTheMonthlyChart() = runTest {
+        val food = category("food")
+        val travel = category("travel")
+        val lunch = add(AT, categoryId = food)
+        val taxi = add(AT + 1, categoryId = travel)
+        add(AT + 2, categoryId = category("rent"))
+        add(UNTIL, categoryId = food) // After the range.
+
+        val viewModel = list(
+            mapOf(
+                FILTER_CATEGORY_ARG to "$food,$travel",
+                FILTER_FROM_ARG to AT,
+                FILTER_UNTIL_ARG to UNTIL
+            )
+        )
+
+        assertEquals(setOf(food, travel), viewModel.filter.value.categoryIds)
+        assertEquals(setOf(lunch, taxi), viewModel.shownIds())
+
+        // Picking one category from the filter replaces them.
+        viewModel.setCategory(food)
+        assertEquals(setOf(food), viewModel.filter.value.categoryIds)
     }
 
     private companion object {

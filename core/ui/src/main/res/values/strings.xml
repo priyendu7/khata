@@ -50,4 +50,9 @@
     <string name="direction_refund">Refund</string>
     <string name="direction_transfer">Transfer</string>
     <string name="counts_in_label">Counts in %1$s</string>
+    <string name="categories_pair">%1$s, %2$s</string>
+    <plurals name="categories_count">
+        <item quantity="one">%d category</item>
+        <item quantity="other">%d categories</item>
+    </plurals>
 </resources>
