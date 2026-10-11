@@ -228,14 +228,14 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
         )
     }
 
-    /** Payee memory's tags and those of the events on the SMS's day, in the device's time zone. */
+    /** Payee memory's tags and those of the events at the SMS's time, in the device's time zone. */
     private suspend fun tagIds(
         database: KhataDatabase,
         sms: SmsTransaction,
         memory: PayeeMemory?
     ): List<Long> {
-        val day = EventRepository.dayOf(sms.timestamp, ZoneId.systemDefault())
-        return (memory?.tagIds.orEmpty() + database.eventDao().tagIdsOn(day)).distinct()
+        val (day, minute) = EventRepository.dayAndMinuteOf(sms.timestamp, ZoneId.systemDefault())
+        return (memory?.tagIds.orEmpty() + database.eventDao().tagIdsAt(day, minute)).distinct()
     }
 
     /** Money out of the account for a debit, into it for a credit or refund (#113). */

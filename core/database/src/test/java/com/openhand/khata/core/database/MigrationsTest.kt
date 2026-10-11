@@ -233,4 +233,22 @@ class MigrationsTest {
             }
         }
     }
+
+    @Test
+    fun version9To10AddsEventTimesAndKeepsEventsWholeDays() {
+        helper.createDatabase(dbName, 9).use { db ->
+            db.execSQL("INSERT INTO tags (id, name) VALUES (1, 'Goa trip')")
+            db.execSQL("INSERT INTO events (tag_id, start_day, end_day) VALUES (1, 20728, 20730)")
+        }
+
+        helper.runMigrationsAndValidate(dbName, 10, true, *KhataMigrations.ALL).use { db ->
+            db.query("SELECT start_day, end_day, start_minute, end_minute FROM events").use {
+                it.moveToFirst()
+                assertEquals(20728L, it.getLong(0))
+                assertEquals(20730L, it.getLong(1))
+                assertTrue(it.isNull(2))
+                assertTrue(it.isNull(3))
+            }
+        }
+    }
 }

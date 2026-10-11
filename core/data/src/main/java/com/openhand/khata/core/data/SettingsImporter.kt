@@ -1,5 +1,7 @@
 package com.openhand.khata.core.data
 
+import com.openhand.khata.core.data.EventRepository.Companion.minuteOfDay
+import com.openhand.khata.core.data.EventRepository.Companion.span
 import com.openhand.khata.core.database.BuiltInRuleOverrideEntity
 import com.openhand.khata.core.database.CustomParserEntity
 import com.openhand.khata.core.database.EventEntity
@@ -16,6 +18,7 @@ import com.openhand.khata.core.model.IgnoreKind
 import com.openhand.khata.sms.parser.CodeCheck
 import com.openhand.khata.sms.parser.CustomRules
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeParseException
 
@@ -90,11 +93,9 @@ internal class SettingsImporter(
             payees = counts(file.payees.map { findPayee(it)?.let { saved -> isSame(saved, it) } }),
             events = counts(
                 file.events.filter { it.name.isNotBlank() }
-                    .mapNotNull { event -> days(event)?.let { event.name to it } }
-                    .map { (name, days) ->
-                        findEvent(name)?.let {
-                            it.startDay == days.first && it.endDay == days.second
-                        }
+                    .mapNotNull { event -> entityOf(event)?.let { event.name to it } }
+                    .map { (name, wanted) ->
+                        findEvent(name)?.let { sameDates(stored(it), wanted) }
                     }
             )
         )
@@ -231,18 +232,19 @@ internal class SettingsImporter(
     /** Moves the event's tag off transactions in its old dates and onto ones in its new dates. */
     private suspend fun applyEvent(data: EventData, zone: ZoneId) {
         val name = data.name.trim()
-        val (first, last) = days(data)?.takeIf { name.isNotEmpty() } ?: return
+        val wanted = entityOf(data)?.takeIf { name.isNotEmpty() } ?: return
         val dao = database.eventDao()
-        val saved = findEvent(name)
+        val saved = findEvent(name)?.let(::stored)
         if (saved == null) {
             val tagId = database.tagDao().getOrCreate(listOf(name)).single()
-            dao.insert(EventEntity(tagId = tagId, startDay = first, endDay = last))
-            dao.tagRange(tagId, millis(first, zone), millis(last + 1, zone))
-        } else if (saved.startDay != first || saved.endDay != last) {
-            val tagId = saved.tagId
-            dao.untagRange(tagId, millis(saved.startDay, zone), millis(saved.endDay + 1, zone))
-            dao.update(EventEntity(saved.id, tagId, first, last))
-            dao.tagRange(tagId, millis(first, zone), millis(last + 1, zone))
+            val event = wanted.copy(tagId = tagId)
+            dao.insert(event)
+            event.span(zone).let { (from, until) -> dao.tagRange(tagId, from, until) }
+        } else if (!sameDates(saved, wanted)) {
+            val event = wanted.copy(id = saved.id, tagId = saved.tagId)
+            saved.span(zone).let { (from, until) -> dao.untagRange(saved.tagId, from, until) }
+            dao.update(event)
+            event.span(zone).let { (from, until) -> dao.tagRange(saved.tagId, from, until) }
         }
     }
 
@@ -337,16 +339,44 @@ internal class SettingsImporter(
             last4 = data.last4?.filter(Char::isDigit)?.takeLast(LAST_DIGITS)?.ifEmpty { null }
         )
 
-        fun days(event: EventData): Pair<Long, Long>? = try {
-            val first = LocalDate.parse(event.firstDay).toEpochDay()
-            val last = LocalDate.parse(event.lastDay).toEpochDay()
-            minOf(first, last) to maxOf(first, last)
+        /**
+         * The event's dates and times, with no id or tag yet; null if a date doesn't parse. Times
+         * missing, unreadable or ending before they start on a one-day event make it whole days.
+         */
+        fun entityOf(event: EventData): EventEntity? {
+            val (first, last) = try {
+                val a = LocalDate.parse(event.firstDay).toEpochDay()
+                val b = LocalDate.parse(event.lastDay).toEpochDay()
+                minOf(a, b) to maxOf(a, b)
+            } catch (_: DateTimeParseException) {
+                return null
+            }
+            val start = minuteOf(event.startTime)
+            val end = minuteOf(event.endTime)
+            val timed = start != null && end != null && (first < last || end > start)
+            return EventEntity(
+                tagId = 0,
+                startDay = first,
+                endDay = last,
+                startMinute = start.takeIf { timed },
+                endMinute = end.takeIf { timed }
+            )
+        }
+
+        fun minuteOf(time: String?): Int? = try {
+            time?.let { LocalTime.parse(it).minuteOfDay() }
         } catch (_: DateTimeParseException) {
             null
         }
 
-        fun millis(epochDay: Long, zone: ZoneId) =
-            LocalDate.ofEpochDay(epochDay).atStartOfDay(zone).toInstant().toEpochMilli()
+        fun sameDates(a: EventEntity, b: EventEntity) = a.startDay == b.startDay &&
+            a.endDay == b.endDay &&
+            a.startMinute == b.startMinute &&
+            a.endMinute == b.endMinute
+
+        /** The saved event as stored, from its row. */
+        fun stored(row: EventRow) =
+            EventEntity(row.id, row.tagId, row.startDay, row.endDay, row.startMinute, row.endMinute)
 
         fun ruleIdOf(code: String): String? =
             (CustomRules.check(code) as? CodeCheck.Valid)?.rule?.rule?.id
