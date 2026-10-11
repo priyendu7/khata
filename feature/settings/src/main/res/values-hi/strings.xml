@@ -408,9 +408,11 @@
     <string name="promise_open_title">ओपन सोर्स।</string>
     <string name="promise_open_body">कोई भी इसका कोड पढ़ सकता है।</string>
     <string name="welcome_get_started">शुरू करें</string>
-    <string name="welcome_sms_title">लेन-देन के मैसेज अपने-आप पढ़ें?</string>
-    <string name="welcome_sms_yes">हाँ</string>
-    <string name="welcome_sms_later">बाद में</string>
+    <string name="welcome_add_title">लेन-देन कैसे जोड़ना चाहेंगे?</string>
+    <string name="welcome_add_sms_title">बैंक SMS से अपने-आप</string>
+    <string name="welcome_add_sms_body">खाता इसी फ़ोन पर बैंक मैसेज पढ़कर लेन-देन जोड़ देगा। कुछ भी फ़ोन से बाहर नहीं जाता।</string>
+    <string name="welcome_add_hand_title">खुद से</string>
+    <string name="welcome_add_hand_body">हर एक को + से जोड़ें। SMS इम्पोर्ट कभी भी सेटिंग्स में चालू कर सकते हैं।</string>
     <string name="settings_promise_value">इंटरनेट नहीं, एन्क्रिप्टेड, ओपन सोर्स</string>
     <string name="sms_live_note">नए बैंक SMS आते ही दर्ज हो जाते हैं। यह इम्पोर्ट सिर्फ़ उन SMS के लिए है जो इस फ़ोन पर पहले से हैं।</string>
     <string name="filters_ignored_like_from">%1$s से</string>
