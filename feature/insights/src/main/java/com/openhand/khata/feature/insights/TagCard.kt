@@ -33,22 +33,25 @@ internal fun TagCard(tags: TagsState, actions: CardActions<Tag?>) {
     ChartCard(stringResource(R.string.insights_by_tag)) {
         PeriodChips(tags.period, actions.onSelectPeriod)
         PeriodStepper(tags, actions.onStepPeriod, actions.onSelectPast)
-        if (tags.spending.isEmpty()) {
-            ChartEmpty(
-                stringResource(R.string.insights_nothing_spent_title),
-                stringResource(R.string.insights_nothing_spent_body)
-            )
-        } else {
-            // Bars are sized against the biggest; a tag with more refunds than spending has none.
-            val biggest = tags.spending.maxOf { it.spentPaise }
-            tags.spending.forEach { spend ->
-                TagBar(spend, biggest) { actions.onOpen(spend.tag) }
+        PeriodSwipe(tags, actions.onStepPeriod) {
+            if (tags.spending.isEmpty()) {
+                ChartEmpty(
+                    stringResource(R.string.insights_nothing_spent_title),
+                    stringResource(R.string.insights_nothing_spent_body)
+                )
+            } else {
+                // Bars are sized against the biggest; a tag with more refunds than spending has
+                // none.
+                val biggest = tags.spending.maxOf { it.spentPaise }
+                tags.spending.forEach { spend ->
+                    TagBar(spend, biggest) { actions.onOpen(spend.tag) }
+                }
+                Text(
+                    stringResource(R.string.insights_tag_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Text(
-                stringResource(R.string.insights_tag_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }

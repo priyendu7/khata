@@ -16,22 +16,25 @@ internal fun AccountCard(accounts: AccountsState, actions: CardActions<Account?>
     ChartCard(stringResource(R.string.insights_by_account)) {
         PeriodChips(accounts.period, actions.onSelectPeriod)
         PeriodStepper(accounts, actions.onStepPeriod, actions.onSelectPast)
-        if (accounts.spending.isEmpty()) {
-            ChartEmpty(
-                stringResource(R.string.insights_nothing_spent_title),
-                stringResource(R.string.insights_nothing_spent_body)
-            )
-        } else {
-            val theme = chartTheme()
-            val charted = accounts.spending.filter { it.spentPaise > 0 }.sumOf { it.spentPaise }
-            val entries = accounts.spending.map { it.toEntry(theme, charted) }
-            SpendingDonut(
-                slices = entries.filter { it.paise > 0 },
-                refunded = entries.filter { it.paise < 0 },
-                totalPaise = accounts.spending.sumOf { it.spentPaise },
-                onOpen = actions.onOpen,
-                theme = theme
-            )
+        PeriodSwipe(accounts, actions.onStepPeriod) {
+            if (accounts.spending.isEmpty()) {
+                ChartEmpty(
+                    stringResource(R.string.insights_nothing_spent_title),
+                    stringResource(R.string.insights_nothing_spent_body)
+                )
+            } else {
+                val theme = chartTheme()
+                val charted = accounts.spending.filter { it.spentPaise > 0 }
+                    .sumOf { it.spentPaise }
+                val entries = accounts.spending.map { it.toEntry(theme, charted) }
+                SpendingDonut(
+                    slices = entries.filter { it.paise > 0 },
+                    refunded = entries.filter { it.paise < 0 },
+                    totalPaise = accounts.spending.sumOf { it.spentPaise },
+                    onOpen = actions.onOpen,
+                    theme = theme
+                )
+            }
         }
     }
 }

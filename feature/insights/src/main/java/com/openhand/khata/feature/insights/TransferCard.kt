@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.TransferEnd
 import com.openhand.khata.core.model.TransferMove
+import com.openhand.khata.core.model.TransferSummary
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -37,45 +38,52 @@ internal fun TransferCard(transfers: TransfersState, actions: CardActions<Long>)
     ChartCard(stringResource(R.string.insights_transfers)) {
         PeriodChips(transfers.period, actions.onSelectPeriod)
         PeriodStepper(transfers, actions.onStepPeriod, actions.onSelectPast)
-        val summary = transfers.summary
-        if (summary.isEmpty) {
-            ChartEmpty(
-                stringResource(R.string.insights_transfers_empty_title),
-                stringResource(R.string.insights_transfers_empty_body)
-            )
-            return@ChartCard
+        PeriodSwipe(transfers, actions.onStepPeriod) {
+            TransferDetails(transfers.summary, actions.onOpen)
         }
-        Column {
-            Text(
-                stringResource(R.string.insights_transfers_total),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(Money.format(summary.totalPaise), style = MaterialTheme.typography.headlineSmall)
-            Text(
-                stringResource(R.string.insights_transfers_not_counted),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        if (summary.cards.isNotEmpty() || summary.unknownCards.isNotEmpty()) {
-            Text(
-                stringResource(R.string.insights_card_bills),
-                style = MaterialTheme.typography.titleSmall
-            )
-            summary.cards.forEach {
-                AmountLine(accountLabel(it.card), paymentCount(it.count), it.paidPaise)
-            }
-            summary.unknownCards.forEach {
-                AmountLine(
-                    title = it.payeeName ?: stringResource(R.string.insights_card_unknown_no_payee),
-                    detail = stringResource(R.string.insights_card_unknown, paymentCount(it.count)),
-                    paise = it.paidPaise
-                )
-            }
-        }
-        Moves(summary.moves, actions.onOpen)
     }
+}
+
+/** The total, card bills and moves, or a note when nothing moved. */
+@Composable
+private fun TransferDetails(summary: TransferSummary, onOpen: (Long) -> Unit) {
+    if (summary.isEmpty) {
+        ChartEmpty(
+            stringResource(R.string.insights_transfers_empty_title),
+            stringResource(R.string.insights_transfers_empty_body)
+        )
+        return
+    }
+    Column {
+        Text(
+            stringResource(R.string.insights_transfers_total),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(Money.format(summary.totalPaise), style = MaterialTheme.typography.headlineSmall)
+        Text(
+            stringResource(R.string.insights_transfers_not_counted),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+    if (summary.cards.isNotEmpty() || summary.unknownCards.isNotEmpty()) {
+        Text(
+            stringResource(R.string.insights_card_bills),
+            style = MaterialTheme.typography.titleSmall
+        )
+        summary.cards.forEach {
+            AmountLine(accountLabel(it.card), paymentCount(it.count), it.paidPaise)
+        }
+        summary.unknownCards.forEach {
+            AmountLine(
+                title = it.payeeName ?: stringResource(R.string.insights_card_unknown_no_payee),
+                detail = stringResource(R.string.insights_card_unknown, paymentCount(it.count)),
+                paise = it.paidPaise
+            )
+        }
+    }
+    Moves(summary.moves, onOpen)
 }
 
 /** The newest [SHOWN_MOVES] moves, and a button for the rest. */
