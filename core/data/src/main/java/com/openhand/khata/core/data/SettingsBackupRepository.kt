@@ -118,7 +118,9 @@ class SettingsBackupRepository @Inject constructor(private val db: Lazy<KhataDat
                 EventData(
                     name = it.name,
                     firstDay = LocalDate.ofEpochDay(it.startDay).toString(),
-                    lastDay = LocalDate.ofEpochDay(it.endDay).toString()
+                    lastDay = LocalDate.ofEpochDay(it.endDay).toString(),
+                    startTime = it.startMinute?.let(EventRepository::timeOf)?.toString(),
+                    endTime = it.endMinute?.let(EventRepository::timeOf)?.toString()
                 )
             }
         )

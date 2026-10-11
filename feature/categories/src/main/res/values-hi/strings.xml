@@ -38,7 +38,12 @@
     <string name="events_dates">तारीखें</string>
     <string name="events_pick_dates">पहला और आखिरी दिन चुनें</string>
     <string name="events_range">%1$s – %2$s</string>
-    <string name="events_help">इन दिनों के हर लेन-देन पर यह नाम टैग के रूप में लगेगा, बाद में आने वाले SMS पर भी। तारीखें या नाम बदलने पर टैग भी साथ जाता है।</string>
+    <string name="events_set_times">समय चुनें</string>
+    <string name="events_start_time">पहले दिन शुरू होने का समय</string>
+    <string name="events_end_time">आखिरी दिन खत्म होने का समय</string>
+    <string name="events_end_before_start">खत्म होने का समय शुरू होने के बाद होना चाहिए</string>
+    <string name="events_at">%1$s, %2$s</string>
+    <string name="events_help">इन दिनों के हर लेन-देन पर, या समय चुने हों तो उनके बीच के हर लेन-देन पर, यह नाम टैग के रूप में लगेगा, बाद में आने वाले SMS पर भी। तारीखें, समय या नाम बदलने पर टैग भी साथ जाता है।</string>
     <string name="events_delete_title">%1$s हटाएँ?</string>
     <string name="events_delete_body">इवेंट हट जाएगा, पर जिन लेन-देन पर पहले से %1$s टैग है, उन पर वह बना रहेगा, ताकि यात्रा का हिसाब बचा रहे।</string>
 </resources>

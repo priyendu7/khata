@@ -154,12 +154,107 @@ class EventRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun namesOnADayAreTheEventsThatIncludeIt() = runTest {
+    fun namesAtATimeAreTheEventsThatIncludeIt() = runTest {
         save(Event(name = "Trip", start = oct(2), end = oct(4)))
         save(Event(name = "Diwali", start = oct(4), end = oct(4)))
+        save(
+            Event(
+                name = "Party",
+                start = oct(4),
+                end = oct(4),
+                startTime = sixPm,
+                endTime = elevenPm
+            )
+        )
 
-        assertEquals(listOf("Diwali", "Trip"), events.namesOn(oct(4)))
-        assertEquals(listOf("Trip"), events.namesOn(oct(2)))
-        assertTrue(events.namesOn(oct(5)).isEmpty())
+        assertEquals(listOf("Diwali", "Trip"), events.namesAt(oct(4), LocalTime.NOON))
+        assertEquals(listOf("Diwali", "Party", "Trip"), events.namesAt(oct(4), sixPm))
+        assertEquals(listOf("Trip"), events.namesAt(oct(2), LocalTime.MIDNIGHT))
+        assertTrue(events.namesAt(oct(5), LocalTime.MIDNIGHT).isEmpty())
     }
+
+    @Test
+    fun anEventWithTimesTagsFromItsStartMinuteToItsEndMinute() = runTest {
+        val beforeStart = addOn(oct(2), LocalTime.of(17, 59))
+        val atStart = addOn(oct(2), sixPm)
+        val middle = addOn(oct(3), LocalTime.MIDNIGHT)
+        val atEnd = addOn(oct(4), elevenPm)
+        val withinEndMinute = addOn(oct(4), LocalTime.of(23, 0, 59))
+        val afterEnd = addOn(oct(4), LocalTime.of(23, 1))
+
+        save(
+            Event(
+                name = "Trip",
+                start = oct(2),
+                end = oct(4),
+                startTime = sixPm,
+                endTime = elevenPm
+            )
+        )
+
+        listOf(atStart, middle, atEnd, withinEndMinute).forEach {
+            assertEquals(listOf("Trip"), tagsOf(it))
+        }
+        listOf(beforeStart, afterEnd).forEach { assertEquals(emptyList<String>(), tagsOf(it)) }
+        assertEquals(
+            listOf(Event(1, "Trip", oct(2), oct(4), sixPm, elevenPm)),
+            events.observeEvents().first()
+        )
+    }
+
+    @Test
+    fun changingTheTimesMovesTheTagAndTurningThemOffGoesBackToWholeDays() = runTest {
+        val morning = addOn(oct(2), LocalTime.of(9, 0))
+        val afternoon = addOn(oct(2), LocalTime.of(13, 0))
+        val evening = addOn(oct(2), LocalTime.of(19, 0))
+        val trip =
+            Event(
+                name = "Trip",
+                start = oct(2),
+                end = oct(4),
+                startTime = sixPm,
+                endTime = elevenPm
+            )
+        val id = save(trip)
+        assertEquals(
+            listOf(emptyList(), emptyList(), listOf("Trip")),
+            tagsOf(morning, afternoon, evening)
+        )
+
+        save(trip.copy(id = id, startTime = LocalTime.NOON))
+        assertEquals(
+            listOf(emptyList(), listOf("Trip"), listOf("Trip")),
+            tagsOf(morning, afternoon, evening)
+        )
+
+        save(trip.copy(id = id))
+        assertEquals(
+            listOf(emptyList(), emptyList(), listOf("Trip")),
+            tagsOf(morning, afternoon, evening)
+        )
+
+        save(trip.copy(id = id, startTime = null, endTime = null))
+        assertEquals(
+            listOf(listOf("Trip"), listOf("Trip"), listOf("Trip")),
+            tagsOf(morning, afternoon, evening)
+        )
+    }
+
+    @Test
+    fun aOneDayEventMustEndAfterItStarts() = runTest {
+        val oneDay = Event(name = "Party", start = oct(2), end = oct(2), startTime = sixPm)
+
+        assertEquals(
+            SaveEventResult.EndBeforeStart,
+            events.save(oneDay.copy(endTime = sixPm), zone)
+        )
+        assertTrue(events.observeEvents().first().isEmpty())
+        // Over two days, an earlier end time is fine.
+        save(oneDay.copy(end = oct(3), endTime = LocalTime.NOON))
+    }
+
+    private suspend fun tagsOf(vararg ids: Long) = ids.map { tagsOf(it) }
+
+    private val sixPm = LocalTime.of(18, 0)
+    private val elevenPm = LocalTime.of(23, 0)
 }

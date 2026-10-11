@@ -12,7 +12,9 @@ import com.openhand.khata.core.model.IgnoreKind
 import com.openhand.khata.sms.parser.BuiltInRules
 import com.openhand.khata.sms.parser.RuleCode
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -261,6 +263,38 @@ class SettingsBackupRepositoryTest : RepositoryTest() {
         assertEquals(MatchCounts(same = 4), again.categories)
         assertEquals(MatchCounts(same = 2), again.payees)
         assertEquals(MatchCounts(same = 2), again.events)
+    }
+
+    @Test
+    fun eventTimesRoundTripAndOlderFilesImportWholeDays() = runTest {
+        val events = EventRepository(lazyDb)
+        val party = Event(
+            name = "Party",
+            start = LocalDate.of(2026, 10, 2),
+            end = LocalDate.of(2026, 10, 2),
+            startTime = LocalTime.of(18, 0),
+            endTime = LocalTime.of(23, 0)
+        )
+        events.save(party, zone)
+        val file = repository.gather()
+        assertEquals(
+            listOf(EventData("Party", "2026-10-02", "2026-10-02", "18:00", "23:00")),
+            file.events
+        )
+
+        // Turned into a whole day here, then the file puts the times back.
+        val id = events.observeEvents().first().single().id
+        events.save(party.copy(id = id, startTime = null, endTime = null), zone)
+        assertEquals(MatchCounts(updated = 1), repository.preview(file).events)
+        apply(file)
+        assertEquals(listOf(party.copy(id = id)), events.observeEvents().first())
+
+        // A file from before #141 has no times: whole days.
+        apply(SettingsFile(events = listOf(EventData("Party", "2026-10-02", "2026-10-02"))))
+        assertEquals(
+            listOf(party.copy(id = id, startTime = null, endTime = null)),
+            events.observeEvents().first()
+        )
     }
 
     @Test

@@ -15,7 +15,8 @@ import kotlinx.coroutines.flow.Flow
 /**
  * A named date range, such as a trip (#73): every transaction in it gets the tag [tagId]. The
  * event's name is that tag's name, so renaming the tag renames the event, and deleting the tag
- * deletes the event. Days are local epoch days, first and last inclusive.
+ * deletes the event. Days are local epoch days, first and last inclusive. Minutes are minutes of
+ * the day (0–1439) that the event starts and ends at, both included; null is the whole day (#141).
  */
 @Entity(
     tableName = "events",
@@ -34,7 +35,9 @@ data class EventEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "tag_id") val tagId: Long,
     @ColumnInfo(name = "start_day") val startDay: Long,
-    @ColumnInfo(name = "end_day") val endDay: Long
+    @ColumnInfo(name = "end_day") val endDay: Long,
+    @ColumnInfo(name = "start_minute") val startMinute: Int? = null,
+    @ColumnInfo(name = "end_minute") val endMinute: Int? = null
 )
 
 /** An event with its tag's name. */
@@ -43,24 +46,30 @@ data class EventRow(
     @ColumnInfo(name = "tag_id") val tagId: Long,
     val name: String,
     @ColumnInfo(name = "start_day") val startDay: Long,
-    @ColumnInfo(name = "end_day") val endDay: Long
+    @ColumnInfo(name = "end_day") val endDay: Long,
+    @ColumnInfo(name = "start_minute") val startMinute: Int?,
+    @ColumnInfo(name = "end_minute") val endMinute: Int?
 )
+
+/** Events that include [day] at [minute]: whole days, or within the times on the first and last. */
+private const val AT =
+    "(e.start_day < :day OR (e.start_day = :day AND " +
+        "(e.start_minute IS NULL OR e.start_minute <= :minute))) AND " +
+        "(e.end_day > :day OR (e.end_day = :day AND " +
+        "(e.end_minute IS NULL OR e.end_minute >= :minute)))"
+
+private const val ROWS =
+    "SELECT e.id AS id, e.tag_id AS tag_id, g.name AS name, e.start_day AS start_day, " +
+        "e.end_day AS end_day, e.start_minute AS start_minute, e.end_minute AS end_minute " +
+        "FROM events e JOIN tags g ON g.id = e.tag_id ORDER BY e.start_day DESC, e.id DESC"
 
 @Dao
 interface EventDao {
     /** Newest first. */
-    @Query(
-        "SELECT e.id AS id, e.tag_id AS tag_id, g.name AS name, e.start_day AS start_day, " +
-            "e.end_day AS end_day FROM events e JOIN tags g ON g.id = e.tag_id " +
-            "ORDER BY e.start_day DESC, e.id DESC"
-    )
+    @Query(ROWS)
     fun observeAll(): Flow<List<EventRow>>
 
-    @Query(
-        "SELECT e.id AS id, e.tag_id AS tag_id, g.name AS name, e.start_day AS start_day, " +
-            "e.end_day AS end_day FROM events e JOIN tags g ON g.id = e.tag_id " +
-            "ORDER BY e.start_day DESC, e.id DESC"
-    )
+    @Query(ROWS)
     suspend fun getAll(): List<EventRow>
 
     @Query("SELECT * FROM events WHERE id = :id")
@@ -69,16 +78,16 @@ interface EventDao {
     @Query("SELECT * FROM events WHERE tag_id = :tagId")
     suspend fun getByTag(tagId: Long): EventEntity?
 
-    /** Tags of the events that include [day]. */
-    @Query("SELECT tag_id FROM events WHERE start_day <= :day AND end_day >= :day")
-    suspend fun tagIdsOn(day: Long): List<Long>
+    /** Tags of the events that include [day] at [minute] of the day. */
+    @Query("SELECT e.tag_id FROM events e WHERE $AT")
+    suspend fun tagIdsAt(day: Long, minute: Int): List<Long>
 
-    /** Names of the events that include [day], by name. */
+    /** Names of the events that include [day] at [minute] of the day, by name. */
     @Query(
         "SELECT g.name FROM events e JOIN tags g ON g.id = e.tag_id " +
-            "WHERE e.start_day <= :day AND e.end_day >= :day ORDER BY g.name COLLATE NOCASE"
+            "WHERE $AT ORDER BY g.name COLLATE NOCASE"
     )
-    suspend fun namesOn(day: Long): List<String>
+    suspend fun namesAt(day: Long, minute: Int): List<String>
 
     @Insert suspend fun insert(event: EventEntity): Long
 

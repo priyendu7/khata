@@ -37,7 +37,12 @@
     <string name="events_dates">Dates</string>
     <string name="events_pick_dates">Pick the first and last day</string>
     <string name="events_range">%1$s – %2$s</string>
-    <string name="events_help">Every transaction on these days is tagged with this name, including SMS that arrive later. Changing the dates or name moves the tag.</string>
+    <string name="events_set_times">Set times</string>
+    <string name="events_start_time">Starts on the first day at</string>
+    <string name="events_end_time">Ends on the last day at</string>
+    <string name="events_end_before_start">The end must be after the start</string>
+    <string name="events_at">%1$s, %2$s</string>
+    <string name="events_help">Every transaction in these days, or between the times if set, is tagged with this name, including SMS that arrive later. Changing the dates, times or name moves the tag.</string>
     <string name="events_delete_title">Delete %1$s?</string>
     <string name="events_delete_body">The event goes, but transactions already tagged %1$s keep the tag, so the trip\'s history stays.</string>
 </resources>

@@ -16,6 +16,7 @@ import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.model.Event
 import dagger.Lazy
 import java.time.Instant
+import java.time.LocalTime
 import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -109,6 +110,27 @@ class AddFromSmsTest {
         vm.update(vm.form.value!!.withTag("work").withDate(day.plusDays(1)))
 
         assertEquals(listOf("work"), vm.form.first { it?.eventTags?.isEmpty() == true }!!.tags)
+    }
+
+    @Test
+    fun aTimeBeforeAnEventStartsHasNoTagAndATimeInsideAddsIt() = runTest {
+        val zone = ZoneId.systemDefault()
+        val day = Instant.ofEpochMilli(at).atZone(zone).toLocalDate()
+        val event = Event(
+            name = "Trip",
+            start = day,
+            end = day,
+            startTime = LocalTime.of(18, 0),
+            endTime = LocalTime.of(23, 0)
+        )
+        EventRepository(lazyDb).save(event, zone)
+        val halfPastFive = day.atTime(17, 30).atZone(zone).toInstant().toEpochMilli()
+        val vm = editor(mapOf(PREFILL_AT_ARG to halfPastFive))
+        assertEquals(emptyList<String>(), vm.form.first { it != null }!!.tags)
+
+        vm.update(vm.form.value!!.copy(time = LocalTime.of(19, 0)))
+
+        assertEquals(listOf("Trip"), vm.form.first { it?.eventTags?.isNotEmpty() == true }!!.tags)
     }
 
     @Test

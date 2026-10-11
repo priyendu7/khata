@@ -121,7 +121,10 @@ class TransactionEditorViewModel @Inject constructor(
                     // Known, so a new date swaps them, but not filled in again if removed.
                     val form = EditorForm.from(transaction, zone)
                     _form.value =
-                        form.copy(knownPayee = payee, eventTags = events.namesOn(form.date))
+                        form.copy(
+                            knownPayee = payee,
+                            eventTags = events.namesAt(form.date, form.time)
+                        )
                 }
             }
         }
@@ -136,12 +139,17 @@ class TransactionEditorViewModel @Inject constructor(
                 }
         }
         viewModelScope.launch {
-            // A saved transaction's own date was handled when it loaded.
-            _form.mapNotNull { it?.date }.distinctUntilChanged().drop(if (isNew) 0 else 1)
-                .mapLatest { date -> date to events.namesOn(date) }
-                .collect { (date, names) ->
+            // A saved transaction's own date and time were handled when it loaded.
+            _form.mapNotNull { form -> form?.let { it.date to it.time } }.distinctUntilChanged()
+                .drop(if (isNew) 0 else 1)
+                .mapLatest { (date, time) -> Triple(date, time, events.namesAt(date, time)) }
+                .collect { (date, time, names) ->
                     _form.update { form ->
-                        if (form?.date == date) form.withEventTags(names) else form
+                        if (form?.date == date && form.time == time) {
+                            form.withEventTags(names)
+                        } else {
+                            form
+                        }
                     }
                 }
         }

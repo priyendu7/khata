@@ -38,7 +38,7 @@ data class EditorForm(
     val rememberPayee: Boolean = true,
     /** The month totals count it in; null is "same as date" (#93). */
     val countsIn: YearMonth? = null,
-    /** Names of the events on [date] (#73), whose tags are filled in like a payee's defaults. */
+    /** The events at [date] and [time] (#73); their tags fill in like a payee's defaults. */
     val eventTags: List<String> = emptyList(),
     /** For a transfer: money out of the account or into it (#113); null when not known. */
     val transferSide: TransferSide? = null
@@ -110,8 +110,8 @@ data class EditorForm(
     }
 
     /**
-     * Switches to [names], the events on a new date. The old events' tags make way for the new
-     * ones', but tags the user added stay, and so do the payee's defaults.
+     * Switches to [names], the events at a new date or time. The old events' tags make way for the
+     * new ones', but tags the user added stay, and so do the payee's defaults.
      */
     fun withEventTags(names: List<String>): EditorForm {
         if (names == eventTags) return this

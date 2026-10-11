@@ -121,6 +121,14 @@ object KhataMigrations {
         }
     }
 
+    /** 9 → 10: optional start and end times on events (#141). Existing events stay whole days. */
+    val MIGRATION_9_10 = object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `events` ADD COLUMN `start_minute` INTEGER")
+            db.execSQL("ALTER TABLE `events` ADD COLUMN `end_minute` INTEGER")
+        }
+    }
+
     val ALL: Array<Migration> = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
@@ -129,6 +137,7 @@ object KhataMigrations {
         MIGRATION_5_6,
         MIGRATION_6_7,
         MIGRATION_7_8,
-        MIGRATION_8_9
+        MIGRATION_8_9,
+        MIGRATION_9_10
     )
 }

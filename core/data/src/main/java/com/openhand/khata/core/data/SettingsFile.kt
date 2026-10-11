@@ -120,7 +120,10 @@ data class EventData(
     val name: String,
     /** ISO dates, both included. */
     val firstDay: String,
-    val lastDay: String
+    val lastDay: String,
+    /** "18:00" on the first day and "23:00" on the last, both included; absent = whole days. */
+    val startTime: String? = null,
+    val endTime: String? = null
 )
 
 /** The JSON inside the envelope: UTF-8, unknown fields ignored, newer versions refused. */

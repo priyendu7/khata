@@ -12,6 +12,7 @@ import com.openhand.khata.core.model.TransactionSource
 import com.openhand.khata.core.model.TransferKind
 import com.openhand.khata.core.model.TransferSide
 import java.time.Instant
+import java.time.LocalTime
 import java.time.ZoneId
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -127,6 +128,29 @@ class SmsImporterTest : RepositoryTest() {
             listOf("work", "Trip"),
             importer.preview(sms(ref = "2", payee = "CAFE", amount = 1)).tags
         )
+    }
+
+    @Test
+    fun anSmsIsTaggedByTheEventsTimeNotJustItsDay() = runTest {
+        val zone = ZoneId.systemDefault()
+        val day = Instant.ofEpochMilli(AT).atZone(zone).toLocalDate()
+        val event = Event(
+            name = "Trip",
+            start = day,
+            end = day.plusDays(1),
+            startTime = LocalTime.of(18, 0),
+            endTime = LocalTime.of(23, 0)
+        )
+        EventRepository(lazyDb).save(event, zone)
+        val at = { hour: Int, minute: Int ->
+            day.atTime(hour, minute).atZone(zone).toInstant().toEpochMilli()
+        }
+
+        val early = saved(sms(at = at(17, 30), ref = "1"))
+        val inside = saved(sms(at = at(19, 0), ref = "2"))
+
+        assertEquals(emptyList<String>(), db.transactionDao().tagNames(early.transactionId))
+        assertEquals(listOf("Trip"), db.transactionDao().tagNames(inside.transactionId))
     }
 
     @Test
