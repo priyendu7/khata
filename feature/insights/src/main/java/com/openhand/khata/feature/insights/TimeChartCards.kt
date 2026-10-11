@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,11 +26,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.Change
 import com.openhand.khata.core.model.MonthlyComparison
+import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.categoriesLabel
 import com.openhand.khata.core.ui.categoryName
 import java.text.NumberFormat
 import java.time.LocalDate
@@ -65,10 +70,12 @@ internal fun HeatmapCard(state: HeatmapState, onOpenDay: (LocalDate) -> Unit) {
 internal fun MonthlyCard(
     state: MonthlyState,
     onSelectMonths: (Int) -> Unit,
+    onPickCategories: (Set<Long>) -> Unit,
     onOpenMonth: (YearMonth) -> Unit
 ) {
-    var stacked by rememberSaveable { mutableStateOf(false) }
+    var picking by rememberSaveable { mutableStateOf(false) }
     val comparison = state.comparison
+    val picked = state.categories.filter { it.id in state.picked }
     ChartCard(stringResource(R.string.insights_monthly_title)) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -82,48 +89,75 @@ internal fun MonthlyCard(
                 )
             }
             FilterChip(
-                selected = stacked,
-                onClick = { stacked = !stacked },
-                label = { Text(stringResource(R.string.insights_stack_by_category)) }
+                selected = picked.isNotEmpty(),
+                onClick = { picking = true },
+                label = {
+                    Text(
+                        categoriesLabel(picked)
+                            ?: stringResource(R.string.insights_categories_all),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                trailingIcon = {
+                    Icon(
+                        painterResource(UiR.drawable.ic_arrow_drop_down),
+                        contentDescription = null
+                    )
+                }
             )
         }
         if (comparison.bars.all { it.spentPaise == 0L && it.incomePaise == 0L }) {
             ChartEmpty(
                 stringResource(R.string.insights_no_months_title),
-                stringResource(R.string.insights_no_months_body)
+                stringResource(
+                    if (comparison.picked) {
+                        R.string.insights_no_months_picked_body
+                    } else {
+                        R.string.insights_no_months_body
+                    }
+                )
             )
         } else {
-            MonthlyBars(comparison, stacked, onOpenMonth)
-            MonthlyLegend(comparison, stacked)
+            MonthlyBars(comparison, onOpenMonth)
+            MonthlyLegend(comparison)
             Changes(comparison)
         }
     }
+    if (picking) {
+        CategoriesDialog(
+            categories = state.categories,
+            picked = state.picked,
+            onDone = {
+                onPickCategories(it)
+                picking = false
+            },
+            onDismiss = { picking = false }
+        )
+    }
 }
 
+/** The stacked categories, then "Other" and income unless categories are picked. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MonthlyLegend(comparison: MonthlyComparison, stacked: Boolean) {
+private fun MonthlyLegend(comparison: MonthlyComparison) {
     val theme = chartTheme()
-    val spending = if (stacked) {
-        comparison.stacked.map {
-            categoryName(it.name, it.seedKey) to theme.categoryColor(it.color)
-        } + (stringResource(R.string.insights_other) to theme.other)
+    val categories = comparison.stacked.map {
+        categoryName(it.name, it.seedKey) to theme.categoryColor(it.color)
+    }
+    val keys = if (comparison.picked) {
+        categories
     } else {
-        listOf(stringResource(R.string.insights_spent) to theme.spending)
+        categories + listOf(
+            stringResource(R.string.insights_other) to theme.other,
+            stringResource(R.string.insights_income) to theme.income
+        )
     }
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        (
-            spending + (
-                stringResource(
-                    R.string.insights_income
-                ) to theme.income
-                )
-            ).forEach { (name, color) ->
-            LegendKey(name, color)
-        }
+        keys.forEach { (name, color) -> LegendKey(name, color) }
     }
 }
 
@@ -138,7 +172,10 @@ private fun LegendKey(name: String, color: Color) {
     }
 }
 
-/** The last month against the one before, overall and for each stacked category. */
+/**
+ * The last month against the one before, overall (or the picked categories together) and for each
+ * stacked category.
+ */
 @Composable
 private fun Changes(comparison: MonthlyComparison) {
     val bars = comparison.bars
@@ -153,7 +190,12 @@ private fun Changes(comparison: MonthlyComparison) {
             ),
             style = MaterialTheme.typography.titleSmall
         )
-        comparison.change?.let { ChangeRow(stringResource(R.string.insights_change_all), it) }
+        val total = if (comparison.picked) {
+            R.string.insights_change_picked
+        } else {
+            R.string.insights_change_all
+        }
+        comparison.change?.let { ChangeRow(stringResource(total), it) }
         comparison.categoryChanges.forEach {
             ChangeRow(categoryName(it.category.name, it.category.seedKey), it.change)
         }

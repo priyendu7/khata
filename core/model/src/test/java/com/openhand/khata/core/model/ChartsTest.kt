@@ -9,6 +9,7 @@ import java.time.YearMonth
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ChartsTest {
@@ -103,6 +104,68 @@ class ChartsTest {
         assertEquals(
             listOf(Change.Percent(18), Change.Percent(-100), Change.New, Change.New, Change.New),
             comparison.categoryChanges.map { it.change }
+        )
+    }
+
+    @Test
+    fun onePickedCategoryIsItsOwnBar() {
+        val entries = listOf(
+            entry(at(2026, 8, 5), DEBIT, 1_000_00, category = 1),
+            entry(at(2026, 8, 6), DEBIT, 500_00, category = 2),
+            entry(at(2026, 8, 7), CREDIT, 50_000_00, category = 9),
+            entry(at(2026, 9, 5), DEBIT, 1_200_00, category = 1),
+            entry(at(2026, 9, 6), REFUND, 200_00, category = 1)
+        )
+
+        val comparison = MonthlyComparison.of(
+            entries,
+            listOf(YearMonth.of(2026, 8), YearMonth.of(2026, 9)),
+            india,
+            (1L..9L).map(::category),
+            picked = setOf(1)
+        )
+
+        assertEquals(listOf(1L), comparison.stacked.map { it.id })
+        assertTrue(comparison.picked)
+        // No "Other" segment and no income.
+        assertEquals(
+            listOf(listOf(1_000_00L), listOf(1_000_00L)),
+            comparison.bars.map { it.segments }
+        )
+        assertEquals(listOf(1_000_00L, 1_000_00L), comparison.bars.map { it.spentPaise })
+        assertEquals(listOf(0L, 0L), comparison.bars.map { it.incomePaise })
+        assertEquals(Change.Percent(0), comparison.change)
+    }
+
+    @Test
+    fun twoPickedCategoriesStackWithTheirChanges() {
+        val entries = listOf(
+            entry(at(2026, 8, 5), DEBIT, 1_000_00, category = 1),
+            entry(at(2026, 8, 6), DEBIT, 9_000_00, category = 3),
+            entry(at(2026, 9, 5), DEBIT, 1_500_00, category = 1),
+            entry(at(2026, 9, 6), DEBIT, 500_00, category = 2),
+            // A picked id that isn't a category is left out.
+            entry(at(2026, 9, 7), DEBIT, 700_00, category = 42)
+        )
+
+        val comparison = MonthlyComparison.of(
+            entries,
+            listOf(YearMonth.of(2026, 8), YearMonth.of(2026, 9)),
+            india,
+            (1L..3L).map(::category),
+            picked = setOf(2, 1, 42)
+        )
+
+        assertEquals(listOf(1L, 2L), comparison.stacked.map { it.id })
+        val (aug, sep) = comparison.bars
+        assertEquals(listOf(1_000_00L, 0L), aug.segments)
+        assertEquals(listOf(1_500_00L, 500_00L), sep.segments)
+        assertEquals(2_000_00L, sep.spentPaise)
+        // Together: ₹1,000 to ₹2,000; category 2 had nothing in August.
+        assertEquals(Change.Percent(100), comparison.change)
+        assertEquals(
+            listOf(1L to Change.Percent(50), 2L to Change.New),
+            comparison.categoryChanges.map { it.category.id to it.change }
         )
     }
 

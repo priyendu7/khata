@@ -1,5 +1,8 @@
 package com.openhand.khata.feature.insights
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -7,6 +10,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -134,9 +138,12 @@ class InsightsContentTest {
                 onOpen = { openedAccounts += it }
             ),
             onCloseBreakdown = { closed++ },
-            onOpenTransactions = { filters += it }
+            onOpenTransactions = { filters += it },
+            onPickCategories = { picks += it }
         )
     }
+
+    private val picks = mutableListOf<Set<Long>>()
 
     private val goa = Tag(1, "Goa trip")
     private val work = Tag(2, "Work")
@@ -229,6 +236,96 @@ class InsightsContentTest {
         compose.onNodeWithText("12 months").performClick()
         assertEquals(listOf(YearMonth.of(2026, 9)), months)
         assertEquals(listOf(12), monthCounts)
+    }
+
+    private val travel = category(3, "travel")
+    private val health = category(8, "health")
+
+    /** Food and Travel picked: two segments a month, no "Other" and no income. */
+    private fun pickedMonthly(picked: Set<Long> = setOf(food.id, travel.id)): MonthlyState {
+        val sep = YearMonth.of(2026, 9)
+        val bars = listOf(
+            MonthBar(sep.minusMonths(1), 1_000_00, 0, listOf(1_000_00, 0)),
+            MonthBar(sep, 1_500_00, 0, listOf(1_200_00, 300_00))
+        )
+        return MonthlyState(
+            months = 6,
+            comparison = MonthlyComparison(
+                bars = bars,
+                stacked = listOf(food, travel),
+                change = Change.Percent(50),
+                categoryChanges = listOf(
+                    CategoryChange(food, Change.Percent(20)),
+                    CategoryChange(travel, Change.New)
+                ),
+                picked = true
+            ),
+            categories = listOf(food, rent, travel, shopping, health),
+            picked = picked
+        )
+    }
+
+    @Test
+    fun monthlyHasNoByCategoryToggleAndPicksCategories() {
+        show(null, monthly = monthly().copy(categories = listOf(food, rent, travel)))
+
+        compose.onNodeWithText("By category").assertDoesNotExist()
+        compose.onNodeWithText("Other").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Categories: All").performClick()
+        // The dialog's rows; Food is also in the legend and the change rows.
+        compose.onNode(hasText("Travel") and isToggleable()).performClick()
+        compose.onNode(hasText("Food") and isToggleable()).performClick()
+        compose.onNodeWithText("Done").performClick()
+        assertEquals(listOf(setOf(travel.id, food.id)), picks)
+    }
+
+    @Test
+    fun allInThePickerClearsTheSelection() {
+        show(null, monthly = pickedMonthly())
+
+        compose.onNodeWithText("Food, Travel").performClick()
+        compose.onNodeWithText("All").performClick()
+        compose.onNodeWithText("Done").performClick()
+        assertEquals(listOf(emptySet<Long>()), picks)
+    }
+
+    @Test
+    fun thePickerChipNamesWhatsPicked() {
+        var state by mutableStateOf(pickedMonthly(setOf(food.id)))
+        compose.setContent {
+            InsightsContent(
+                donut = null,
+                heatmap = null,
+                monthly = state,
+                onSelectPeriod = {},
+                onStepPeriod = {},
+                onSelectPast = {},
+                onOpenCategory = {},
+                onOpenDay = {},
+                onSelectMonths = {},
+                onOpenMonth = {}
+            )
+        }
+        compose.onNode(hasText("Food") and hasClickAction()).assertIsDisplayed()
+        state = pickedMonthly(setOf(food.id, travel.id))
+        compose.onNodeWithText("Food, Travel").assertIsDisplayed()
+        state = pickedMonthly(setOf(food.id, travel.id, health.id))
+        compose.onNodeWithText("3 categories").assertIsDisplayed()
+    }
+
+    @Test
+    fun pickedCategoriesShowOnlyThemselves() {
+        show(null, monthly = pickedMonthly())
+
+        compose.onNodeWithText("Together").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("+50%").assertIsDisplayed()
+        compose.onNodeWithText("New").performScrollTo().assertIsDisplayed()
+        // The legend: only the picked categories.
+        compose.onNodeWithText("Other").assertDoesNotExist()
+        compose.onNodeWithText("Income").assertDoesNotExist()
+        compose.onNodeWithContentDescription("September 2026: spent ₹1,500", substring = true)
+            .assertExists()
+        compose.onNodeWithContentDescription("income", substring = true).assertDoesNotExist()
     }
 
     @Test
@@ -391,7 +488,12 @@ class InsightsContentTest {
         compose.onNodeWithText("See transactions").performScrollTo().performClick()
         assertEquals(
             listOf(
-                TransactionFilter(categoryId = food.id, tagId = goa.id, from = 100, until = 200),
+                TransactionFilter(
+                    categoryIds = setOf(food.id),
+                    tagId = goa.id,
+                    from = 100,
+                    until = 200
+                ),
                 TransactionFilter(tagId = goa.id, from = 100, until = 200)
             ),
             filters
@@ -500,7 +602,7 @@ class InsightsContentTest {
         assertEquals(
             listOf(
                 TransactionFilter(
-                    categoryId = food.id,
+                    categoryIds = setOf(food.id),
                     accountId = card.id,
                     from = 100,
                     until = 200

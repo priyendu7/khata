@@ -45,7 +45,8 @@ data class TransactionListItem(
 data class TransactionFilter(
     /** Matches the payee's name or the note, ignoring case. */
     val query: String = "",
-    val categoryId: Long? = null,
+    /** Any of these categories; empty means any category. */
+    val categoryIds: Set<Long> = emptySet(),
     val tagId: Long? = null,
     /** Only transactions with no tag at all; used instead of [tagId]. */
     val untagged: Boolean = false,
@@ -59,7 +60,7 @@ data class TransactionFilter(
 ) {
     val isFiltered: Boolean
         get() = query.isNotBlank() ||
-            categoryId != null ||
+            categoryIds.isNotEmpty() ||
             tagId != null ||
             untagged ||
             accountId != null ||

@@ -2,7 +2,9 @@ package com.openhand.khata.core.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.DefaultCategory
 
 @StringRes
@@ -27,3 +29,19 @@ fun DefaultCategory.nameRes(): Int = when (this) {
 fun categoryName(name: String?, seedKey: String?): String = name
     ?: DefaultCategory.fromKey(seedKey)?.let { stringResource(it.nameRes()) }
     ?: stringResource(R.string.category_uncategorized)
+
+/**
+ * A short label for several picked categories: "Food", "Food, Travel" or "3 categories". Null
+ * when none are picked, so the caller shows its own "any" label.
+ */
+@Composable
+fun categoriesLabel(picked: List<Category>): String? = when (picked.size) {
+    0 -> null
+    1 -> picked[0].let { categoryName(it.name, it.seedKey) }
+    2 -> stringResource(
+        R.string.categories_pair,
+        categoryName(picked[0].name, picked[0].seedKey),
+        categoryName(picked[1].name, picked[1].seedKey)
+    )
+    else -> pluralStringResource(R.plurals.categories_count, picked.size, picked.size)
+}

@@ -30,13 +30,13 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
 /**
- * Spending and income bars for each of [comparison]'s months, with the spending split by
- * category when [stacked]. Tapping a month (or choosing it in TalkBack) calls [onMonthClick].
+ * A bar for each of [comparison]'s months with the spending split by category, and beside it
+ * income unless categories are picked. Tapping a month (or choosing it in TalkBack) calls
+ * [onMonthClick].
  */
 @Composable
 fun MonthlyBars(
     comparison: MonthlyComparison,
-    stacked: Boolean,
     onMonthClick: (YearMonth) -> Unit,
     modifier: Modifier = Modifier,
     theme: ChartTheme = chartTheme()
@@ -47,15 +47,25 @@ fun MonthlyBars(
     val monthFormat = DateTimeFormatter.ofPattern("MMM", locale)
     val longFormat = DateTimeFormatter.ofPattern("MMMM yyyy", locale)
     val bars = comparison.bars
+    val picked = comparison.picked
     val descriptions = bars.map {
-        stringResource(
-            R.string.insights_month_description,
-            it.month.format(longFormat),
-            Money.format(it.spentPaise),
-            Money.format(it.incomePaise)
-        )
+        if (picked) {
+            stringResource(
+                R.string.insights_month_picked_description,
+                it.month.format(longFormat),
+                Money.format(it.spentPaise)
+            )
+        } else {
+            stringResource(
+                R.string.insights_month_description,
+                it.month.format(longFormat),
+                Money.format(it.spentPaise),
+                Money.format(it.incomePaise)
+            )
+        }
     }
-    val segmentColors = comparison.stacked.map { theme.categoryColor(it.color) } + theme.other
+    val categoryColors = comparison.stacked.map { theme.categoryColor(it.color) }
+    val segmentColors = if (picked) categoryColors else categoryColors + theme.other
     val ticks = axisTicks(bars.maxOfOrNull { maxOf(it.spentPaise, it.incomePaise) } ?: 0L)
     val tickLabels = ticks.map { Money.format(it) }
     val labelGap = with(LocalDensity.current) { LABEL_GAP.toPx() }
@@ -99,23 +109,23 @@ fun MonthlyBars(
         val barWidth = group * BAR_FRACTION
         // With 12 months there may not be room for every name; then every other one.
         val every = if (group < theme.axisText.fontSize.toPx() * MIN_LABEL_EMS) 2 else 1
+        // Spending and income side by side, or spending alone when categories are picked.
+        val perGroup = if (picked) 1 else 2
         bars.forEachIndexed { i, bar ->
-            val left = gutter + i * group + (group - 2 * barWidth) / 2
-            if (stacked) {
-                var bottom = plotHeight
-                bar.segments.forEachIndexed { s, paise ->
-                    // Clipped to the month's spending, which refunds can make less than the parts.
-                    val height = (y(0) - y(paise)).coerceAtMost(bottom - y(bar.spentPaise))
-                    if (height > 0) {
-                        val topLeft = Offset(left, bottom - height)
-                        drawRect(segmentColors[s], topLeft, Size(barWidth, height))
-                        bottom -= height
-                    }
+            val left = gutter + i * group + (group - perGroup * barWidth) / 2
+            var bottom = plotHeight
+            bar.segments.forEachIndexed { s, paise ->
+                // Clipped to the month's spending, which refunds can make less than the parts.
+                val height = (y(0) - y(paise)).coerceAtMost(bottom - y(bar.spentPaise))
+                if (height > 0) {
+                    val topLeft = Offset(left, bottom - height)
+                    drawRect(segmentColors[s], topLeft, Size(barWidth, height))
+                    bottom -= height
                 }
-            } else {
-                drawBar(theme.spending, left, y(bar.spentPaise), barWidth, plotHeight)
             }
-            drawBar(theme.income, left + barWidth, y(bar.incomePaise), barWidth, plotHeight)
+            if (!picked) {
+                drawBar(theme.income, left + barWidth, y(bar.incomePaise), barWidth, plotHeight)
+            }
             if (i % every == (bars.size - 1) % every) {
                 // Centered under the month's bars.
                 val label = measurer.measure(bar.month.format(monthFormat), theme.axisText)

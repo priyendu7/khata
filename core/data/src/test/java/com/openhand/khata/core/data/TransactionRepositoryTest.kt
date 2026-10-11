@@ -5,6 +5,7 @@ import com.openhand.khata.core.database.entity.PayeeEntity
 import com.openhand.khata.core.database.entity.TransactionEntity
 import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.AccountType
+import com.openhand.khata.core.model.DefaultCategory
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.SmsTransaction
 import com.openhand.khata.core.model.Transaction
@@ -220,9 +221,17 @@ class TransactionRepositoryTest : RepositoryTest() {
         }
 
         assertEquals(listOf(taxi, dinner, lunch), ids(TransactionFilter()))
-        assertEquals(listOf(dinner, lunch), ids(TransactionFilter(categoryId = food)))
+        assertEquals(listOf(dinner, lunch), ids(TransactionFilter(categoryIds = setOf(food))))
         assertEquals(listOf(taxi, lunch), ids(TransactionFilter(tagId = officeTag)))
-        assertEquals(listOf(lunch), ids(TransactionFilter(categoryId = food, accountId = cash)))
+        val uncategorized = db.categoryDao().getBySeedKey(DefaultCategory.UNCATEGORIZED.key)!!.id
+        assertEquals(
+            listOf(taxi, dinner, lunch),
+            ids(TransactionFilter(categoryIds = setOf(food, uncategorized)))
+        )
+        assertEquals(
+            listOf(lunch),
+            ids(TransactionFilter(categoryIds = setOf(food), accountId = cash))
+        )
         assertEquals(listOf(dinner), ids(TransactionFilter(from = 2 * DAY, until = 3 * DAY)))
         assertEquals(listOf(dinner), ids(TransactionFilter(query = "dhab")))
         assertEquals(listOf(lunch), ids(TransactionFilter(query = "50%")))
