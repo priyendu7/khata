@@ -65,7 +65,7 @@ class RuleSavingTest {
             IngestOutcome.UNREADABLE,
             ingestor.ingest("JM-KOTAKB-S", atm.replace("2,000", "500"), AT + 1)
         )
-        val start = MakerForm.start("JM-KOTAKB-S", atm, AT, null)
+        val start = MakerForm.start("JM-KOTAKB-S", atm, AT, null).unguessed()
         val form = start.tapInStep(start.words.indexOfFirst { it.text == "Rs.2,000" })
         val rule = (form.check(emptySet()) as RuleCheck.Valid).rule
         val saving = RuleSaving(this, parsers, ingestor)

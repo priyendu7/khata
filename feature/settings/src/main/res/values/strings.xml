@@ -430,6 +430,14 @@
     <string name="parser_step_next">Next</string>
     <string name="parser_step_skip">Skip</string>
     <string name="parser_step_skipped">%1$s: skipped</string>
+    <string name="parser_guess_amount">Is this the amount?</string>
+    <string name="parser_guess_payee">Is this who was paid, or who paid?</string>
+    <string name="parser_guess_account">Is this the account or card number?</string>
+    <string name="parser_guess_reference">Is this the reference number?</string>
+    <string name="parser_guess_date">Is this the date?</string>
+    <string name="parser_guess_hint">Khata guessed this from the SMS. If it\'s wrong, tap the right words.</string>
+    <string name="parser_guess_yes">Yes</string>
+    <string name="parser_guess_all">Looks right</string>
     <string name="parser_saved">Saved.</string>
     <plurals name="parser_saved_recorded">
         <item quantity="one">Saved. %d waiting SMS recorded.</item>

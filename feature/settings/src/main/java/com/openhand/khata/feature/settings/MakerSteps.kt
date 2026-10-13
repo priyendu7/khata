@@ -13,6 +13,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,8 +43,12 @@ internal fun MarkStep(form: MakerForm, step: RuleMaker.Field, onForm: (MakerForm
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
-    Text(stringResource(stepPrompt(step)), style = MaterialTheme.typography.titleMedium)
-    ParserHint(stringResource(R.string.parser_step_hint))
+    val guess = form.isGuess(step)
+    Text(
+        stringResource(if (guess) guessPrompt(step) else stepPrompt(step)),
+        style = MaterialTheme.typography.titleMedium
+    )
+    ParserHint(stringResource(if (guess) R.string.parser_guess_hint else R.string.parser_step_hint))
     SmsWords(form, onTap = { onForm(form.tapInStep(it)) })
     form.marks.firstOrNull { it.field == step }?.let { mark ->
         Text(
@@ -67,8 +72,16 @@ internal fun MarkStep(form: MakerForm, step: RuleMaker.Field, onForm: (MakerForm
             }
         }
         Button(onClick = { onForm(form.next()) }, enabled = form.canGoOn) {
-            Text(stringResource(R.string.parser_step_next))
+            Text(
+                stringResource(if (guess) R.string.parser_guess_yes else R.string.parser_step_next)
+            )
         }
+    }
+    if (form.canConfirmAll) {
+        OutlinedButton(
+            onClick = { onForm(form.confirmAll()) },
+            modifier = Modifier.fillMaxWidth()
+        ) { Text(stringResource(R.string.parser_guess_all)) }
     }
 }
 
@@ -177,6 +190,14 @@ private fun stepPrompt(field: RuleMaker.Field): Int = when (field) {
     RuleMaker.Field.ACCOUNT -> R.string.parser_step_account
     RuleMaker.Field.REF -> R.string.parser_step_reference
     RuleMaker.Field.DATE -> R.string.parser_step_date
+}
+
+private fun guessPrompt(field: RuleMaker.Field): Int = when (field) {
+    RuleMaker.Field.AMOUNT -> R.string.parser_guess_amount
+    RuleMaker.Field.PAYEE -> R.string.parser_guess_payee
+    RuleMaker.Field.ACCOUNT -> R.string.parser_guess_account
+    RuleMaker.Field.REF -> R.string.parser_guess_reference
+    RuleMaker.Field.DATE -> R.string.parser_guess_date
 }
 
 /** A colour of its own for each field, readable with white text and in both themes. */

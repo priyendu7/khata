@@ -36,18 +36,23 @@ import com.openhand.khata.core.model.UnparsedSmsGroup
 import com.openhand.khata.core.ui.dateLabel
 import com.openhand.khata.core.ui.segment
 import com.openhand.khata.core.ui.timeLabel
+import com.openhand.khata.sms.parser.ParsedSms
 import java.time.Instant
 import java.time.ZoneId
 
 /**
  * The SMS no rule could read (PRD feature 7), one card per sender header, the newest first. A
  * group of several shows its newest SMS and acts on all of them at once; expanded, each SMS has
- * its own actions. The sender is shown rather than a bank, since a business no rule knows has none.
+ * its own actions. The sender is shown rather than a bank, since a business no rule knows has
+ * none. A card with a guess in [guesses] (PRD feature 8) asks whether it's right: yes saves a
+ * parser from it, and Fix it opens Make a parser with the guesses filled in.
  */
 @Composable
 internal fun UnparsedSmsList(
     groups: List<UnparsedSmsGroup>,
     left: Int,
+    guesses: Map<Long, ParsedSms>,
+    onAcceptGuess: (UnparsedSms) -> Unit,
     onAddByHand: (UnparsedSms) -> Unit,
     onMakeParser: (UnparsedSms) -> Unit,
     onDismiss: (UnparsedSms) -> Unit,
@@ -80,6 +85,8 @@ internal fun UnparsedSmsList(
                     val alone = sms == null
                     SmsCard(
                         sms = one,
+                        guess = if (alone) guesses[one.id] else null,
+                        onAcceptGuess = { onAcceptGuess(one) },
                         onAddByHand = { onAddByHand(one) },
                         onMakeParser = if (alone) ({ onMakeParser(one) }) else null,
                         onDismiss = { onDismiss(one) },
@@ -93,6 +100,8 @@ internal fun UnparsedSmsList(
                     GroupCard(
                         group = group,
                         expanded = open,
+                        guess = guesses[group.newest.id],
+                        onAcceptGuess = { onAcceptGuess(group.newest) },
                         onToggle = {
                             expanded =
                                 if (open) expanded - group.header else expanded + group.header
@@ -155,12 +164,16 @@ private fun UnparsedIntro(left: Int, single: Boolean) {
 private fun GroupCard(
     group: UnparsedSmsGroup,
     expanded: Boolean,
+    guess: ParsedSms?,
+    onAcceptGuess: () -> Unit,
     onToggle: () -> Unit,
     onMakeParser: () -> Unit,
     onIgnoreSender: () -> Unit,
     onDismissAll: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Expanded, the newest isn't on this card, so neither is its guess.
+    val shownGuess = guess.takeIf { !expanded }
     CardColumn(modifier) {
         TopLine(
             pluralStringResource(
@@ -173,6 +186,7 @@ private fun GroupCard(
         )
         // Expanded, the newest is the first in the list below.
         if (!expanded) SmsText(group.newest)
+        shownGuess?.let { GuessText(it) }
         TextButton(onClick = onToggle, contentPadding = PaddingValues(0.dp)) {
             Text(
                 if (expanded) {
@@ -182,10 +196,20 @@ private fun GroupCard(
                 }
             )
         }
-        ActionRow(
-            primary = R.string.review_make_parser to onMakeParser,
-            others = listOf(R.string.review_dismiss_all to onDismissAll)
-        )
+        if (shownGuess != null) {
+            ActionRow(
+                primary = R.string.review_guess_yes to onAcceptGuess,
+                others = listOf(
+                    R.string.review_guess_fix to onMakeParser,
+                    R.string.review_dismiss_all to onDismissAll
+                )
+            )
+        } else {
+            ActionRow(
+                primary = R.string.review_make_parser to onMakeParser,
+                others = listOf(R.string.review_dismiss_all to onDismissAll)
+            )
+        }
     }
 }
 
@@ -196,6 +220,8 @@ private fun GroupCard(
 @Composable
 private fun SmsCard(
     sms: UnparsedSms,
+    guess: ParsedSms?,
+    onAcceptGuess: () -> Unit,
     onAddByHand: () -> Unit,
     onMakeParser: (() -> Unit)?,
     onDismiss: () -> Unit,
@@ -215,10 +241,15 @@ private fun SmsCard(
             )
         )
         SmsText(sms)
+        guess?.let { GuessText(it) }
         Spacer(Modifier.height(8.dp))
+        val makeParser = onMakeParser?.let { R.string.review_make_parser to it }
         ActionRow(
-            primary = onMakeParser?.let { R.string.review_make_parser to it },
-            others = listOf(
+            primary = if (guess != null) R.string.review_guess_yes to onAcceptGuess else makeParser,
+            others = listOfNotNull(
+                makeParser?.takeIf {
+                    guess != null
+                }?.let { R.string.review_guess_fix to it.second },
                 R.string.review_add_by_hand to onAddByHand,
                 R.string.review_dismiss to onDismiss
             )
