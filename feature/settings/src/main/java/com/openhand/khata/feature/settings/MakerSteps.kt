@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.segmentCardBorder
 import com.openhand.khata.core.ui.segmentCardColors
 import com.openhand.khata.sms.parser.DateFormats
 import com.openhand.khata.sms.parser.RuleKind
@@ -143,7 +144,11 @@ internal fun MarkSummary(form: MakerForm, onForm: (MakerForm) -> Unit) {
  */
 @Composable
 internal fun SmsWords(form: MakerForm, onTap: ((Int) -> Unit)?) {
-    Card(Modifier.fillMaxWidth(), colors = segmentCardColors()) {
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = segmentCardColors(),
+        border = segmentCardBorder()
+    ) {
         FlowRow(
             modifier = Modifier.padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),

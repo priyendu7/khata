@@ -68,8 +68,9 @@
     <string name="insights_change_title">%1$s बनाम %2$s</string>
     <string name="insights_change_all">कुल खर्च</string>
     <string name="insights_change_picked">सब मिलाकर</string>
-    <string name="insights_change_up">+%1$s%%</string>
-    <string name="insights_change_down">−%1$s%%</string>
+    <string name="insights_change_up">↑ %1$s%%</string>
+    <string name="insights_change_down">↓ %1$s%%</string>
+    <string name="insights_change_none">कोई बदलाव नहीं</string>
     <string name="insights_change_new">नया</string>
     <plurals name="insights_months">
         <item quantity="one">%d महीना</item>
@@ -127,13 +128,11 @@
     <string name="card_statement_total">कुल देय</string>
     <string name="card_statement_minimum">न्यूनतम देय</string>
     <string name="card_statement_due_date">देय तिथि</string>
-    <string name="card_statement_status">स्थिति</string>
     <string name="card_payments">भुगतान</string>
     <string name="card_payment">%2$s को %1$s</string>
     <string name="card_no_payments">अभी कोई भुगतान नहीं</string>
     <string name="card_no_statement_title">अभी कोई स्टेटमेंट नहीं</string>
     <string name="card_no_statement_body">बैंक का स्टेटमेंट SMS आने पर बिल यहाँ दिखेगा। तब तक, इस साइकिल में आपका खर्च यह है।</string>
-    <string name="card_bank_vs_khata">बैंक के अनुसार %1$s देय · Khata में इस साइकिल के %2$s के खर्च दर्ज हैं</string>
     <string name="card_bank_vs_khata_note">ब्याज, शुल्क, EMI या छूटा हुआ SMS इनमें अंतर ला सकते हैं।</string>
     <string name="card_spending">श्रेणी के अनुसार खर्च</string>
     <string name="card_cycle">%1$s – %2$s</string>
@@ -190,4 +189,19 @@
     <string name="card_reminder_text_today">%1$s: %2$s आज देय है</string>
     <!-- On a lock screen that hides private content: no card or amount. -->
     <string name="card_reminder_public">एक क्रेडिट कार्ड बिल जल्द देय है</string>
+    <plurals name="cards_due_across">
+        <item quantity="one">%d कार्ड पर बकाया</item>
+        <item quantity="other">%d कार्डों पर बकाया</item>
+    </plurals>
+    <string name="cards_next_due">अगला: %1$s %2$s</string>
+    <string name="cards_statement_due">स्टेटमेंट बकाया</string>
+    <string name="cards_spent_cycle_label">इस साइकिल में खर्च</string>
+    <string name="card_due_line">देय %1$s · %2$s</string>
+    <string name="card_paid_so_far">अब तक भुगतान</string>
+    <string name="card_check_title">स्टेटमेंट जाँच</string>
+    <string name="card_check_apart">%1$s का अंतर</string>
+    <string name="card_check_match">मेल खाता है</string>
+    <string name="card_check_bank">बैंक के अनुसार बकाया</string>
+    <string name="card_check_khata">इस साइकिल में खाता में दर्ज</string>
+    <string name="card_payments_help">इस कार्ड के भुगतान आते ही यहाँ दिखते हैं।</string>
 </resources>

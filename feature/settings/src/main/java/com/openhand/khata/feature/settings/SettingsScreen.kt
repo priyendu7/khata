@@ -1,5 +1,6 @@
 package com.openhand.khata.feature.settings
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,16 +17,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.RowChevron
+import com.openhand.khata.core.ui.RowIcon
 import com.openhand.khata.core.ui.ScreenTitle
 import com.openhand.khata.core.ui.SectionHeader
 import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.Segments
+import com.openhand.khata.core.ui.Tone
 import com.openhand.khata.core.ui.segment
 
 /** Settings tab, wired to its [SettingsViewModel] through Hilt. */
@@ -108,7 +113,14 @@ fun SettingsScreen(
             SectionHeader(stringResource(R.string.settings_section_security))
             security()
             SectionHeader(stringResource(R.string.settings_section_app))
-            Row(stringResource(R.string.settings_language), languageName(language), 0, 1) {
+            Row(
+                stringResource(R.string.settings_language),
+                languageName(language),
+                0,
+                1,
+                UiR.drawable.ic_settings,
+                Tone.NEUTRAL
+            ) {
                 choosingLanguage = true
             }
             AboutSection(versionName, onOpen, onOpenLink)
@@ -138,7 +150,9 @@ private fun SmsSection(summary: SettingsSummary, onOpen: (SettingsPage) -> Unit)
         summary.lastScan?.let { stringResource(R.string.settings_sms_scanned, onOff, date(it)) }
             ?: onOff,
         0,
-        SMS_ROWS
+        SMS_ROWS,
+        UiR.drawable.ic_sms,
+        Tone.INFO
     ) { onOpen(SettingsPage.SMS_IMPORT) }
     Row(
         stringResource(R.string.filters_title),
@@ -147,13 +161,17 @@ private fun SmsSection(summary: SettingsSummary, onOpen: (SettingsPage) -> Unit)
             count(R.plurals.settings_ignore_rules, summary.ignoreRules)
         ),
         1,
-        SMS_ROWS
+        SMS_ROWS,
+        UiR.drawable.ic_filter,
+        Tone.INFO
     ) { onOpen(SettingsPage.FILTERS) }
     Row(
         stringResource(R.string.test_sms_title),
         stringResource(R.string.settings_test_value),
         2,
-        SMS_ROWS
+        SMS_ROWS,
+        UiR.drawable.ic_search,
+        Tone.INFO
     ) { onOpen(SettingsPage.TEST_MESSAGE) }
     Row(
         stringResource(R.string.settings_parsers),
@@ -162,7 +180,9 @@ private fun SmsSection(summary: SettingsSummary, onOpen: (SettingsPage) -> Unit)
             count(R.plurals.settings_parsers_custom, summary.customParsers)
         ),
         3,
-        SMS_ROWS
+        SMS_ROWS,
+        UiR.drawable.ic_code,
+        Tone.INFO
     ) { onOpen(SettingsPage.PARSERS) }
 }
 
@@ -173,32 +193,42 @@ private fun ListsSection(summary: SettingsSummary, onOpen: (SettingsPage) -> Uni
         stringResource(R.string.settings_accounts),
         count(R.plurals.settings_accounts_count, summary.accounts),
         0,
-        LIST_ROWS
+        LIST_ROWS,
+        UiR.drawable.ic_bank,
+        Tone.POSITIVE
     ) { onOpen(SettingsPage.ACCOUNTS) }
     Row(
         stringResource(R.string.settings_categories),
         count(R.plurals.settings_categories_count, summary.categories),
         1,
-        LIST_ROWS
+        LIST_ROWS,
+        UiR.drawable.ic_category,
+        Tone.POSITIVE
     ) { onOpen(SettingsPage.CATEGORIES) }
     Row(
         stringResource(R.string.settings_tags),
         count(R.plurals.settings_tags_count, summary.tags),
         2,
-        LIST_ROWS
+        LIST_ROWS,
+        UiR.drawable.ic_label,
+        Tone.POSITIVE
     ) { onOpen(SettingsPage.TAGS) }
     Row(
         stringResource(R.string.settings_payees),
         count(R.plurals.settings_payees_count, summary.payees),
         3,
-        LIST_ROWS
+        LIST_ROWS,
+        UiR.drawable.ic_person,
+        Tone.POSITIVE
     ) { onOpen(SettingsPage.PAYEES) }
     val events = count(R.plurals.settings_events_count, summary.events)
     Row(
         stringResource(R.string.settings_events),
         summary.newestEvent?.let { pair(events, it) } ?: events,
         4,
-        LIST_ROWS
+        LIST_ROWS,
+        UiR.drawable.ic_calendar,
+        Tone.POSITIVE
     ) { onOpen(SettingsPage.EVENTS) }
 }
 
@@ -214,25 +244,33 @@ private fun BackupSection(
         summary.lastExport?.let { stringResource(R.string.settings_export_last, date(it)) }
             ?: stringResource(R.string.settings_export_never),
         0,
-        BACKUP_ROWS
+        BACKUP_ROWS,
+        UiR.drawable.ic_download,
+        Tone.ACCENT
     ) { onOpen(SettingsPage.EXPORT) }
     Row(
         stringResource(R.string.settings_import),
         stringResource(R.string.settings_import_value),
         1,
-        BACKUP_ROWS
+        BACKUP_ROWS,
+        UiR.drawable.ic_upload,
+        Tone.ACCENT
     ) { onOpen(SettingsPage.IMPORT) }
     Row(
         stringResource(R.string.settings_export_settings),
         stringResource(R.string.settings_export_settings_value),
         2,
-        BACKUP_ROWS
+        BACKUP_ROWS,
+        UiR.drawable.ic_download,
+        Tone.ACCENT
     ) { onOpen(SettingsPage.EXPORT_SETTINGS) }
     Row(
         stringResource(R.string.settings_import_settings),
         stringResource(R.string.settings_import_settings_value),
         3,
-        BACKUP_ROWS
+        BACKUP_ROWS,
+        UiR.drawable.ic_upload,
+        Tone.ACCENT
     ) { onOpen(SettingsPage.IMPORT_SETTINGS) }
     backupReminder(Modifier.segment(BACKUP_ROWS - 1, BACKUP_ROWS))
 }
@@ -248,21 +286,34 @@ private fun AboutSection(
         stringResource(R.string.promise_title),
         stringResource(R.string.settings_promise_value),
         0,
-        ABOUT_ROWS
+        ABOUT_ROWS,
+        UiR.drawable.ic_shield,
+        Tone.NEUTRAL
     ) { onOpen(SettingsPage.PROMISE) }
     Row(
         stringResource(R.string.settings_privacy),
         stringResource(R.string.settings_privacy_value),
         1,
-        ABOUT_ROWS
+        ABOUT_ROWS,
+        UiR.drawable.ic_lock,
+        Tone.NEUTRAL
     ) { onOpenLink(PRIVACY_POLICY_URL) }
     Row(
         stringResource(R.string.settings_source),
         stringResource(R.string.settings_source_value),
         2,
-        ABOUT_ROWS
+        ABOUT_ROWS,
+        UiR.drawable.ic_code,
+        Tone.NEUTRAL
     ) { onOpenLink(SOURCE_URL) }
-    Row(stringResource(R.string.settings_version), versionName, 3, ABOUT_ROWS)
+    Row(
+        stringResource(R.string.settings_version),
+        versionName,
+        3,
+        ABOUT_ROWS,
+        UiR.drawable.ic_info,
+        Tone.NEUTRAL
+    )
 }
 
 /** English and हिन्दी are always written in their own script, so either can be found. */
@@ -281,13 +332,17 @@ private fun Row(
     value: String,
     index: Int,
     count: Int,
+    @DrawableRes icon: Int,
+    tone: Tone,
     onClick: (() -> Unit)? = null
 ) {
     SegmentListItem(
         index = index,
         count = count,
-        headlineContent = { Text(title) },
+        leadingContent = { RowIcon(icon, tone) },
+        headlineContent = { Text(title, fontWeight = FontWeight.SemiBold) },
         supportingContent = { Text(value) },
+        trailingContent = onClick?.let { { RowChevron() } },
         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
     )
 }

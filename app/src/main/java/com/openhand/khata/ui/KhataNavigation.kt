@@ -2,15 +2,20 @@ package com.openhand.khata.ui
 
 import android.net.Uri
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -27,6 +32,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -456,28 +463,16 @@ private fun MainTabs(
     Scaffold(
         floatingActionButton = {
             if (current == Destination.HOME || current == Destination.TRANSACTIONS) {
-                AddTransactionButton(onClick = { onOpenTransaction(0L) })
+                AddTransactionButton(
+                    onClick = { onOpenTransaction(0L) },
+                    wide = current == Destination.HOME
+                )
             }
         },
         bottomBar = {
-            NavigationBar {
-                Destination.entries.forEach { destination ->
-                    NavigationBarItem(
-                        selected = destination == current,
-                        onClick = { current = destination },
-                        icon = {
-                            // PRD feature 4: the To review count as a badge on Transactions.
-                            val badge = toReview.takeIf {
-                                destination == Destination.TRANSACTIONS &&
-                                    it > 0
-                            }
-                            BadgedBox(badge = { badge?.let { Badge { Text("$it") } } }) {
-                                Icon(painterResource(destination.icon), contentDescription = null)
-                            }
-                        },
-                        label = { Text(stringResource(destination.label)) }
-                    )
-                }
+            Column {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                TabBar(current, toReview) { current = it }
             }
         }
     ) { padding ->
@@ -513,6 +508,48 @@ private fun MainTabs(
                 security = { LockSettingsRows(onOpenLock = { onOpen(SettingsPage.LOCK) }) },
                 cardReminder = { CardReminderSection(it) },
                 onOpen = onOpen
+            )
+        }
+    }
+}
+
+/** The tabs, with To review's count as a badge on Transactions (PRD feature 4). */
+@Composable
+private fun TabBar(current: Destination, toReview: Int, onSelect: (Destination) -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    NavigationBar(containerColor = colors.surfaceContainerLow, tonalElevation = 0.dp) {
+        Destination.entries.forEach { destination ->
+            val selected = destination == current
+            NavigationBarItem(
+                selected = selected,
+                onClick = { onSelect(destination) },
+                icon = {
+                    val badge = toReview.takeIf {
+                        destination == Destination.TRANSACTIONS && it > 0
+                    }
+                    BadgedBox(badge = { badge?.let { Badge { Text("$it") } } }) {
+                        Icon(
+                            painterResource(destination.icon),
+                            contentDescription = null,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                },
+                label = {
+                    Text(
+                        stringResource(destination.label),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+                        maxLines = 1
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = colors.primary,
+                    selectedTextColor = colors.onSurface,
+                    indicatorColor = colors.secondaryContainer,
+                    unselectedIconColor = colors.onSurfaceVariant,
+                    unselectedTextColor = colors.onSurfaceVariant
+                )
             )
         }
     }

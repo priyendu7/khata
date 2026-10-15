@@ -2,6 +2,8 @@ package com.openhand.khata.feature.insights
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -53,20 +55,21 @@ class CreditCardContentTest {
         compose.setContent { CreditCardContent(state) }
 
         compose.onNodeWithText("Axis ··5678").assertIsDisplayed()
-        compose.onNodeWithText("₹8,695").assertIsDisplayed()
+        compose.onAllNodesWithText("₹8,695").onFirst().assertIsDisplayed()
         compose.onNodeWithText("₹500").assertIsDisplayed()
-        compose.onNodeWithText("2 Nov 2026").assertIsDisplayed()
+        compose.onNodeWithText("Due 2 Nov 2026", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Partly paid (₹2,000 of ₹8,695)").assertIsDisplayed()
-        compose.onNodeWithText("₹2,000 on 13 Oct 2026").assertIsDisplayed()
+        compose.onNodeWithText("₹2,000 on 13 Oct 2026").performScrollTo().assertIsDisplayed()
     }
 
     @Test
     fun comparesTheBanksFigureWithKhatas() {
         compose.setContent { CreditCardContent(state) }
 
-        compose.onNodeWithText("Bank says ₹8,695 due · Khata recorded ₹8,120 of spends this cycle")
-            .performScrollTo()
-            .assertIsDisplayed()
+        compose.onNodeWithText("Bank says due").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("₹575 apart").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Khata recorded this cycle").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("₹8,120").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Interest, fees, EMIs or a missed SMS can make these differ.")
             .performScrollTo()
             .assertIsDisplayed()

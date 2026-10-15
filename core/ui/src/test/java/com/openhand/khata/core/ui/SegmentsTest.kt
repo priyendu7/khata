@@ -14,7 +14,7 @@ class SegmentsTest {
     }
 
     @Test
-    fun middleItemHasSmallCorners() {
+    fun middleItemHasSquareCorners() {
         assertEquals(RoundedCornerShape(inner), segmentShape(1, 3))
     }
 

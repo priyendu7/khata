@@ -1,12 +1,11 @@
 package com.openhand.khata.feature.insights
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.openhand.khata.core.model.PaymentStatus
 import com.openhand.khata.core.model.StatementSummary
-import com.openhand.khata.core.ui.incomeColor
+import com.openhand.khata.core.ui.Tone
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -37,12 +36,17 @@ enum class BillTone {
     }
 }
 
-/** Green when paid, amber when due soon, red when overdue; the theme's own for the rest. */
+/** Green when paid, the accent while due, coral once it's close or late; blue part-paid. */
 @Composable
 internal fun BillTone.color(): Color = when (this) {
-    BillTone.PAID -> incomeColor()
     BillTone.PARTLY_PAID -> MaterialTheme.colorScheme.tertiary
-    BillTone.DUE -> MaterialTheme.colorScheme.onSurfaceVariant
-    BillTone.DUE_SOON -> if (isSystemInDarkTheme()) Color(0xFFFFB74D) else Color(0xFFB26A00)
-    BillTone.OVERDUE -> MaterialTheme.colorScheme.error
+    else -> tone().color()
+}
+
+/** The same, as a [Tone] for chips and notices. */
+internal fun BillTone.tone(): Tone = when (this) {
+    BillTone.PAID -> Tone.POSITIVE
+    BillTone.PARTLY_PAID -> Tone.NEUTRAL
+    BillTone.DUE -> Tone.ACCENT
+    BillTone.DUE_SOON, BillTone.OVERDUE -> Tone.WARNING
 }

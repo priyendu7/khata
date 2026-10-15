@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.Money
+import com.openhand.khata.core.ui.segmentCardBorder
 import com.openhand.khata.core.ui.segmentCardColors
 import com.openhand.khata.sms.parser.CompiledRule
 import com.openhand.khata.sms.parser.ParseResult
@@ -38,7 +39,11 @@ internal fun testRule(rule: CompiledRule, sender: String?, body: String, at: Lon
 
 @Composable
 internal fun TestResult(read: ParseResult?) {
-    Card(Modifier.fillMaxWidth(), colors = segmentCardColors()) {
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = segmentCardColors(),
+        border = segmentCardBorder()
+    ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             when (read) {
                 is ParseResult.Parsed -> ParsedFields(read.sms)

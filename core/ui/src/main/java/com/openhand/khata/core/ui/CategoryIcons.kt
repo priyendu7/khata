@@ -3,7 +3,7 @@ package com.openhand.khata.core.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -70,15 +70,19 @@ val CategoryColors: List<Int> = listOf(
     0xFF2E7D32, 0xFF558B2F, 0xFF9E9D24, 0xFFF9A825, 0xFFFF8F00, 0xFF5D4037, 0xFF37474F, 0xFF757575
 ).map { it.toInt() }
 
-/** A category's emoji on a circle of its colour. */
+/** A category's emoji on a rounded square of its colour. */
 @Composable
 fun CategoryBadge(icon: String, color: Int, modifier: Modifier = Modifier, size: Dp = 40.dp) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = modifier.size(
-            size
-        ).clip(CircleShape).background(Color(color).copy(alpha = 0.18f))
+        modifier = modifier
+            .size(size)
+            .clip(RoundedCornerShape(size * BADGE_CORNER))
+            .background(Color(color).copy(alpha = BADGE_TINT))
     ) {
         Text(CategoryIcons.emoji(icon), fontSize = (size.value * 0.5f).sp)
     }
 }
+
+private const val BADGE_CORNER = 0.31f
+private const val BADGE_TINT = 0.18f

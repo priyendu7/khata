@@ -50,8 +50,9 @@ class SettingsScreenTest {
                 "App",
                 "About"
             )
+        // The screen's title is a heading too, above the sections.
         compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
-            .assertCountEquals(sections.size)
+            .assertCountEquals(sections.size + 1)
         val tops = sections.map {
             compose.onNodeWithText(it).fetchSemanticsNode().positionInRoot.y
         }

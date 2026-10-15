@@ -14,15 +14,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,6 +42,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.TransactionFilter
+import com.openhand.khata.core.ui.AccentFab
 import com.openhand.khata.core.ui.CategoryBadge
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
@@ -62,13 +63,12 @@ import java.time.ZoneId
 
 /** The "+" button shown on Home and Transactions. */
 @Composable
-fun AddTransactionButton(onClick: () -> Unit) {
-    FloatingActionButton(onClick = onClick) {
-        Icon(
-            painterResource(UiR.drawable.ic_add),
-            contentDescription = stringResource(R.string.transactions_add)
-        )
-    }
+fun AddTransactionButton(onClick: () -> Unit, wide: Boolean = false) {
+    AccentFab(
+        onClick = onClick,
+        label = stringResource(R.string.transactions_add),
+        text = if (wide) stringResource(R.string.transactions_add_short) else null
+    )
 }
 
 /**
@@ -146,8 +146,12 @@ private fun SearchField(query: String, onChange: (String) -> Unit) {
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
-        // A pill, like the search bars in Google's apps.
-        shape = CircleShape,
+        shape = RoundedCornerShape(16.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+        ),
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
     )
 }
@@ -273,6 +277,7 @@ private fun FilterButton(label: String, selected: Boolean, onClick: () -> Unit) 
     FilterChip(
         selected = selected,
         onClick = onClick,
+        shape = Segments.SmallShape,
         label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         trailingIcon = {
             Icon(painterResource(UiR.drawable.ic_arrow_drop_down), contentDescription = null)
@@ -316,7 +321,7 @@ private fun DayHeader(day: DaySection) {
             .fillMaxWidth()
             // Hides the rows scrolling under it.
             .background(MaterialTheme.colorScheme.background)
-            .padding(start = 32.dp, end = 32.dp, top = 16.dp, bottom = 8.dp)
+            .padding(start = 24.dp, end = 24.dp, top = 18.dp, bottom = 8.dp)
     ) {
         Text(
             dayLabel(day.date),

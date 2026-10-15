@@ -4,8 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -14,22 +14,28 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.StatementSummary
 import com.openhand.khata.core.model.TransactionFilter
+import com.openhand.khata.core.ui.AmountText
 import com.openhand.khata.core.ui.SectionHeader
 import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.Segments
+import com.openhand.khata.core.ui.ShareBar
+import com.openhand.khata.core.ui.StatusChip
 import com.openhand.khata.core.ui.SubScreen
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
 /** A credit card's page (#155), wired to its [CreditCardViewModel]. */
 @Composable
@@ -78,7 +84,9 @@ fun CreditCardContent(state: CreditCardState?, actions: CreditCardActions = Cred
             if (latest == null) {
                 NoStatementCard()
             } else {
-                StatementCard(latest, state)
+                StatementCard(latest, state.today)
+                state.summary.latestSpentPaise?.let { StatementCheck(latest, it) }
+                PaymentsCard(latest)
             }
             CycleSpendingCard(state, actions)
             PastStatements(state, actions.onShowStatement)
@@ -98,70 +106,58 @@ private fun NoStatementCard() {
     }
 }
 
-/** Total, minimum, due date, status and payments; then the bank's figure against Khata's. */
+/**
+ * The current statement: its status, the total large, when it's due, how much of it is paid as a
+ * bar, and the minimum against what's paid so far.
+ */
 @Composable
-private fun StatementCard(bill: StatementSummary, state: CreditCardState) {
+private fun StatementCard(bill: StatementSummary, today: LocalDate) {
     val statement = bill.statement
-    ChartCard(stringResource(R.string.card_statement_title)) {
-        DetailLine(
-            stringResource(R.string.card_statement_total),
-            Money.format(statement.totalPaise)
+    val days = ChronoUnit.DAYS.between(today, statement.dueDate)
+    PageCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.card_statement_title),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f).semantics { heading() }
+            )
+            StatusChip(
+                statusLabel(bill),
+                BillTone.of(bill, today).tone(),
+                Modifier.weight(1f, fill = false)
+            )
+        }
+        AmountText(statement.totalPaise, style = MaterialTheme.typography.displaySmall)
+        Text(
+            stringResource(R.string.card_due_line, longDate(statement.dueDate), dueIn(days)),
+            style = MaterialTheme.typography.bodyMedium
         )
-        statement.minDuePaise?.let {
-            DetailLine(stringResource(R.string.card_statement_minimum), Money.format(it))
-        }
-        DetailLine(stringResource(R.string.card_statement_due_date), longDate(statement.dueDate))
-        DetailLine(
-            stringResource(R.string.card_statement_status),
-            statusLabel(bill),
-            BillTone.of(bill, state.today).color()
-        )
-        Text(stringResource(R.string.card_payments), style = MaterialTheme.typography.titleSmall)
-        if (bill.payments.isEmpty()) {
-            Text(
-                stringResource(R.string.card_no_payments),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        if (statement.totalPaise > 0) {
+            ShareBar(
+                bill.paidPaise.toFloat() / statement.totalPaise,
+                BillTone.of(bill, today).color()
             )
         }
-        bill.payments.forEach {
-            Text(
-                stringResource(
-                    R.string.card_payment,
-                    Money.format(it.amountPaise),
-                    longDate(it.timestamp.toLocalDate())
-                ),
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-        state.summary.latestSpentPaise?.let { recorded ->
-            Text(
-                stringResource(
-                    R.string.card_bank_vs_khata,
-                    Money.format(statement.totalPaise),
-                    Money.format(recorded)
-                ),
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                stringResource(R.string.card_bank_vs_khata_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            statement.minDuePaise?.let {
+                Figure(stringResource(R.string.card_statement_minimum), Money.format(it))
+            }
+            Figure(stringResource(R.string.card_paid_so_far), Money.format(bill.paidPaise))
         }
     }
 }
 
-/** A label and its value on one line; the value never wraps. */
+/** A small label over its amount. */
 @Composable
-private fun DetailLine(label: String, value: String, color: Color = Color.Unspecified) {
-    Row(Modifier.fillMaxWidth()) {
+private fun RowScope.Figure(label: String, value: String) {
+    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(
             label,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f).padding(end = 12.dp)
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Text(value, style = MaterialTheme.typography.titleSmall, color = color)
+        Text(value, style = MaterialTheme.typography.titleMedium)
     }
 }
 
@@ -210,11 +206,7 @@ private fun PastStatements(state: CreditCardState, onShow: (Long?) -> Unit) {
                 headlineContent = { Text(longDate(bill.statement.statementDate)) },
                 supportingContent = { Text(Money.format(bill.statement.totalPaise)) },
                 trailingContent = {
-                    Text(
-                        statusLabel(bill),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = BillTone.of(bill, state.today).color()
-                    )
+                    StatusChip(statusLabel(bill), BillTone.of(bill, state.today).tone())
                 },
                 modifier = Modifier.clickable { onShow(bill.statement.id) }
             )
@@ -223,5 +215,5 @@ private fun PastStatements(state: CreditCardState, onShow: (Long?) -> Unit) {
 }
 
 /** A payment's day, where the phone is. */
-private fun Long.toLocalDate(): LocalDate =
+internal fun Long.toLocalDate(): LocalDate =
     Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()

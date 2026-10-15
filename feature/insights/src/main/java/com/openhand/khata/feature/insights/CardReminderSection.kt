@@ -34,12 +34,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.model.CardReminderSettings
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.RowChevron
+import com.openhand.khata.core.ui.RowIcon
+import com.openhand.khata.core.ui.Tone
 
 /**
  * The row for card due date reminders (#156), on the Cards tab and in Settings. Turning them on
@@ -81,7 +85,11 @@ fun CardReminderRow(
         else -> daysSummary(settings.daysBefore)
     }
     ListItem(
-        headlineContent = { Text(stringResource(R.string.card_reminder_setting)) },
+        leadingContent = { RowIcon(UiR.drawable.ic_notifications, Tone.INFO) },
+        headlineContent = {
+            Text(stringResource(R.string.card_reminder_setting), fontWeight = FontWeight.SemiBold)
+        },
+        trailingContent = { RowChevron() },
         supportingContent = { Text(state) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = modifier.clickable { editing = true }

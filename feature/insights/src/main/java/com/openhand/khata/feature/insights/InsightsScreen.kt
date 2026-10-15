@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -32,8 +33,12 @@ import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Tag
 import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.ui.DateRangeDialog
+import com.openhand.khata.core.ui.IconTile
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
+import com.openhand.khata.core.ui.Segments
+import com.openhand.khata.core.ui.Tone
+import com.openhand.khata.core.ui.segmentCardBorder
 import com.openhand.khata.core.ui.segmentCardColors
 import java.time.LocalDate
 import java.time.YearMonth
@@ -190,10 +195,16 @@ fun InsightsContent(
 internal fun ChartCard(title: String, content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        colors = segmentCardColors()
+        shape = Segments.Single,
+        colors = segmentCardColors(),
+        border = segmentCardBorder()
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() }
+            )
             content()
         }
     }
@@ -207,12 +218,7 @@ internal fun ChartEmpty(title: String, body: String) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
     ) {
-        Icon(
-            painterResource(UiR.drawable.ic_insights),
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(40.dp)
-        )
+        IconTile(painterResource(UiR.drawable.ic_insights), Tone.NEUTRAL, size = 52.dp)
         Text(title, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
         Text(
             body,

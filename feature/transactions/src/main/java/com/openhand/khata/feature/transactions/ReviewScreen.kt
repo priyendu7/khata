@@ -14,7 +14,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SuggestionChip
@@ -44,14 +43,17 @@ import com.openhand.khata.core.ui.CategoryBadge
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
 import com.openhand.khata.core.ui.EmptyState
+import com.openhand.khata.core.ui.NoticeCard
 import com.openhand.khata.core.ui.PickerField
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.TagInput
+import com.openhand.khata.core.ui.Tone
 import com.openhand.khata.core.ui.amountColor
 import com.openhand.khata.core.ui.categoryName
 import com.openhand.khata.core.ui.dateLabel
 import com.openhand.khata.core.ui.label
+import com.openhand.khata.core.ui.segmentCardBorder
 import com.openhand.khata.core.ui.segmentCardColors
 import com.openhand.khata.core.ui.signedAmount
 import com.openhand.khata.core.ui.timeLabel
@@ -297,7 +299,11 @@ private fun ExistingTags(tags: List<String>) {
 @Composable
 private fun TransactionFacts(item: ReviewItem, showSms: Boolean, onToggleSms: () -> Unit) {
     val at = Instant.ofEpochMilli(item.timestamp).atZone(ZoneId.systemDefault())
-    Card(Modifier.fillMaxWidth(), colors = segmentCardColors()) {
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = segmentCardColors(),
+        border = segmentCardBorder()
+    ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 signedAmount(item.direction, item.amountPaise),
@@ -336,17 +342,12 @@ private fun TransactionFacts(item: ReviewItem, showSms: Boolean, onToggleSms: ()
 /** "3 transactions to review", above the list while any wait (PRD feature 4). */
 @Composable
 internal fun ReviewBanner(count: Int, onReview: () -> Unit) {
-    Card(
+    NoticeCard(
+        icon = painterResource(UiR.drawable.ic_inbox),
+        title = pluralStringResource(R.plurals.review_banner, count, count),
+        body = null,
+        tone = Tone.ACCENT,
         onClick = onReview,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        ),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
-    ) {
-        Text(
-            pluralStringResource(R.plurals.review_banner, count, count),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(16.dp)
-        )
-    }
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+    )
 }
