@@ -155,6 +155,25 @@ class CardRepository @Inject constructor(
             }.minByOrNull { it.statement.statement.dueDate }
         }
 
+    /**
+     * Every debit card with its bank account (#155) and its own spending in [from, until), as
+     * epoch milliseconds; the account's spending includes it too, but nothing is counted twice.
+     */
+    fun observeDebitCards(from: Long, until: Long): Flow<List<DebitCardSummary>> = combine(
+        db.observe { it.accountDao().observeAll() },
+        db.observe { it.accountDao().observeDebitCardSpending(from, until) }
+    ) { accounts, spends ->
+        val byId = accounts.associateBy { it.id }
+        val spent = spends.associate { it.accountId to it.spentPaise }
+        accounts.filter { it.type == AccountType.DEBIT_CARD }.map { card ->
+            DebitCardSummary(
+                card = card.toModel(),
+                linkedAccount = card.linkedAccountId?.let(byId::get)?.toModel(),
+                spentPaise = spent[card.id] ?: 0
+            )
+        }
+    }
+
     /** [card]'s spending by category in [cycle], with the same rules as Insights (#108). */
     fun observeCycleSpending(
         card: Account,
@@ -272,6 +291,9 @@ data class CardSummary(
     /** The current statement. */
     val latest: StatementSummary? get() = statements.firstOrNull()
 }
+
+/** A debit card for the Cards tab (#155): its bank account, if linked, and what it spent. */
+data class DebitCardSummary(val card: Account, val linkedAccount: Account?, val spentPaise: Long)
 
 /** A credit card bill not paid in full yet, for the Home card and reminders. */
 data class CardDue(val card: Account, val statement: StatementSummary)

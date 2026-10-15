@@ -287,4 +287,28 @@ class MigrationsTest {
             }
         }
     }
+
+    @Test
+    fun version11To12AddsLinkedAccountAndKeepsAccounts() {
+        helper.createDatabase(dbName, 11).use { db ->
+            db.execSQL(
+                "INSERT INTO accounts (id, name, type, bank, last4, billing_day) " +
+                    "VALUES (3, 'HDFC Savings', 'bank', 'HDFC', '1234', NULL), " +
+                    "(4, 'HDFC Debit', 'debit_card', 'HDFC', '5678', NULL)"
+            )
+        }
+
+        helper.runMigrationsAndValidate(dbName, 12, true, *KhataMigrations.ALL).use { db ->
+            db.query("SELECT name, linked_account_id FROM accounts WHERE id = 4").use {
+                it.moveToFirst()
+                assertEquals("HDFC Debit", it.getString(0))
+                assertTrue(it.isNull(1))
+            }
+            db.execSQL("UPDATE accounts SET linked_account_id = 3 WHERE id = 4")
+            db.query("SELECT linked_account_id FROM accounts WHERE id = 4").use {
+                it.moveToFirst()
+                assertEquals(3L, it.getLong(0))
+            }
+        }
+    }
 }

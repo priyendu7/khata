@@ -8,7 +8,12 @@ data class Account(
     val bank: String? = null,
     val last4: String? = null,
     /** A credit card's statement day of the month (#154), or null; see [CardCycles]. */
-    val billingDay: Int? = null
+    val billingDay: Int? = null,
+    /**
+     * A debit card's bank account (#155), or null. The account's spending includes the card's,
+     * and a debit card is never linked to anything but a bank account.
+     */
+    val linkedAccountId: Long? = null
 ) {
     companion object {
         const val LAST_DIGITS = 4

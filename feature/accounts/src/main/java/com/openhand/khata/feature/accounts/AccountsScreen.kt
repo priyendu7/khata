@@ -15,6 +15,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -36,7 +37,10 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.AccountType
+import com.openhand.khata.core.ui.Choice
+import com.openhand.khata.core.ui.ChoiceDialog
 import com.openhand.khata.core.ui.EmptyState
+import com.openhand.khata.core.ui.PickerField
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.Segments
@@ -75,7 +79,7 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountsViewModel = hiltViewMo
                         index = index,
                         count = list.size,
                         headlineContent = { Text(account.name) },
-                        supportingContent = { Text(accountSummary(account)) },
+                        supportingContent = { Text(accountSummary(account, list)) },
                         modifier = Modifier.clickable { editing = account }
                     )
                 }
@@ -86,6 +90,8 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountsViewModel = hiltViewMo
     editing?.let { account ->
         AccountEditor(
             account = account,
+            bankAccounts = accounts.orEmpty()
+                .filter { it.type == AccountType.BANK && it.id != account.id },
             onSave = {
                 viewModel.save(it)
                 editing = null
@@ -113,18 +119,21 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountsViewModel = hiltViewMo
     }
 }
 
-/** "Credit card · HDFC · ••1234" */
+/** "Debit card · HDFC · ••5678 · Linked to HDFC Savings" */
 @Composable
-private fun accountSummary(account: Account): String = listOfNotNull(
+private fun accountSummary(account: Account, all: List<Account>): String = listOfNotNull(
     stringResource(account.type.label()),
     account.bank,
-    account.last4?.let { stringResource(R.string.accounts_last4_display, it) }
+    account.last4?.let { stringResource(R.string.accounts_last4_display, it) },
+    all.firstOrNull { it.id == account.linkedAccountId }
+        ?.let { stringResource(R.string.accounts_linked_to, it.name) }
 ).joinToString(" · ")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AccountEditor(
     account: Account,
+    bankAccounts: List<Account>,
     onSave: (Account) -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
@@ -133,6 +142,7 @@ private fun AccountEditor(
     var type by rememberSaveable { mutableStateOf(account.type) }
     var bank by rememberSaveable { mutableStateOf(account.bank.orEmpty()) }
     var last4 by rememberSaveable { mutableStateOf(account.last4.orEmpty()) }
+    var linked by rememberSaveable { mutableStateOf(account.linkedAccountId) }
     val valid = name.isNotBlank() && Account.isValidLast4(last4)
 
     AlertDialog(
@@ -202,13 +212,24 @@ private fun AccountEditor(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
+                if (type == AccountType.DEBIT_CARD) {
+                    LinkedAccountPicker(linked, bankAccounts) { linked = it }
+                }
             }
         },
         confirmButton = {
             TextButton(
                 enabled = valid,
                 onClick = {
-                    onSave(account.copy(name = name, type = type, bank = bank, last4 = last4))
+                    onSave(
+                        account.copy(
+                            name = name,
+                            type = type,
+                            bank = bank,
+                            last4 = last4,
+                            linkedAccountId = linked.takeIf { type == AccountType.DEBIT_CARD }
+                        )
+                    )
                 }
             ) { Text(stringResource(UiR.string.save)) }
         },
@@ -223,6 +244,43 @@ private fun AccountEditor(
             }
         }
     )
+}
+
+/** A debit card's bank account (#155): its spending counts there too. */
+@Composable
+private fun LinkedAccountPicker(
+    linked: Long?,
+    bankAccounts: List<Account>,
+    onPick: (Long?) -> Unit
+) {
+    var choosing by rememberSaveable { mutableStateOf(false) }
+    val notLinked = stringResource(R.string.accounts_not_linked)
+    Column(Modifier.padding(top = 8.dp)) {
+        PickerField(
+            label = stringResource(R.string.accounts_linked_account),
+            value = bankAccounts.firstOrNull { it.id == linked }?.name ?: notLinked,
+            onClick = { choosing = true }
+        )
+        Text(
+            stringResource(R.string.accounts_linked_help),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+        )
+    }
+    if (choosing) {
+        ChoiceDialog(
+            title = stringResource(R.string.accounts_linked_account),
+            choices = listOf(Choice<Long?>(null, notLinked)) +
+                bankAccounts.map { Choice(it.id, it.name) },
+            selected = linked,
+            onSelect = {
+                onPick(it)
+                choosing = false
+            },
+            onDismiss = { choosing = false }
+        )
+    }
 }
 
 /** Deleting never loses transactions: they move to another account or to "no account". */

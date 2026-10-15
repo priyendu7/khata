@@ -20,7 +20,12 @@ data class AccountEntity(
     val bank: String?,
     val last4: String?,
     /** A credit card's statement day of the month, 1–31 (#154); null for none. */
-    @ColumnInfo(name = "billing_day") val billingDay: Int? = null
+    @ColumnInfo(name = "billing_day") val billingDay: Int? = null,
+    /**
+     * A debit card's bank account (#155), or null. Its spending counts under that account too;
+     * no foreign key, as SQLite can't add one to a table, so deleting an account clears it.
+     */
+    @ColumnInfo(name = "linked_account_id") val linkedAccountId: Long? = null
 )
 
 /**

@@ -153,6 +153,7 @@ class SmsParser(
                 direction = direction,
                 accountType = accountType.accountType,
                 accountLast4 = read[RuleFormat.ACCOUNT]?.let(Fields::last4),
+                linkedAccountLast4 = read[RuleFormat.LINKED_ACCOUNT]?.let(Fields::last4),
                 payee = read[RuleFormat.PAYEE]?.let(Fields::clean),
                 reference = read[RuleFormat.REF]?.let(Fields::clean),
                 timestamp = timestamp(rule.dateFormat, read[RuleFormat.DATE], receivedAt)
@@ -276,7 +277,9 @@ data class ParsedSms(
     val payee: String?,
     val reference: String?,
     /** Epoch millis. */
-    val timestamp: Long
+    val timestamp: Long,
+    /** The bank account a debit card spend is from (#155), when the SMS names it. */
+    val linkedAccountLast4: String? = null
 )
 
 /** What a statement rule read from one SMS. */

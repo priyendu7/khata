@@ -115,4 +115,77 @@
     <!-- The other end of a move when neither its account nor a payee is known. -->
     <string name="insights_move_unknown_end">Not known</string>
     <string name="insights_moves_show_all">Show all %d</string>
+
+    <!-- Cards tab (#155). -->
+    <string name="cards_title">Cards</string>
+    <string name="cards_credit">Credit cards</string>
+    <string name="cards_debit">Debit cards</string>
+    <string name="cards_empty_title">No cards yet</string>
+    <string name="cards_empty_body">Cards appear here from your bank\'s SMS, or you can add one in Settings &gt; Accounts.</string>
+    <!-- A card's name and its last 4 digits, e.g. "ICICI ··1234". -->
+    <string name="cards_card_last4">%1$s ··%2$s</string>
+    <!-- A bill's total and due date, e.g. "₹35,300 due 23 Oct". -->
+    <string name="cards_due">%1$s due %2$s</string>
+    <string name="cards_spent_this_cycle">%1$s spent this cycle</string>
+    <string name="cards_spent_this_month">%1$s this month</string>
+    <!-- A debit card's bank account, e.g. "Linked to HDFC Savings". -->
+    <string name="cards_linked_to">Linked to %1$s</string>
+    <string name="cards_not_linked">Not linked to an account</string>
+    <string name="cards_status_paid">Paid</string>
+    <string name="cards_status_minimum">Minimum paid</string>
+    <!-- Paid so far and the bill's total, e.g. "Partly paid (₹5,000 of ₹35,300)". -->
+    <string name="cards_status_partly">Partly paid (%1$s of %2$s)</string>
+    <string name="cards_status_not_paid">Not paid</string>
+    <string name="cards_status_overdue">Overdue</string>
+
+    <!-- A credit card's page (#155). -->
+    <string name="card_statement_title">Current statement</string>
+    <string name="card_statement_total">Total due</string>
+    <string name="card_statement_minimum">Minimum due</string>
+    <string name="card_statement_due_date">Due date</string>
+    <string name="card_statement_status">Status</string>
+    <string name="card_payments">Payments</string>
+    <!-- A payment towards the bill, e.g. "₹5,000 on 12 Oct 2026". -->
+    <string name="card_payment">%1$s on %2$s</string>
+    <string name="card_no_payments">No payments yet</string>
+    <string name="card_no_statement_title">No statement yet</string>
+    <string name="card_no_statement_body">The bill shows here once the bank\'s statement SMS arrives. Until then, here\'s what you\'ve spent this cycle.</string>
+    <!-- The statement's total, then the spends Khata recorded in its cycle. -->
+    <string name="card_bank_vs_khata">Bank says %1$s due · Khata recorded %2$s of spends this cycle</string>
+    <string name="card_bank_vs_khata_note">Interest, fees, EMIs or a missed SMS can make these differ.</string>
+    <string name="card_spending">Spending by category</string>
+    <!-- A billing cycle's first and last days, e.g. "18 Sep – 17 Oct 2026". -->
+    <string name="card_cycle">%1$s – %2$s</string>
+    <string name="card_this_cycle">This cycle</string>
+    <!-- The cycle a past statement billed, by its statement date. -->
+    <string name="card_statement_cycle">Statement of %1$s</string>
+    <string name="card_show_this_cycle">Show this cycle</string>
+    <string name="card_nothing_spent_body">No spending on this card in this cycle.</string>
+    <string name="card_past_statements">Past statements</string>
+    <string name="card_settings">Card settings</string>
+    <string name="card_billing_day">Billing day</string>
+    <!-- The day of the month the bank makes the statement, e.g. "17 of each month". -->
+    <string name="card_billing_day_value">%1$d of each month</string>
+    <string name="card_billing_day_none">Not set</string>
+    <string name="card_billing_day_help">The day the bank makes your statement. Khata uses it for cycles until a statement SMS arrives.</string>
+
+    <!-- A debit card's page (#155). -->
+    <string name="debit_linked_account">Bank account</string>
+    <string name="debit_not_linked">Not linked</string>
+    <string name="debit_linked_help">The card\'s spending also counts under this account, never twice.</string>
+    <string name="debit_nothing_spent_body">No spending on this card in this period.</string>
+
+    <!-- Home's card for the next unpaid credit card bill (#155). -->
+    <string name="home_bill_title">Card bill</string>
+    <!-- Card, total, due date and when, e.g. "Axis ··5678 · ₹8,695 due 2 Nov · in 18 days". -->
+    <string name="home_bill_body">%1$s · %2$s due %3$s · %4$s</string>
+    <string name="home_bill_today">today</string>
+    <plurals name="home_bill_in_days">
+        <item quantity="one">in %d day</item>
+        <item quantity="other">in %d days</item>
+    </plurals>
+    <plurals name="home_bill_overdue">
+        <item quantity="one">overdue by %d day</item>
+        <item quantity="other">overdue by %d days</item>
+    </plurals>
 </resources>

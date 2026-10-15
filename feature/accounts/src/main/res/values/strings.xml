@@ -11,6 +11,12 @@
     <string name="accounts_last4">Last 4 digits (optional)</string>
     <string name="accounts_last4_help">Only the last 4 digits are ever stored.</string>
     <string name="accounts_last4_display">••%1$s</string>
+    <!-- A debit card's bank account (#155). -->
+    <string name="accounts_linked_account">Bank account</string>
+    <string name="accounts_not_linked">Not linked</string>
+    <string name="accounts_linked_help">The card\'s spending also counts under this account.</string>
+    <!-- In the list, e.g. "Linked to HDFC Savings". -->
+    <string name="accounts_linked_to">Linked to %1$s</string>
     <string name="accounts_delete_title">Delete %1$s?</string>
     <string name="accounts_delete_unused">No transactions use this account.</string>
     <plurals name="accounts_delete_move">

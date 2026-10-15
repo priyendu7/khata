@@ -103,8 +103,9 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
     )
 
     /**
-     * Like [observeCategorySpending], for one [account]'s transactions only, or those with no
-     * account when [account] is null. Added up, they give its figure in [observeAccountSpending].
+     * Like [observeCategorySpending], for one [account]'s transactions only (with its linked debit
+     * cards', #155), or those with no account when [account] is null. Added up, they give its
+     * figure in [observeAccountSpending].
      */
     fun observeCategorySpendingForAccount(
         from: Long,
@@ -143,8 +144,9 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
 
     /**
      * Each account's spending in [from, until), biggest first, with No account as a null account.
-     * Added up, they give [observeTotals]' spent figure: transfers never count, so paying a card
-     * bill isn't counted again. Accounts that net to zero are left out; refunds beyond spending
+     * A linked debit card's spending is in its bank account's (#155). Added up, they give
+     * [observeTotals]' spent figure: transfers never count, so paying a card bill isn't counted
+     * again. Accounts that net to zero are left out; refunds beyond spending
      * are negative and come last.
      */
     fun observeAccountSpending(from: Long, until: Long): Flow<List<AccountSpend>> =
