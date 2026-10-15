@@ -200,6 +200,7 @@ fun MakeParserContent(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            KindChoice(form, onForm)
             val step = form.step
             if (step != null) {
                 MarkStep(form, step, onForm)
@@ -215,9 +216,33 @@ fun MakeParserContent(
     }
 }
 
-/** Direction, account type, bank and senders. */
+/** Direction and account type (a statement has neither), bank and senders. */
 @Composable
 private fun RuleDetails(form: MakerForm, onForm: (MakerForm) -> Unit) {
+    if (!form.isStatement) TransactionDetails(form, onForm)
+    OutlinedTextField(
+        value = form.bank,
+        onValueChange = { onForm(form.copy(bank = it)) },
+        label = { Text(stringResource(R.string.parser_make_bank)) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth()
+    )
+    OutlinedTextField(
+        value = form.senders,
+        onValueChange = { onForm(form.copy(senders = it)) },
+        label = { Text(stringResource(R.string.parser_make_senders)) },
+        supportingText = { Text(stringResource(R.string.parser_make_senders_hint)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.Characters,
+            autoCorrectEnabled = false
+        ),
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+@Composable
+private fun TransactionDetails(form: MakerForm, onForm: (MakerForm) -> Unit) {
     Text(
         stringResource(R.string.parser_field_direction),
         style = MaterialTheme.typography.titleSmall
@@ -244,25 +269,6 @@ private fun RuleDetails(form: MakerForm, onForm: (MakerForm) -> Unit) {
             )
         }
     }
-    OutlinedTextField(
-        value = form.bank,
-        onValueChange = { onForm(form.copy(bank = it)) },
-        label = { Text(stringResource(R.string.parser_make_bank)) },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth()
-    )
-    OutlinedTextField(
-        value = form.senders,
-        onValueChange = { onForm(form.copy(senders = it)) },
-        label = { Text(stringResource(R.string.parser_make_senders)) },
-        supportingText = { Text(stringResource(R.string.parser_make_senders_hint)) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(
-            capitalization = KeyboardCapitalization.Characters,
-            autoCorrectEnabled = false
-        ),
-        modifier = Modifier.fillMaxWidth()
-    )
 }
 
 /** The rule's problems, or what it reads from this SMS and recent ones; then Save. */
@@ -277,7 +283,15 @@ private fun RuleResult(
     remarking: Boolean
 ) {
     when (check) {
-        null -> ParserHint(stringResource(R.string.parser_make_need_amount))
+        null -> ParserHint(
+            stringResource(
+                if (form.isStatement) {
+                    R.string.parser_make_need_statement
+                } else {
+                    R.string.parser_make_need_amount
+                }
+            )
+        )
         is RuleCheck.Invalid -> {
             ErrorText(stringResource(R.string.parser_invalid_title))
             check.errors.forEach { ErrorText("• " + stringResource(ruleErrorMessage(it))) }
@@ -342,6 +356,9 @@ internal fun fieldLabel(field: RuleMaker.Field): Int = when (field) {
     RuleMaker.Field.ACCOUNT -> R.string.parser_field_account
     RuleMaker.Field.REF -> R.string.parser_field_reference
     RuleMaker.Field.DATE -> R.string.parser_field_date
+    RuleMaker.Field.TOTAL -> R.string.parser_field_total
+    RuleMaker.Field.MIN_DUE -> R.string.parser_field_min_due
+    RuleMaker.Field.DUE_DATE -> R.string.parser_field_due_date
 }
 
 internal fun Context.copyToClipboard(text: String) {

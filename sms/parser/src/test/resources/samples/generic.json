@@ -1,0 +1,109 @@
+{
+  "bank": "Generic credit card rules",
+  "zone": "Asia/Kolkata",
+  "note": "Made-up versions of real ICICI, Axis and HDFC credit card SMS, read by the generic rules (rules/generic.json): statements, payments received, and SMS that must not be read as a statement. Card digits, emails and links are not real.",
+  "samples": [
+    {
+      "sender": "JM-ICICIT-S",
+      "body": "ICICI Bank Credit Card XX1234 Statement is sent to a*****1@example.com. Total of Rs 35,299.72 or minimum of Rs 3,450.00 is due by 23-OCT-26.",
+      "receivedAt": "2026-10-05T11:00:00+05:30",
+      "expect": {
+        "result": "statement",
+        "bank": "ICICI",
+        "card": "1234",
+        "totalPaise": 3529972,
+        "minDuePaise": 345000,
+        "dueDate": "2026-10-23"
+      }
+    },
+    {
+      "sender": "AX-AXISBK-S",
+      "body": "Your statement for Axis Bank Credit Card no. XX5678 is generated.\nDue on: 02-11-26\nTotal amt: INR  Dr. 8695.00\nMin amt due: INR  Dr. 174.00\nPay at axis.bank.in/ccpaynow\nTo view/download statement: https://example.com/abc",
+      "receivedAt": "2026-10-14T09:30:00+05:30",
+      "expect": {
+        "result": "statement",
+        "bank": "Axis",
+        "card": "5678",
+        "totalPaise": 869500,
+        "minDuePaise": 17400,
+        "dueDate": "2026-11-02"
+      }
+    },
+    {
+      "sender": "VM-HDFCBK-S",
+      "body": "HDFC Bank Credit Card XX4321 Statement:\nTotal due: Rs.8,363.00\nMin.due: Rs.2,268.00\nPay by 02-10-2025\nView: https://example.com/xyz",
+      "receivedAt": "2025-09-12T10:15:00+05:30",
+      "expect": {
+        "result": "statement",
+        "bank": "HDFC",
+        "card": "4321",
+        "totalPaise": 836300,
+        "minDuePaise": 226800,
+        "dueDate": "2025-10-02"
+      }
+    },
+    {
+      "sender": "JM-ICICIT-S",
+      "body": "Payment of Rs 41,589.48 has been received on your ICICI Bank Credit Card XX1234 through Bharat Bill Payment System on 15-MAY-26.",
+      "receivedAt": "2026-05-15T18:20:00+05:30",
+      "expect": {
+        "bank": "ICICI",
+        "amountPaise": 4158948,
+        "direction": "credit",
+        "accountType": "credit_card",
+        "account": "1234",
+        "payee": null,
+        "ref": null,
+        "timestamp": "2026-05-15T18:20:00+05:30"
+      }
+    },
+    {
+      "sender": "AX-AXISBK-S",
+      "body": "Payment of INR 1290.82 has been received towards your Axis Bank Credit Card XX5678 on 13-09-26 - Axis Bank",
+      "receivedAt": "2026-09-14T08:00:00+05:30",
+      "expect": {
+        "bank": "Axis",
+        "amountPaise": 129082,
+        "direction": "credit",
+        "accountType": "credit_card",
+        "account": "5678",
+        "payee": null,
+        "ref": null,
+        "timestamp": "2026-09-13T08:00:00+05:30"
+      }
+    },
+    {
+      "sender": "VM-HDFCBK-S",
+      "body": "DEAR HDFCBANK CARDMEMBER, PAYMENT OF Rs. 9060.00 RECEIVED TOWARDS YOUR CREDIT CARD ENDING WITH 4321 ON 14-10-2026.YOUR AVAILABLE LIMIT IS RS. 49332.05",
+      "receivedAt": "2026-10-14T21:05:00+05:30",
+      "expect": {
+        "bank": "HDFC",
+        "amountPaise": 906000,
+        "direction": "credit",
+        "accountType": "credit_card",
+        "account": "4321",
+        "payee": null,
+        "ref": null,
+        "timestamp": "2026-10-14T21:05:00+05:30"
+      }
+    },
+    {
+      "sender": "JM-ICICIT-S",
+      "body": "Reminder: payment of Rs 35,299.72 on your ICICI Bank Credit Card XX1234 is due on 23-OCT-26. Ignore if paid.",
+      "receivedAt": "2026-10-20T10:00:00+05:30",
+      "expect": "not_transaction"
+    },
+    {
+      "sender": "JM-ICICIT-S",
+      "body": "Get 5X rewards on your ICICI Bank Credit Card XX1234! See your statement for this offer. T&C apply.",
+      "receivedAt": "2026-10-01T12:00:00+05:30",
+      "expect": "not_transaction"
+    },
+    {
+      "sender": "VM-HDFCBK-S",
+      "body": "Your Personal Loan account statement for Sep-26 is ready. Total EMI paid so far Rs 24,000. Download: https://example.com/l",
+      "receivedAt": "2026-10-02T12:00:00+05:30",
+      "expect": "unparsed"
+    }
+  ]
+}

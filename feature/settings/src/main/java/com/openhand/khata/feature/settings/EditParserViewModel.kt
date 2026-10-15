@@ -93,10 +93,13 @@ class EditParserViewModel @Inject constructor(
 
     private fun remarked(code: String) {
         val rule = decode(code) ?: return
-        _form.value?.let { update(it.remarked(rule.pattern, rule.dateFormat)) }
+        _form.value?.let { update(it.remarked(rule)) }
     }
 
-    /** Check: needs the SMS permission. Only SMS from [headers] are read. */
+    /**
+     * Check: needs the SMS permission. Only SMS from [headers] are read, or from any business
+     * sender for a rule for any sender (no headers).
+     */
     fun loadRecent(headers: Set<String>, now: Long = System.currentTimeMillis()) {
         viewModelScope.launch {
             val parser = ingestor.parser()

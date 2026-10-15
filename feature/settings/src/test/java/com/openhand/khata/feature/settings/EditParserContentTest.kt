@@ -75,7 +75,7 @@ class EditParserContentTest {
             assertEquals("kotak-upi-sent", id)
             assertEquals("My Kotak", bank)
             assertEquals(listOf("KOTAKB", "KOTAK"), senders)
-            assertEquals("credit_card", accountType.name.lowercase())
+            assertEquals("credit_card", accountType?.name?.lowercase())
         }
     }
 

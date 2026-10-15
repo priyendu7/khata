@@ -10,6 +10,7 @@ import com.openhand.khata.sms.parser.ParsedSms
 import com.openhand.khata.sms.parser.RuleCheck
 import com.openhand.khata.sms.parser.RuleCode
 import com.openhand.khata.sms.parser.RuleDirection
+import com.openhand.khata.sms.parser.RuleKind
 import com.openhand.khata.sms.parser.RuleMaker
 import com.openhand.khata.sms.parser.RuleValidator
 import com.openhand.khata.sms.parser.SmsParser
@@ -59,7 +60,7 @@ class SmsGuessing @Inject constructor(
     /** The rule made from [sms]'s guesses: null without an amount and a direction, or if invalid. */
     private fun rule(sms: UnparsedSms, parser: SmsParser, taken: Set<String>): CompiledRule? {
         val header = SenderId.parse(sms.sender)?.header ?: return null
-        val guesses = FieldGuesser.guess(sms.body)
+        val guesses = FieldGuesser.guess(sms.body, RuleKind.TRANSACTION)
         // The bank the rules already name for this sender, as Make a parser starts with.
         val bank = parser.bankOf(sms.sender) ?: header
         val id = RuleMaker.ruleId(bank, guesses.direction ?: RuleDirection.DEBIT, taken)

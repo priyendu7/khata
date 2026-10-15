@@ -62,7 +62,7 @@ class CustomRulesTest {
 
     @Test
     fun aRuleForANewerVersionIsRejected() {
-        val json = RuleCode.json.encodeToString(ParserRule.serializer(), atm.copy(v = 2))
+        val json = RuleCode.json.encodeToString(ParserRule.serializer(), atm.copy(v = 3))
 
         assertEquals(
             CodeCheck.Unreadable(RuleCodeError.UNKNOWN_VERSION),

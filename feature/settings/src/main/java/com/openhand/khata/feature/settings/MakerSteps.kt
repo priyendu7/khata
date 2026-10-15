@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.segmentCardColors
 import com.openhand.khata.sms.parser.DateFormats
+import com.openhand.khata.sms.parser.RuleKind
 import com.openhand.khata.sms.parser.RuleMaker
 
 // The rule maker's marking: one field at a time, then a chip per field to change one.
@@ -39,7 +40,7 @@ import com.openhand.khata.sms.parser.RuleMaker
 @Composable
 internal fun MarkStep(form: MakerForm, step: RuleMaker.Field, onForm: (MakerForm) -> Unit) {
     Text(
-        stringResource(R.string.parser_step_count, step.ordinal + 1, RuleMaker.Field.entries.size),
+        stringResource(R.string.parser_step_count, form.fields.indexOf(step) + 1, form.fields.size),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
@@ -59,10 +60,10 @@ internal fun MarkStep(form: MakerForm, step: RuleMaker.Field, onForm: (MakerForm
             ),
             style = MaterialTheme.typography.bodyMedium
         )
-        if (step == RuleMaker.Field.DATE) DateFormatChoice(form, mark, onForm)
+        if (step.isDate) DateFormatChoice(form, mark, onForm)
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        if (step != RuleMaker.Field.entries.first()) {
+        if (step != form.fields.first()) {
             TextButton(onClick = { onForm(form.back()) }) { Text(stringResource(UiR.string.back)) }
         }
         Spacer(Modifier.weight(1f))
@@ -85,11 +86,33 @@ internal fun MarkStep(form: MakerForm, step: RuleMaker.Field, onForm: (MakerForm
     }
 }
 
+/**
+ * What kind of SMS this is: a transaction, or a card statement. Changing it guesses the fields
+ * again and starts marking over. Not offered when re-marking a rule, whose kind stays.
+ */
+@Composable
+internal fun KindChoice(form: MakerForm, onForm: (MakerForm) -> Unit) {
+    if (form.fixedId != null) return
+    Text(stringResource(R.string.parser_make_kind), style = MaterialTheme.typography.titleSmall)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(
+            RuleKind.TRANSACTION to R.string.parser_kind_transaction,
+            RuleKind.STATEMENT to R.string.parser_kind_statement
+        ).forEach { (kind, label) ->
+            FilterChip(
+                selected = form.kind == kind,
+                onClick = { onForm(form.withKind(kind)) },
+                label = { Text(stringResource(label)) }
+            )
+        }
+    }
+}
+
 /** A chip per field, saying what's marked; a tap opens that step again. */
 @Composable
 internal fun MarkSummary(form: MakerForm, onForm: (MakerForm) -> Unit) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        RuleMaker.Field.entries.forEach { field ->
+        form.fields.forEach { field ->
             val mark = form.marks.firstOrNull { it.field == field }
             val label = stringResource(fieldLabel(field))
             FilterChip(
@@ -190,6 +213,9 @@ private fun stepPrompt(field: RuleMaker.Field): Int = when (field) {
     RuleMaker.Field.ACCOUNT -> R.string.parser_step_account
     RuleMaker.Field.REF -> R.string.parser_step_reference
     RuleMaker.Field.DATE -> R.string.parser_step_date
+    RuleMaker.Field.TOTAL -> R.string.parser_step_total
+    RuleMaker.Field.MIN_DUE -> R.string.parser_step_min_due
+    RuleMaker.Field.DUE_DATE -> R.string.parser_step_due_date
 }
 
 private fun guessPrompt(field: RuleMaker.Field): Int = when (field) {
@@ -198,15 +224,21 @@ private fun guessPrompt(field: RuleMaker.Field): Int = when (field) {
     RuleMaker.Field.ACCOUNT -> R.string.parser_guess_account
     RuleMaker.Field.REF -> R.string.parser_guess_reference
     RuleMaker.Field.DATE -> R.string.parser_guess_date
+    RuleMaker.Field.TOTAL -> R.string.parser_guess_total
+    RuleMaker.Field.MIN_DUE -> R.string.parser_guess_min_due
+    RuleMaker.Field.DUE_DATE -> R.string.parser_guess_due_date
 }
 
-/** A colour of its own for each field, readable with white text and in both themes. */
+/**
+ * A colour of its own for each field of a kind, readable with white text and in both themes. A
+ * statement's fields borrow the transaction colours: the two kinds are never marked together.
+ */
 private fun fieldColor(field: RuleMaker.Field): Color = when (field) {
-    RuleMaker.Field.AMOUNT -> AmountColor
+    RuleMaker.Field.AMOUNT, RuleMaker.Field.TOTAL -> AmountColor
     RuleMaker.Field.PAYEE -> PayeeColor
     RuleMaker.Field.ACCOUNT -> AccountColor
-    RuleMaker.Field.REF -> ReferenceColor
-    RuleMaker.Field.DATE -> DateColor
+    RuleMaker.Field.REF, RuleMaker.Field.MIN_DUE -> ReferenceColor
+    RuleMaker.Field.DATE, RuleMaker.Field.DUE_DATE -> DateColor
 }
 
 private val AmountColor = Color(0xFF2E7D32)

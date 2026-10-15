@@ -83,7 +83,7 @@ class RuleEditFormTest {
 
         assertEquals(sent.id, remade.id)
         assertEquals("Kotak", remade.bank)
-        val edited = form.remarked(remade.pattern, remade.dateFormat)
+        val edited = form.remarked(remade)
         assertEquals(sent.id, edited.rule().id)
         assertEquals(remade.pattern, edited.pattern)
         assertEquals("dd-MM-yy", edited.dateFormat)

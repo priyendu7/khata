@@ -154,6 +154,14 @@ private fun Answer(
                     answer.rulesTried.last(),
                     answer.preview
                 )
+                is ParseResult.Statement -> {
+                    RuleUsed(answer.rulesTried.last())
+                    Text(statementText(result.statement))
+                    Text(
+                        stringResource(R.string.test_sms_statement_not_saved),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
                 is ParseResult.Unparsed -> {
                     Title(stringResource(R.string.test_sms_to_review))
                     Text(stringResource(R.string.test_sms_to_review_note))
@@ -172,13 +180,7 @@ private fun Answer(
 
 @Composable
 private fun Parsed(sms: ParsedSms, rule: TriedRule, preview: SmsImportPreview?) {
-    Title(stringResource(R.string.test_sms_parsed, rule.id))
-    Text(
-        stringResource(
-            if (rule.custom) R.string.test_sms_rule_custom else R.string.test_sms_rule_built_in
-        ),
-        style = MaterialTheme.typography.bodySmall
-    )
+    RuleUsed(rule)
     Field(R.string.parser_field_amount, Money.format(sms.amountPaise))
     Field(R.string.parser_field_direction, stringResource(directionLabel(sms.direction)))
     Field(
@@ -224,6 +226,18 @@ private fun Parsed(sms: ParsedSms, rule: TriedRule, preview: SmsImportPreview?) 
             color = MaterialTheme.colorScheme.error
         )
     }
+}
+
+/** "Read by parser …", and whether it's built in or one the user added. */
+@Composable
+private fun RuleUsed(rule: TriedRule) {
+    Title(stringResource(R.string.test_sms_parsed, rule.id))
+    Text(
+        stringResource(
+            if (rule.custom) R.string.test_sms_rule_custom else R.string.test_sms_rule_built_in
+        ),
+        style = MaterialTheme.typography.bodySmall
+    )
 }
 
 @Composable

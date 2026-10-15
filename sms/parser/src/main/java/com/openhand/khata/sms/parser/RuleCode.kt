@@ -9,7 +9,8 @@ import kotlinx.serialization.json.intOrNull
 /**
  * The shareable form of a rule: `khata1:` followed by the rule's JSON in unpadded base64url, so it
  * survives being pasted through chat apps. The rule maker shows these to share; Settings > Parsers
- * reads them.
+ * reads them. The prefix stays `khata1:` for every rule version: the `v` inside says which, so an
+ * older Khata given a v2 rule says it's for a newer version rather than that it isn't a code.
  */
 object RuleCode {
     const val PREFIX = "khata1:"
@@ -47,9 +48,10 @@ object RuleCode {
      */
     internal fun fromJson(element: JsonObject): RuleCodeResult {
         val version = (element["v"] as? JsonPrimitive)?.intOrNull
-        val rule = if (version == RuleFormat.VERSION) decodeRule(element) else null
+        val known = version != null && version in RuleFormat.V1..RuleFormat.VERSION
+        val rule = if (known) decodeRule(element) else null
         return when {
-            version != RuleFormat.VERSION -> RuleCodeResult.Error(RuleCodeError.UNKNOWN_VERSION)
+            !known -> RuleCodeResult.Error(RuleCodeError.UNKNOWN_VERSION)
             rule == null -> RuleCodeResult.Error(RuleCodeError.BAD_JSON)
             else -> RuleCodeResult.Decoded(rule)
         }

@@ -4,6 +4,7 @@ import com.google.re2j.Matcher
 import com.google.re2j.Pattern
 import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.SenderCategory
 import com.openhand.khata.core.model.SenderId
 import java.time.DateTimeException
 import java.time.Instant
@@ -21,7 +22,10 @@ import java.util.Locale
  * Pure Kotlin, so it runs in unit tests on a computer exactly as on the phone.
  *
  * Rules are tried in the order given (custom rules first, then built-in ones), and the first rule
- * whose sender and pattern match wins.
+ * whose sender and pattern match wins. Rules for any sender ([ParserRule.anySender], such as the
+ * generic card rules) come after every rule that names the sender, so a bank's own rules win.
+ * Statement rules are tried like the rest, so a statement is read before the content filters
+ * could drop it as a bill reminder.
  *
  * Patterns run on RE2J, not java.util.regex: RE2 matches in time proportional to the SMS length
  * for any pattern, so a badly written custom rule can't freeze the app. (Java's backtracking
@@ -49,6 +53,14 @@ class SmsParser(
         rules.firstOrNull { id.header in it.headers }?.rule?.bank
     }
 
+    /** The rules that name [id]'s header, then those for any business sender. */
+    private fun rulesFor(id: SenderId): List<CompiledRule> {
+        val (any, named) = rules.partition { it.rule.anySender }
+        val business = id.category != SenderCategory.PROMOTIONAL &&
+            id.category != SenderCategory.GOVERNMENT
+        return named.filter { id.header in it.headers } + any.takeIf { business }.orEmpty()
+    }
+
     /**
      * Sender filters, then the rules for the sender, then content filters on what no rule read.
      *
@@ -64,18 +76,19 @@ class SmsParser(
      */
     fun explain(sender: String, body: String, receivedAt: Long): Explanation {
         senderReason(sender)?.let { return Explanation(ParseResult.Filtered(it), emptyList()) }
-        val header = requireNotNull(SenderId.parse(sender)).header
-        val candidates = rules.filter { header in it.headers }
+        val id = requireNotNull(SenderId.parse(sender))
+        val candidates = rulesFor(id)
         val tried = mutableListOf<String>()
-        val parsed = candidates.firstNotNullOfOrNull { rule ->
+        val read = candidates.firstNotNullOfOrNull { rule ->
             tried += rule.rule.id
             tryRule(rule, body, receivedAt)
         }
-        val dropped = if (parsed == null) contentReason(header, body) else null
+        val dropped = if (read == null) contentReason(id.header, body) else null
         val result = when {
-            parsed != null -> ParseResult.Parsed(parsed)
+            read != null -> read
             dropped != null -> ParseResult.Filtered(dropped)
-            else -> ParseResult.Unparsed(candidates.firstOrNull()?.rule?.bank)
+            // A rule for any sender says nothing about whose sender this is.
+            else -> ParseResult.Unparsed(candidates.firstOrNull { !it.rule.anySender }?.rule?.bank)
         }
         return Explanation(result, tried)
     }
@@ -83,15 +96,17 @@ class SmsParser(
     /**
      * Reads [body] without its sender, which a saved transaction doesn't keep (#113): the rules
      * for [bank] first (either name may be the longer one, as in "Kotak Mahindra Bank"), then
-     * every other rule. No filters: the SMS was saved already.
+     * every other rule. No filters: the SMS was saved already. Only transaction rules.
      */
     fun readWithoutSender(body: String, receivedAt: Long, bank: String?): ParsedSms? {
-        val (ofBank, others) = rules.partition { compiled ->
+        val (ofBank, others) = rules.filterNot { it.rule.isStatement }.partition { compiled ->
             val rule = compiled.rule.bank
             bank != null &&
                 (rule.contains(bank, ignoreCase = true) || bank.contains(rule, ignoreCase = true))
         }
-        return (ofBank + others).firstNotNullOfOrNull { tryRule(it, body, receivedAt) }
+        return (ofBank + others).firstNotNullOfOrNull {
+            (tryRule(it, body, receivedAt) as? ParseResult.Parsed)?.sms
+        }
     }
 
     /** The content filters, then the user's "ignore messages like this" rules. */
@@ -99,27 +114,68 @@ class SmsParser(
         filters.contentReason(body)
             ?: ignore.likeThisRule(header, body)?.let(FilterReason::IgnoredLikeThis)
 
-    private fun tryRule(compiled: CompiledRule, body: String, receivedAt: Long): ParsedSms? {
+    /** What [compiled] reads from [body]: a transaction or a statement, or null. */
+    private fun tryRule(compiled: CompiledRule, body: String, receivedAt: Long): ParseResult? {
         val match = compiled.pattern.matcher(body).takeIf(Matcher::find) ?: return null
         val groups = compiled.pattern.namedGroups()
-        fun named(name: String): String? = if (name in groups) match.group(name) else null
+        val read = Groups { name -> if (name in groups) match.group(name) else null }
+        return if (compiled.rule.isStatement) {
+            statement(compiled.rule, read)?.let(ParseResult::Statement)
+        } else {
+            transaction(compiled.rule, read, body, receivedAt)?.let(ParseResult::Parsed)
+        }
+    }
 
-        val rule = compiled.rule
-        val amount = named(RuleFormat.AMOUNT)?.let(Fields::amountPaise)
-        val direction = direction(rule, named(RuleFormat.DIR) ?: body)
-        return if (amount == null || direction == null) {
+    /** A matched rule's named groups by name; null for a group the pattern doesn't have. */
+    private fun interface Groups {
+        operator fun get(name: String): String?
+    }
+
+    private fun bank(rule: ParserRule, read: Groups): String =
+        read[RuleFormat.BANK]?.let(Fields::clean) ?: rule.bank
+
+    private fun transaction(
+        rule: ParserRule,
+        read: Groups,
+        body: String,
+        receivedAt: Long
+    ): ParsedSms? {
+        val amount = read[RuleFormat.AMOUNT]?.let(Fields::amountPaise)
+        val direction = direction(rule, read[RuleFormat.DIR] ?: body)
+        val accountType = rule.accountType
+        return if (amount == null || direction == null || accountType == null) {
             null
         } else {
             ParsedSms(
                 ruleId = rule.id,
-                bank = rule.bank,
+                bank = bank(rule, read),
                 amountPaise = amount,
                 direction = direction,
-                accountType = rule.accountType.accountType,
-                accountLast4 = named(RuleFormat.ACCOUNT)?.let(Fields::last4),
-                payee = named(RuleFormat.PAYEE)?.let(Fields::clean),
-                reference = named(RuleFormat.REF)?.let(Fields::clean),
-                timestamp = timestamp(rule.dateFormat, named(RuleFormat.DATE), receivedAt)
+                accountType = accountType.accountType,
+                accountLast4 = read[RuleFormat.ACCOUNT]?.let(Fields::last4),
+                payee = read[RuleFormat.PAYEE]?.let(Fields::clean),
+                reference = read[RuleFormat.REF]?.let(Fields::clean),
+                timestamp = timestamp(rule.dateFormat, read[RuleFormat.DATE], receivedAt)
+            )
+        }
+    }
+
+    /** A statement needs its card, total and a readable due date; the rest is optional. */
+    private fun statement(rule: ParserRule, read: Groups): ParsedStatement? {
+        val card = read[RuleFormat.ACCOUNT]?.let(Fields::last4)
+        val total = read[RuleFormat.TOTAL]?.let(Fields::amountPaise)
+        val due = localDate(rule.dueDateFormat, read[RuleFormat.DUE_DATE])
+        return if (card == null || total == null || due == null) {
+            null
+        } else {
+            ParsedStatement(
+                ruleId = rule.id,
+                bank = bank(rule, read),
+                cardLast4 = card,
+                totalPaise = total,
+                minDuePaise = read[RuleFormat.MIN_DUE]?.let(Fields::amountPaise),
+                dueDate = due,
+                statementDate = localDate(rule.dateFormat, read[RuleFormat.STATEMENT_DATE])
             )
         }
     }
@@ -153,11 +209,7 @@ class SmsParser(
 
     private fun smsDateTime(format: String, text: String, received: ZonedDateTime): LocalDateTime? =
         try {
-            val formatter = DateTimeFormatterBuilder()
-                .parseCaseInsensitive()
-                .appendPattern(format)
-                .toFormatter(Locale.ENGLISH)
-            val parsed = formatter.parse(text.trim())
+            val parsed = formatter(format).parse(text.trim())
             val date = LocalDate.from(parsed)
             when {
                 parsed.isSupported(
@@ -169,6 +221,17 @@ class SmsParser(
         } catch (_: DateTimeException) {
             null
         }
+
+    private fun localDate(format: String?, text: String?): LocalDate? = try {
+        text?.let { LocalDate.from(formatter(format ?: return null).parse(it.trim())) }
+    } catch (_: DateTimeException) {
+        null
+    }
+
+    private fun formatter(format: String) = DateTimeFormatterBuilder()
+        .parseCaseInsensitive()
+        .appendPattern(format)
+        .toFormatter(Locale.ENGLISH)
 
     companion object {
         /** Every pattern is case-insensitive; rules can't set flags (see [RegexSubset]). */
@@ -182,6 +245,9 @@ class SmsParser(
 
 sealed interface ParseResult {
     data class Parsed(val sms: ParsedSms) : ParseResult
+
+    /** A credit card statement a statement rule read. Not saved until #154. */
+    data class Statement(val statement: ParsedStatement) : ParseResult
 
     /** Dropped by one of the [SmsFilters], for [reason]. Never stored. */
     data class Filtered(val reason: FilterReason) : ParseResult
@@ -211,4 +277,16 @@ data class ParsedSms(
     val reference: String?,
     /** Epoch millis. */
     val timestamp: Long
+)
+
+/** What a statement rule read from one SMS. */
+data class ParsedStatement(
+    val ruleId: String,
+    val bank: String,
+    val cardLast4: String,
+    val totalPaise: Long,
+    /** Null when the rule has no `minDue` group. */
+    val minDuePaise: Long?,
+    val dueDate: LocalDate,
+    val statementDate: LocalDate?
 )

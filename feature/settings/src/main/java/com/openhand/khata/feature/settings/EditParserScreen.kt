@@ -119,17 +119,23 @@ fun EditParserContent(
                 placeholder = stringResource(R.string.parser_edit_senders_hint),
                 addLabel = stringResource(R.string.parser_edit_sender_add)
             )
-            DirectionFields(form, onForm)
-            AccountTypeField(form, onForm)
+            if (form.isStatement) {
+                ParserHint(stringResource(R.string.parser_edit_statement_note))
+            } else {
+                DirectionFields(form, onForm)
+                AccountTypeField(form, onForm)
+            }
+            if (form.hasDueDate) {
+                FormatField(
+                    form.dueDateFormat,
+                    R.string.parser_edit_due_date_format
+                ) { onForm(form.copy(dueDateFormat = it)) }
+            }
             if (form.hasDate) {
-                OutlinedTextField(
-                    value = form.dateFormat,
-                    onValueChange = { onForm(form.copy(dateFormat = it)) },
-                    label = { Text(stringResource(R.string.parser_make_date_format_other)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                FormatField(
+                    form.dateFormat,
+                    R.string.parser_make_date_format_other
+                ) { onForm(form.copy(dateFormat = it)) }
             }
             Advanced(form, onForm, onRemark)
             HorizontalDivider()
@@ -147,6 +153,18 @@ fun EditParserContent(
             ) { Text(stringResource(UiR.string.save)) }
         }
     }
+}
+
+@Composable
+private fun FormatField(value: String, label: Int, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onChange,
+        label = { Text(stringResource(label)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
 /** A fixed direction, or words in the SMS that decide it. */

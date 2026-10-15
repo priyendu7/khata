@@ -21,6 +21,7 @@ import com.openhand.khata.sms.parser.BuiltInRules
 import com.openhand.khata.sms.parser.CodeCheck
 import com.openhand.khata.sms.parser.CompiledRule
 import com.openhand.khata.sms.parser.CustomRules
+import com.openhand.khata.sms.parser.ParseResult
 import com.openhand.khata.sms.parser.ParserRule
 import com.openhand.khata.sms.parser.RuleAccountType
 import com.openhand.khata.sms.parser.RuleCode
@@ -102,7 +103,7 @@ class ParsersContentTest {
     fun explainsACodeForANewerVersion() {
         showAdd()
 
-        paste(RuleCode.encode(hdfc.copy(v = 2)))
+        paste(RuleCode.encode(hdfc.copy(v = 3)))
 
         compose.onNodeWithText("for a newer version of Khata", substring = true).assertExists()
     }
@@ -165,7 +166,8 @@ class ParsersContentTest {
     fun testRuleUsesTheRulesSenderForAPastedSms() {
         val rule = (CustomRules.check(RuleCode.encode(hdfc)) as CodeCheck.Valid).rule
 
-        assertEquals(45_000L, testRule(rule, null, hdfcSms, AT)?.amountPaise)
+        val read = testRule(rule, null, hdfcSms, AT) as? ParseResult.Parsed
+        assertEquals(45_000L, read?.sms?.amountPaise)
         assertEquals(null, testRule(rule, "AX-OTHRBK-S", hdfcSms, AT))
     }
 
@@ -220,7 +222,12 @@ class ParsersContentTest {
             compose.onNodeWithText(it.id).performScrollTo().assertExists()
         }
         compose.onNodeWithText("kotak-upi-received").assertExists()
-        compose.onAllNodesWithText("Kotak · KOTAKB").assertCountEquals(BuiltInRules.all().size)
+        compose.onAllNodesWithText("Kotak · KOTAKB")
+            .assertCountEquals(BuiltInRules.all().count { it.bank == "Kotak" })
+        // The generic card rules (#153) read any bank's SMS.
+        compose.onAllNodesWithText("Any bank · any bank sender")
+            .assertCountEquals(BuiltInRules.all().count { it.anySender })
+        compose.onAllNodesWithText("Card statement").assertCountEquals(2)
         compose.onAllNodesWithText("Income · Bank account").assertCountEquals(2)
     }
 

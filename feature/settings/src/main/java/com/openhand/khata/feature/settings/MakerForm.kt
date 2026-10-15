@@ -7,6 +7,7 @@ import com.openhand.khata.sms.parser.ParserRule
 import com.openhand.khata.sms.parser.RuleAccountType
 import com.openhand.khata.sms.parser.RuleCheck
 import com.openhand.khata.sms.parser.RuleDirection
+import com.openhand.khata.sms.parser.RuleKind
 import com.openhand.khata.sms.parser.RuleMaker
 import com.openhand.khata.sms.parser.RuleValidator
 import java.util.Locale
@@ -15,9 +16,10 @@ import java.util.Locale
  * What the user has told the rule maker so far: the SMS, the words marked in it, and the rule's
  * details. [selection] is the run of words picked but not yet marked, as word indexes.
  *
- * Fields are marked one at a time, in [RuleMaker.Field] order: [step] is the one being marked,
- * and null once each has been marked or skipped. The form starts with [FieldGuesser]'s guesses
- * marked; [guessed] are the ones the user hasn't confirmed or changed yet.
+ * Fields are marked one at a time, in the order [RuleMaker.Field.of] gives for the rule's [kind]:
+ * [step] is the one being marked, and null once each has been marked or skipped. The form starts
+ * with [FieldGuesser]'s guesses marked; [guessed] are the ones the user hasn't confirmed or
+ * changed yet.
  */
 data class MakerForm(
     /** Null for a pasted SMS. */
@@ -37,9 +39,38 @@ data class MakerForm(
     val step: RuleMaker.Field? = RuleMaker.Field.AMOUNT,
     /** The step was opened again from its chip, so finishing it goes back to the rest. */
     val revisiting: Boolean = false,
-    val guessed: Set<RuleMaker.Field> = emptySet()
+    val guessed: Set<RuleMaker.Field> = emptySet(),
+    /** A transaction, or a card statement (#153). */
+    val kind: RuleKind = RuleKind.TRANSACTION
 ) {
     val words: List<RuleMaker.Word> = RuleMaker.words(body)
+
+    /** The fields this kind of rule marks, in order. */
+    val fields: List<RuleMaker.Field> get() = RuleMaker.Field.of(kind)
+
+    private val required: Set<RuleMaker.Field> get() = RuleMaker.Field.requiredFor(kind)
+
+    val isStatement: Boolean get() = kind == RuleKind.STATEMENT
+
+    /**
+     * Marking a [kind] of rule instead: the SMS's fields are guessed again for it, and marking
+     * starts over.
+     */
+    fun withKind(kind: RuleKind): MakerForm {
+        if (kind == this.kind) return this
+        val guesses = FieldGuesser.guess(body, kind)
+        return copy(
+            kind = kind,
+            marks = guesses.marks,
+            dateFormat = guesses.dateFormat,
+            guessed = guesses.fields.keys,
+            step = RuleMaker.Field.of(kind).first(),
+            selection = null,
+            revisiting = false,
+            direction = guesses.direction ?: direction,
+            accountType = guesses.accountType.takeIf { kind == RuleKind.TRANSACTION } ?: accountType
+        )
+    }
 
     /**
      * A tap on word [index]: selects it; with one word selected, a tap on another selects the run
@@ -57,7 +88,8 @@ data class MakerForm(
 
     /**
      * Marks the selected words as [field]. An earlier mark of the same field, or one overlapping
-     * these words, is replaced. Marking a date picks the first common format that reads it.
+     * these words, is replaced. Marking a date (or due date) picks the first common format that
+     * reads it.
      */
     fun mark(field: RuleMaker.Field): MakerForm {
         val picked = selection ?: return this
@@ -65,17 +97,17 @@ data class MakerForm(
         val kept = marks.filterNot {
             it.field == field || it.start < mark.end && mark.start < it.end
         }
-        val format = if (field == RuleMaker.Field.DATE) {
+        val format = if (field.isDate) {
             DateFormats.matching(body.substring(mark.start, mark.end)).firstOrNull()
         } else {
-            dateFormat.takeIf { kept.any { it.field == RuleMaker.Field.DATE } }
+            dateFormat.takeIf { kept.any { it.field.isDate } }
         }
         return copy(marks = kept + mark, selection = null, dateFormat = format)
     }
 
     fun unmark(field: RuleMaker.Field): MakerForm = copy(
         marks = marks.filterNot { it.field == field },
-        dateFormat = dateFormat.takeIf { field != RuleMaker.Field.DATE }
+        dateFormat = dateFormat.takeIf { !field.isDate }
     )
 
     /**
@@ -101,19 +133,25 @@ data class MakerForm(
         }
     }
 
-    /** The amount can't be skipped: a rule without one reads nothing. */
-    val canSkip: Boolean get() = step != RuleMaker.Field.AMOUNT
+    /**
+     * The amount can't be skipped: a rule without one reads nothing. Nor can a statement's card,
+     * total or due date.
+     */
+    val canSkip: Boolean get() = step !in required
 
-    val canGoOn: Boolean get() = step != RuleMaker.Field.AMOUNT || isMarked(RuleMaker.Field.AMOUNT)
+    val canGoOn: Boolean get() = step.let { it == null || it !in required || isMarked(it) }
 
     fun isMarked(field: RuleMaker.Field): Boolean = marks.any { it.field == field }
 
     /** [field] is marked with a guess the user hasn't confirmed yet. */
     fun isGuess(field: RuleMaker.Field): Boolean = field in guessed && isMarked(field)
 
-    /** "Looks right": every guess at once, straight on to checking the rule. Needs an amount. */
+    /**
+     * "Looks right": every guess at once, straight on to checking the rule. Needs an amount (a
+     * statement's card, total and due date).
+     */
     val canConfirmAll: Boolean
-        get() = step != null && guessed.isNotEmpty() && isMarked(RuleMaker.Field.AMOUNT)
+        get() = step != null && guessed.isNotEmpty() && required.all(::isMarked)
 
     fun confirmAll(): MakerForm = if (canConfirmAll) {
         copy(step = null, selection = null, revisiting = false, guessed = emptySet())
@@ -123,7 +161,7 @@ data class MakerForm(
 
     /** On to the next field (confirming its guess), or back to the rest after a chip's step. */
     fun next(): MakerForm = copy(
-        step = if (revisiting) null else step?.let { fieldNumber(it.ordinal + 1) },
+        step = if (revisiting) null else step?.let { fields.getOrNull(fields.indexOf(it) + 1) },
         selection = null,
         revisiting = false,
         guessed = guessed - setOfNotNull(step)
@@ -134,7 +172,7 @@ data class MakerForm(
 
     /** The step before, keeping what's marked. From the rest, the last step. */
     fun back(): MakerForm = copy(
-        step = step?.let { fieldNumber(it.ordinal - 1) ?: it } ?: RuleMaker.Field.entries.last(),
+        step = step?.let { fields.getOrNull(fields.indexOf(it) - 1) ?: it } ?: fields.last(),
         selection = null,
         revisiting = false
     )
@@ -155,35 +193,40 @@ data class MakerForm(
         .map { it.trim().uppercase(Locale.ROOT) }
         .filter(String::isNotEmpty)
 
-    /** The rule, with an id not in [taken]. Null until the amount is marked. */
+    /**
+     * The rule, with an id not in [taken]. Null until the amount (a statement's card, total and
+     * due date) is marked.
+     */
     fun check(taken: Set<String>): RuleCheck? {
-        if (marks.none { it.field == RuleMaker.Field.AMOUNT }) return null
+        if (!required.all(::isMarked)) return null
+        val id = fixedId ?: RuleMaker.ruleId(bank, direction.takeUnless { isStatement }, taken)
         val draft = RuleMaker.Draft(
-            id = fixedId ?: RuleMaker.ruleId(bank, direction, taken),
+            id = id,
             bank = bank,
             senders = senderList(),
             body = body,
             marks = marks,
             direction = direction,
             accountType = accountType,
-            dateFormat = dateFormat?.trim()?.takeIf(String::isNotEmpty)
+            dateFormat = dateFormat?.trim()?.takeIf(String::isNotEmpty),
+            kind = kind
         )
         return RuleValidator.validate(RuleMaker.rule(draft))
     }
 
-    /** Re-marking [rule]: its id, bank, senders and the rest stay as they are. */
-    fun remarking(rule: ParserRule): MakerForm = copy(
+    /** Re-marking [rule]: its id, kind, bank, senders and the rest stay as they are. */
+    fun remarking(rule: ParserRule): MakerForm = withKind(rule.kind ?: RuleKind.TRANSACTION).copy(
         fixedId = rule.id,
         bank = rule.bank,
         senders = rule.senders.joinToString(", "),
         direction = rule.direction ?: direction,
-        accountType = rule.accountType
+        accountType = rule.accountType ?: accountType
     )
 
     companion object {
         /**
-         * A new form for this SMS, with its fields, direction and account type guessed from its
-         * words ([FieldGuesser]). [knownBank] is the bank the rules already name for [sender];
+         * A new form for this SMS, with its kind, fields, direction and account type guessed from
+         * its words ([FieldGuesser]). [knownBank] is the bank the rules already name for [sender];
          * otherwise its sender ID.
          */
         fun start(sender: String?, body: String, receivedAt: Long, knownBank: String?): MakerForm {
@@ -199,10 +242,10 @@ data class MakerForm(
                 bank = knownBank ?: header,
                 senders = header,
                 dateFormat = guesses.dateFormat,
-                guessed = guesses.fields.keys
+                guessed = guesses.fields.keys,
+                kind = guesses.kind,
+                step = RuleMaker.Field.of(guesses.kind).first()
             )
         }
     }
 }
-
-private fun fieldNumber(ordinal: Int): RuleMaker.Field? = RuleMaker.Field.entries.getOrNull(ordinal)

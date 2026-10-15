@@ -1,0 +1,156 @@
+{
+  "description": "Statement rules (v2) and rules for any sender: a statement is read before the bill-reminder filter, and a bank's own rules win over rules for any sender.",
+  "zone": "Asia/Kolkata",
+  "rules": [
+    {
+      "v": 2,
+      "id": "test-statement",
+      "bank": "Test Bank",
+      "senders": [
+        "TESTBK"
+      ],
+      "kind": "statement",
+      "pattern": "Card XX(?<account>\\d{4}) statement(?: of (?<statementDate>\\d{2}-\\d{2}-\\d{2}))?:\\s+min due (?:Rs\\.?\\s*)?(?<minDue>[\\d,.]+),\\s+total due (?:Rs\\.?\\s*)?(?<total>[\\d,.]+),\\s+pay by (?<dueDate>\\d{1,2}-[a-z0-9]{2,3}-\\d{2,4})",
+      "dueDateFormat": "[d-MMM-yy][d-MM-yyyy]",
+      "dateFormat": "dd-MM-yy"
+    },
+    {
+      "v": 1,
+      "id": "own-payment",
+      "bank": "Own Bank",
+      "senders": [
+        "OWNBNK"
+      ],
+      "pattern": "Payment of Rs\\.?\\s*(?<amount>[\\d,.]+) received",
+      "direction": "credit",
+      "accountType": "credit_card"
+    },
+    {
+      "v": 2,
+      "id": "any-payment",
+      "bank": "Any bank",
+      "senders": [
+        "*"
+      ],
+      "pattern": "Payment of Rs\\.?\\s*(?<amount>[\\d,.]+) received on your (?<bank>\\w+) Bank card XX(?<account>\\d{4})",
+      "direction": "credit",
+      "accountType": "credit_card"
+    }
+  ],
+  "cases": [
+    {
+      "name": "statement: minimum before total, told apart by label",
+      "sender": "AX-TESTBK-S",
+      "body": "Card XX1234 statement: min due Rs.625.00, total due Rs.12,500.00, pay by 5-NOV-26",
+      "receivedAt": "2026-10-10T10:00:00+05:30",
+      "expect": {
+        "result": "statement",
+        "ruleId": "test-statement",
+        "bank": "Test Bank",
+        "card": "1234",
+        "totalPaise": 1250000,
+        "minDuePaise": 62500,
+        "dueDate": "2026-11-05",
+        "statementDate": null
+      }
+    },
+    {
+      "name": "statement with its date, due date in another format",
+      "sender": "AX-TESTBK-S",
+      "body": "Card XX1234 statement of 15-10-26: min due 625, total due 12,500, pay by 05-11-2026",
+      "receivedAt": "2026-10-16T10:00:00+05:30",
+      "expect": {
+        "result": "statement",
+        "ruleId": "test-statement",
+        "bank": "Test Bank",
+        "card": "1234",
+        "totalPaise": 1250000,
+        "minDuePaise": 62500,
+        "dueDate": "2026-11-05",
+        "statementDate": "2026-10-15"
+      }
+    },
+    {
+      "name": "a statement the rule can't read is a bill reminder",
+      "sender": "AX-TESTBK-S",
+      "body": "Card XX1234: total due Rs.12,500.00 is due by 05-11-26",
+      "receivedAt": "2026-10-10T10:00:00+05:30",
+      "expect": {
+        "result": "filtered",
+        "reason": "not_transaction",
+        "group": "reminder"
+      }
+    },
+    {
+      "name": "an unreadable due date isn't a statement",
+      "sender": "AX-TESTBK-S",
+      "body": "Card XX1234 statement: min due Rs.625.00, total due Rs.12,500.00, pay by 05-13-2026",
+      "receivedAt": "2026-10-10T10:00:00+05:30",
+      "expect": {
+        "result": "filtered",
+        "reason": "not_transaction",
+        "group": "reminder"
+      }
+    },
+    {
+      "name": "a rule for any sender reads a bank no rule names, with the bank from the SMS",
+      "sender": "JM-SOMEBK-S",
+      "body": "Payment of Rs.500 received on your Some Bank card XX9876",
+      "receivedAt": "2026-10-10T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "any-payment",
+        "bank": "Some",
+        "amountPaise": 50000,
+        "direction": "credit",
+        "accountType": "credit_card",
+        "account": "9876",
+        "payee": null,
+        "ref": null,
+        "timestamp": "2026-10-10T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "the bank's own rule wins over a rule for any sender",
+      "sender": "JM-OWNBNK-S",
+      "body": "Payment of Rs.500 received on your Own Bank card XX9876",
+      "receivedAt": "2026-10-10T10:00:00+05:30",
+      "expect": {
+        "result": "parsed",
+        "ruleId": "own-payment",
+        "bank": "Own Bank",
+        "amountPaise": 50000,
+        "direction": "credit",
+        "accountType": "credit_card",
+        "account": null,
+        "payee": null,
+        "ref": null,
+        "timestamp": "2026-10-10T10:00:00+05:30"
+      }
+    },
+    {
+      "name": "a rule for any sender doesn't read promotional senders",
+      "sender": "JM-SOMEBK-P",
+      "body": "Payment of Rs.500 received on your Some Bank card XX9876",
+      "receivedAt": "2026-10-10T10:00:00+05:30",
+      "filters": {
+        "dropPromotional": false,
+        "onlyService": false
+      },
+      "expect": {
+        "result": "unparsed",
+        "bank": null
+      }
+    },
+    {
+      "name": "an unread SMS takes no bank from a rule for any sender",
+      "sender": "JM-SOMEBK-S",
+      "body": "Rs.500 debited from your account",
+      "receivedAt": "2026-10-10T10:00:00+05:30",
+      "expect": {
+        "result": "unparsed",
+        "bank": null
+      }
+    }
+  ]
+}
