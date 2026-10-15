@@ -55,6 +55,7 @@ import com.openhand.khata.core.ui.label
 import com.openhand.khata.core.ui.segmentCardColors
 import com.openhand.khata.core.ui.signedAmount
 import com.openhand.khata.core.ui.timeLabel
+import com.openhand.khata.sms.parser.ParsedSms
 import java.time.Instant
 import java.time.ZoneId
 
@@ -74,6 +75,7 @@ fun ReviewScreen(
     val context = LocalContext.current
     val queue by viewModel.queue.collectAsStateWithLifecycle()
     val unparsed by viewModel.unparsed.collectAsStateWithLifecycle()
+    val guesses by viewModel.guesses.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val tagSuggestions by viewModel.tagSuggestions.collectAsStateWithLifecycle()
     ReviewContent(
@@ -85,6 +87,8 @@ fun ReviewScreen(
         onSave = viewModel::save,
         onSkip = viewModel::skip,
         unparsed = unparsed,
+        guesses = guesses,
+        onAcceptGuess = viewModel::acceptGuess,
         onAddByHand = { onAddByHand(firstAmountPaise(it.body), it.receivedAt, it.id) },
         onMakeParser = { onMakeParser(it.id) },
         onDismiss = viewModel::dismiss,
@@ -106,6 +110,8 @@ fun ReviewContent(
     onSave: (ReviewItem, name: String, categoryId: Long?, tags: List<String>) -> Unit,
     onSkip: (ReviewItem) -> Unit,
     unparsed: List<UnparsedSmsGroup> = emptyList(),
+    guesses: Map<Long, ParsedSms> = emptyMap(),
+    onAcceptGuess: (UnparsedSms) -> Unit = {},
     onAddByHand: (UnparsedSms) -> Unit = {},
     onMakeParser: (UnparsedSms) -> Unit = {},
     onDismiss: (UnparsedSms) -> Unit = {},
@@ -127,6 +133,8 @@ fun ReviewContent(
                 item == null && unparsed.isNotEmpty() -> UnparsedSmsList(
                     groups = unparsed,
                     left = unparsedCount,
+                    guesses = guesses,
+                    onAcceptGuess = onAcceptGuess,
                     onAddByHand = onAddByHand,
                     onMakeParser = onMakeParser,
                     onDismiss = onDismiss,

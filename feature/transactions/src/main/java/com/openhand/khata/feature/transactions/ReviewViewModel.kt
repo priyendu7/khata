@@ -10,7 +10,9 @@ import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.ReviewItem
 import com.openhand.khata.core.model.UnparsedSms
 import com.openhand.khata.core.model.UnparsedSmsGroup
+import com.openhand.khata.sms.ingest.SmsGuessing
 import com.openhand.khata.sms.ingest.SmsIgnoring
+import com.openhand.khata.sms.parser.ParsedSms
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,7 +34,8 @@ class ReviewViewModel @Inject constructor(
     private val unparsedSms: UnparsedSmsRepository,
     categories: CategoryRepository,
     private val tags: TagRepository,
-    private val ignoring: SmsIgnoring
+    private val ignoring: SmsIgnoring,
+    private val guessing: SmsGuessing
 ) : ViewModel() {
     /** Waiting transactions, newest first; null until loaded. */
     val queue: StateFlow<List<ReviewItem>?> = review.observeQueue()
@@ -41,6 +44,16 @@ class ReviewViewModel @Inject constructor(
     /** Bank SMS no rule could read, by sender, newest first; shown after the transactions. */
     val unparsed: StateFlow<List<UnparsedSmsGroup>> = unparsedSms.observeGroups()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
+
+    /**
+     * Khata's best guess at each SMS card's message, by id: what a parser made from the guessed
+     * fields reads from it. Only cards with a guess have one.
+     */
+    val guesses: StateFlow<Map<Long, ParsedSms>> = unparsed
+        .mapLatest { groups ->
+            guessing.guesses(groups.map { it.newest }).mapValues { (_, guess) -> guess.sms }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyMap())
 
     val categories: StateFlow<List<Category>> = categories.observeAll()
         .map { all -> all.filter { !it.archived } }
@@ -75,6 +88,13 @@ class ReviewViewModel @Inject constructor(
     /** Deletes every SMS in the group, after the user confirmed. Ones arriving since stay. */
     fun dismissAll(group: UnparsedSmsGroup) {
         viewModelScope.launch { unparsedSms.delete(group.messages.map { it.id }) }
+    }
+
+    /**
+     * "Yes, save" on a guess: saves its parser, which records this SMS and the others like it.
+     */
+    fun acceptGuess(sms: UnparsedSms) {
+        viewModelScope.launch { guessing.accept(sms) }
     }
 
     /** Ignores every SMS from its sender, and removes the ones waiting here. */

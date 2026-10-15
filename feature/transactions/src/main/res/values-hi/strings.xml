@@ -70,6 +70,17 @@
     <string name="review_unparsed_body">इसमें रकम है, लेकिन इसका फ़ॉर्मेट खाता के लिए नया है।</string>
     <string name="review_add_by_hand">हाथ से जोड़ें</string>
     <string name="review_make_parser">पार्सर बनाएँ</string>
+    <string name="review_guess_title">Khata का अंदाज़ा:</string>
+    <string name="review_guess_paid">%2$s को %1$s दिए</string>
+    <string name="review_guess_paid_only">%1$s दिए</string>
+    <string name="review_guess_received">%2$s से %1$s मिले</string>
+    <string name="review_guess_received_only">%1$s मिले</string>
+    <string name="review_guess_refund">%2$s से %1$s रिफ़ंड</string>
+    <string name="review_guess_refund_only">%1$s रिफ़ंड</string>
+    <string name="review_guess_account">खाता ··%1$s</string>
+    <string name="review_guess_question">क्या यह सही है?</string>
+    <string name="review_guess_yes">हाँ, सेव करें</string>
+    <string name="review_guess_fix">ठीक करें</string>
     <string name="review_dismiss">हटाएँ</string>
     <string name="review_copy">बग रिपोर्ट के लिए कॉपी करें</string>
     <string name="review_copied_title">SMS कॉपी हो गया</string>

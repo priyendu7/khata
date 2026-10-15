@@ -15,6 +15,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.ReviewItem
@@ -22,6 +23,7 @@ import com.openhand.khata.core.model.SenderId
 import com.openhand.khata.core.model.UnparsedSms
 import com.openhand.khata.core.model.UnparsedSmsGroup
 import com.openhand.khata.sms.parser.IgnoreTemplate
+import com.openhand.khata.sms.parser.ParsedSms
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -64,10 +66,16 @@ class ReviewContentTest {
         receivedAt = 1_790_000_000_000
     )
 
-    private fun show(queue: List<ReviewItem>?, unparsed: List<UnparsedSms> = emptyList()) {
+    private fun show(
+        queue: List<ReviewItem>?,
+        unparsed: List<UnparsedSms> = emptyList(),
+        guesses: Map<Long, ParsedSms> = emptyMap()
+    ) {
         compose.setContent {
             ReviewContent(
                 unparsed = grouped(unparsed),
+                guesses = guesses,
+                onAcceptGuess = { unparsedActions += "accept ${it.id}" },
                 onAddByHand = { unparsedActions += "add ${it.id}" },
                 onMakeParser = { unparsedActions += "parser ${it.id}" },
                 onDismiss = { unparsedActions += "dismiss ${it.id}" },
@@ -178,6 +186,42 @@ class ReviewContentTest {
 
         assertEquals(listOf("add 3", "dismiss 3", "copy 3", "github"), unparsedActions)
         compose.onNodeWithText("SMS copied").assertDoesNotExist()
+    }
+
+    @Test
+    fun aGuessAsksIfItsRightAndYesOrFixItAct() {
+        val guess = ParsedSms(
+            ruleId = "kotakb-debit",
+            bank = "KOTAKB",
+            amountPaise = 200_000,
+            direction = Direction.DEBIT,
+            accountType = AccountType.BANK,
+            accountLast4 = "5678",
+            payee = "ATM",
+            reference = null,
+            timestamp = sms.receivedAt
+        )
+        show(emptyList(), listOf(sms), guesses = mapOf(sms.id to guess))
+
+        compose.onNodeWithText("Khata thinks:").assertExists()
+        compose.onNodeWithText("paid to ATM", substring = true).assertExists()
+        compose.onNodeWithText("A/c ··5678", substring = true).assertExists()
+        compose.onNodeWithText("Is that right?").assertExists()
+        compose.onNodeWithText("Make a parser").assertDoesNotExist()
+        compose.onNodeWithText("Yes, save").performScrollTo().performClick()
+        compose.onNodeWithText("Fix it").performScrollTo().performClick()
+        compose.onNodeWithText("Dismiss").performScrollTo().assertExists()
+
+        assertEquals(listOf("accept 3", "parser 3"), unparsedActions)
+    }
+
+    @Test
+    fun noGuessNoQuestion() {
+        show(emptyList(), listOf(sms))
+
+        compose.onNodeWithText("Khata thinks:").assertDoesNotExist()
+        compose.onNodeWithText("Yes, save").assertDoesNotExist()
+        compose.onNodeWithText("Make a parser").performScrollTo().assertExists()
     }
 
     @Test

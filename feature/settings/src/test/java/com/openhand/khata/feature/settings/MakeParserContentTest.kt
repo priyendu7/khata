@@ -38,9 +38,14 @@ class MakeParserContentTest {
         "Avl Lmt Rs.9,900"
     private val saved = mutableListOf<CompiledRule>()
 
-    private fun showMaker(sender: String? = "AX-HDFCBK-S", canReadSms: Boolean = true) {
+    private fun showMaker(
+        sender: String? = "AX-HDFCBK-S",
+        canReadSms: Boolean = true,
+        guesses: Boolean = false
+    ) {
+        val start = MakerForm.start(sender, sms, AT, null)
         compose.setContent {
-            var form by remember { mutableStateOf(MakerForm.start(sender, sms, AT, null)) }
+            var form by remember { mutableStateOf(if (guesses) start else start.unguessed()) }
             MakeParserContent(
                 onBack = {},
                 form = form,
@@ -106,6 +111,34 @@ class MakeParserContentTest {
         // Saved as its code, which Settings > Parsers reads back.
         val code = RuleCode.encode(rule)
         assertTrue(CustomRules.check(code) is CodeCheck.Valid)
+    }
+
+    @Test
+    fun opensWithTheGuessesAndLooksRightGoesToTheCheck() {
+        showMaker(guesses = true)
+        compose.onNodeWithText("Is this the amount?").assertExists()
+        compose.onNodeWithText("Amount: Rs.450.00").assertExists()
+
+        tap("Looks right")
+
+        compose.onNodeWithText("Bank name").performScrollTo().performTextReplacement("HDFC Bank")
+        compose.onAllNodesWithText("Payee: CITY PHARMACY").assertCountEquals(2)
+        tap("Save rule")
+        assertEquals("yyyy-MM-dd", saved.single().rule.dateFormat)
+    }
+
+    @Test
+    fun aWrongGuessIsFixedByTapping() {
+        showMaker(guesses = true)
+        tap("Yes")
+        compose.onNodeWithText("Is this who was paid, or who paid?").assertExists()
+
+        tap("PHARMACY")
+
+        compose.onNodeWithText("Payee: PHARMACY").assertExists()
+        compose.onNodeWithText("Tap who was paid or who paid").assertExists()
+        tap("Next")
+        compose.onNodeWithText("Is this the account or card number?").assertExists()
     }
 
     @Test

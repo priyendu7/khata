@@ -426,6 +426,14 @@
     <string name="parser_step_next">आगे</string>
     <string name="parser_step_skip">छोड़ें</string>
     <string name="parser_step_skipped">%1$s: छोड़ा गया</string>
+    <string name="parser_guess_amount">क्या यह रकम है?</string>
+    <string name="parser_guess_payee">क्या यही वह है जिसे पैसे दिए गए या जिसने दिए?</string>
+    <string name="parser_guess_account">क्या यह खाता या कार्ड नंबर है?</string>
+    <string name="parser_guess_reference">क्या यह रेफ़रेंस नंबर है?</string>
+    <string name="parser_guess_date">क्या यह तारीख़ है?</string>
+    <string name="parser_guess_hint">Khata ने SMS से यह अंदाज़ा लगाया है। ग़लत हो तो सही शब्दों पर टैप करें।</string>
+    <string name="parser_guess_yes">हाँ</string>
+    <string name="parser_guess_all">सब सही है</string>
     <string name="parser_saved">सहेजा गया।</string>
     <plurals name="parser_saved_recorded">
         <item quantity="one">सहेजा गया। रुका हुआ %d SMS दर्ज हुआ।</item>
