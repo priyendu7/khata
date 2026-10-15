@@ -41,7 +41,15 @@ class SettingsScreenTest {
     fun sectionsAreHeadingsInOrder() {
         show()
         val sections =
-            listOf("SMS", "Your lists", "Backup & restore", "Security", "App", "About")
+            listOf(
+                "SMS",
+                "Your lists",
+                "Backup & restore",
+                "Credit cards",
+                "Security",
+                "App",
+                "About"
+            )
         compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
             .assertCountEquals(sections.size)
         val tops = sections.map {

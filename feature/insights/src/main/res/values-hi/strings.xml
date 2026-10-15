@@ -164,4 +164,30 @@
         <item quantity="one">%d दिन पहले देय था</item>
         <item quantity="other">%d दिन पहले देय था</item>
     </plurals>
+
+    <!-- Credit card due date reminders (#156). -->
+    <string name="card_reminder_section">रिमाइंडर</string>
+    <string name="card_reminder_setting">देय तिथि रिमाइंडर</string>
+    <string name="card_reminder_summary">कार्ड बिल की देय तिथि से पहले याद दिलाएँ, जब तक पूरा भुगतान न हो जाए</string>
+    <string name="card_reminder_when">कब</string>
+    <plurals name="card_reminder_days_before">
+        <item quantity="one">%d दिन पहले</item>
+        <item quantity="other">%d दिन पहले</item>
+    </plurals>
+    <string name="card_reminder_on_the_day">देय तिथि को</string>
+    <string name="card_reminder_no_days">कोई दिन नहीं चुना</string>
+    <string name="card_reminder_off">बंद</string>
+    <string name="card_reminder_home_only_short">सिर्फ़ होम पर: सूचनाएँ बंद हैं</string>
+    <string name="card_reminder_home_only">Khata के लिए सूचनाएँ बंद हैं, इसलिए बिल सिर्फ़ होम पर दिखेगा।</string>
+    <string name="card_reminder_card_help">इस कार्ड के बिल की देय तिथि से पहले, जब तक पूरा भुगतान न हो जाए।</string>
+    <string name="card_reminder_all_off">देय तिथि रिमाइंडर सभी कार्ड के लिए बंद हैं। इन्हें कार्ड टैब में रिमाइंडर के तहत चालू करें।</string>
+    <!-- The notification channel's name in the phone's settings. -->
+    <string name="card_reminder_channel">कार्ड की देय तिथियाँ</string>
+    <string name="card_reminder_title">क्रेडिट कार्ड बिल देय है</string>
+    <!-- Card, amount still to pay and due date, e.g. "Axis ··5678: ₹8,695 due on 2 Nov". -->
+    <string name="card_reminder_text">%1$s: %2$s, देय तिथि %3$s</string>
+    <!-- Card and amount still to pay, e.g. "Axis ··5678: ₹8,695 due today". -->
+    <string name="card_reminder_text_today">%1$s: %2$s आज देय है</string>
+    <!-- On a lock screen that hides private content: no card or amount. -->
+    <string name="card_reminder_public">एक क्रेडिट कार्ड बिल जल्द देय है</string>
 </resources>

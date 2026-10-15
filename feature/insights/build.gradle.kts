@@ -15,7 +15,11 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    // Asks for the notification permission when reminders are turned on.
+    implementation(libs.androidx.activity.compose)
     implementation(libs.kotlinx.coroutines.core)
+    // Due date reminders (#156), scheduled like the backup reminder.
+    implementation(libs.androidx.work.runtime)
 
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
@@ -25,6 +29,7 @@ dependencies {
     testImplementation(project(":core:database"))
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+    testImplementation(libs.androidx.work.testing)
     // Adds the empty activity that Compose UI tests host their content in (debug builds only).
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

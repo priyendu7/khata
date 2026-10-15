@@ -45,6 +45,7 @@ import com.openhand.khata.feature.csv.BackupReminderNotifier
 import com.openhand.khata.feature.csv.ExportScreen
 import com.openhand.khata.feature.csv.ImportScreen
 import com.openhand.khata.feature.insights.CARD_ID_ARG
+import com.openhand.khata.feature.insights.CardReminderSection
 import com.openhand.khata.feature.insights.CardsScreen
 import com.openhand.khata.feature.insights.CreditCardScreen
 import com.openhand.khata.feature.insights.DebitCardScreen
@@ -100,7 +101,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Top-level navigation: the tabs, and the screens opened from them. [openRequest] is a screen to
- * open from outside (the backup reminder notification opens Export; the welcome, SMS import).
+ * open from outside: the backup reminder notification opens Export, a card due date reminder its
+ * card's page, and the welcome SMS import.
  */
 @Composable
 fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
@@ -114,7 +116,9 @@ fun KhataNavigation(openRequest: String? = null, onOpened: () -> Unit = {}) {
         val route = when (openRequest) {
             BackupReminderNotifier.OPEN_EXPORT -> Route.EXPORT
             OPEN_SMS_IMPORT -> Route.SMS_IMPORT
-            else -> return@LaunchedEffect
+            // A card due date reminder (#156) opens its card's page.
+            else -> openRequest?.takeIf { it.startsWith(Route.CREDIT_CARD_PREFIX) }
+                ?: return@LaunchedEffect
         }
         navController.navigate(route) { launchSingleTop = true }
         onOpened()
@@ -329,7 +333,7 @@ private fun KhataNavHost(
     }
 }
 
-private object Route {
+internal object Route {
     const val TABS = "tabs"
     const val ACCOUNTS = "accounts"
     const val CATEGORIES = "categories"
@@ -355,7 +359,8 @@ private object Route {
 
     fun editParser(ruleId: String, builtIn: Boolean) = "parsers/edit/${Uri.encode(ruleId)}/$builtIn"
     const val REVIEW = "review"
-    const val CREDIT_CARD = "cards/credit/{$CARD_ID_ARG}"
+    const val CREDIT_CARD_PREFIX = "cards/credit/"
+    const val CREDIT_CARD = "$CREDIT_CARD_PREFIX{$CARD_ID_ARG}"
     const val DEBIT_CARD = "cards/debit/{$CARD_ID_ARG}"
 
     /** A credit card's page, or a debit card's. */
@@ -506,6 +511,7 @@ private fun MainTabs(
             Destination.SETTINGS -> SettingsRoute(
                 modifier,
                 security = { LockSettingsRows(onOpenLock = { onOpen(SettingsPage.LOCK) }) },
+                cardReminder = { CardReminderSection(it) },
                 onOpen = onOpen
             )
         }

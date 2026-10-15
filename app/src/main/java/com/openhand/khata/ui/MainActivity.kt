@@ -13,6 +13,8 @@ import com.openhand.khata.R
 import com.openhand.khata.core.security.lock.LockSettings
 import com.openhand.khata.core.ui.KhataTheme
 import com.openhand.khata.feature.csv.BackupReminderNotifier
+import com.openhand.khata.feature.insights.CardDueNotifier
+import com.openhand.khata.feature.insights.CardDueScheduler
 import com.openhand.khata.feature.lock.LockGate
 import com.openhand.khata.feature.lock.setSecure
 import com.openhand.khata.feature.settings.WelcomeGate
@@ -28,6 +30,8 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var lockSettings: LockSettings
 
     @Inject lateinit var welcomeSettings: WelcomeSettings
+
+    @Inject lateinit var cardDueScheduler: CardDueScheduler
 
     /** A screen to open, from a tapped notification; cleared once opened. */
     private val openRequest = mutableStateOf<String?>(null)
@@ -75,6 +79,15 @@ class MainActivity : AppCompatActivity() {
         openRequest.value = requestedScreen(intent)
     }
 
-    private fun requestedScreen(intent: Intent?) =
-        intent?.getStringExtra(BackupReminderNotifier.EXTRA_OPEN)
+    override fun onResume() {
+        super.onResume()
+        // Notifications may have been allowed or blocked in the phone's settings meanwhile.
+        cardDueScheduler.recheckNotifications()
+    }
+
+    private fun requestedScreen(intent: Intent?): String? {
+        val card = intent?.getLongExtra(CardDueNotifier.EXTRA_CARD, 0) ?: 0
+        if (card > 0) return Route.card(card, credit = true)
+        return intent?.getStringExtra(BackupReminderNotifier.EXTRA_OPEN)
+    }
 }

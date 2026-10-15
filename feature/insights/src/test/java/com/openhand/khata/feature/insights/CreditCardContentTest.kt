@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import com.openhand.khata.core.model.CardReminderSettings
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.CategoryBreakdown
 import com.openhand.khata.core.model.CategorySpend
@@ -124,6 +125,34 @@ class CreditCardContentTest {
         compose.onNodeWithText("3 of each month").performClick()
 
         assertEquals(3, day)
+    }
+
+    @Test
+    fun theCardsRemindersAreSwitched() {
+        var on: Boolean? = null
+        compose.setContent {
+            CreditCardContent(state, CreditCardActions(onSetReminders = { on = it }))
+        }
+
+        compose.onNodeWithText("Due date reminders").performScrollTo().performClick()
+
+        assertEquals(false, on)
+    }
+
+    @Test
+    fun withRemindersOffForAllTheCardSaysWhereToTurnThemOn() {
+        var on: Boolean? = null
+        compose.setContent {
+            CreditCardContent(
+                state.copy(reminders = CardReminderSettings(enabled = false)),
+                CreditCardActions(onSetReminders = { on = it })
+            )
+        }
+
+        compose.onNodeWithText("off for every card", substring = true).performScrollTo()
+            .assertIsDisplayed()
+        compose.onNodeWithText("Due date reminders").performClick()
+        assertNull(on)
     }
 
     @Test

@@ -4,9 +4,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openhand.khata.core.data.AccountRepository
+import com.openhand.khata.core.data.CardReminderRepository
 import com.openhand.khata.core.data.CardRepository
 import com.openhand.khata.core.data.CardSummary
 import com.openhand.khata.core.model.CardCycle
+import com.openhand.khata.core.model.CardReminderSettings
 import com.openhand.khata.core.model.CategoryBreakdown
 import com.openhand.khata.core.model.StatementSummary
 import com.openhand.khata.core.model.TransactionFilter
@@ -23,7 +25,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -38,7 +39,9 @@ data class CreditCardState(
     val summary: CardSummary,
     val shownStatement: StatementSummary?,
     val spending: CategoryBreakdown,
-    val today: LocalDate
+    val today: LocalDate,
+    /** Due date reminders (#156), for this card's switch. */
+    val reminders: CardReminderSettings = CardReminderSettings()
 ) {
     val shownCycle: CardCycle get() = shownStatement?.cycle ?: summary.currentCycle
 }
@@ -49,17 +52,20 @@ class CreditCardViewModel internal constructor(
     private val cardId: Long,
     private val cards: CardRepository,
     private val accounts: AccountRepository,
+    private val reminders: CardReminderRepository,
     today: Flow<LocalDate>,
     private val zone: ZoneId
 ) : ViewModel() {
     @Inject constructor(
         savedState: SavedStateHandle,
         cards: CardRepository,
-        accounts: AccountRepository
+        accounts: AccountRepository,
+        reminders: CardReminderRepository
     ) : this(
         checkNotNull(savedState.get<Long>(CARD_ID_ARG)),
         cards,
         accounts,
+        reminders,
         currentDate(),
         ZoneId.systemDefault()
     )
@@ -76,12 +82,16 @@ class CreditCardViewModel internal constructor(
             }.flatMapLatest { shown ->
                 if (shown == null) return@flatMapLatest flowOf(null)
                 val cycle = shown.statement?.cycle ?: shown.summary.currentCycle
-                cards.observeCycleSpending(shown.summary.card, cycle, zone).map {
+                combine(
+                    cards.observeCycleSpending(shown.summary.card, cycle, zone),
+                    reminders.settings
+                ) { spending, settings ->
                     CreditCardState(
                         shown.summary,
                         shown.statement,
-                        CategoryBreakdown.of(it),
-                        date
+                        CategoryBreakdown.of(spending),
+                        date,
+                        settings
                     )
                 }
             }
@@ -97,6 +107,9 @@ class CreditCardViewModel internal constructor(
     fun setBillingDay(day: Int?) {
         viewModelScope.launch { accounts.setBillingDay(cardId, day) }
     }
+
+    /** Turns this card's due date reminders (#156) on or off. */
+    fun setReminders(on: Boolean) = reminders.setCardEnabled(cardId, on)
 
     /** The transactions list for the shown cycle's spending, of one category or any (null). */
     fun filter(categoryId: Long?): TransactionFilter? {

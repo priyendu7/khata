@@ -247,6 +247,7 @@
     <string name="settings_section_sms">SMS</string>
     <string name="settings_section_lists">आपकी सूचियाँ</string>
     <string name="settings_section_backup">बैकअप और रीस्टोर</string>
+    <string name="settings_section_cards">क्रेडिट कार्ड</string>
     <string name="settings_section_security">सुरक्षा</string>
     <string name="settings_section_app">ऐप</string>
     <string name="settings_section_about">जानकारी</string>

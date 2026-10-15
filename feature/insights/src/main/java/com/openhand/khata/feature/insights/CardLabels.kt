@@ -13,10 +13,12 @@ import java.time.format.DateTimeFormatter
 /** "ICICI ··1234": the card's name, and its last 4 digits unless the name has them. */
 @Composable
 internal fun cardLabel(card: Account): String {
-    val last4 = card.last4?.takeUnless { card.name.contains(it) }
-        ?: return card.name
+    val last4 = card.shownLast4() ?: return card.name
     return stringResource(R.string.cards_card_last4, card.name, last4)
 }
+
+/** The card's last 4 digits, unless its name already has them. */
+internal fun Account.shownLast4(): String? = last4?.takeUnless { name.contains(it) }
 
 /** "Not paid", "Partly paid (₹5,000 of ₹35,300)" and so on. */
 @Composable

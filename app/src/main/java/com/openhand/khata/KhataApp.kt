@@ -3,6 +3,7 @@ package com.openhand.khata
 import android.app.Application
 import com.openhand.khata.core.data.EventRepository
 import com.openhand.khata.feature.csv.BackupReminderScheduler
+import com.openhand.khata.feature.insights.CardDueScheduler
 import com.openhand.khata.feature.lock.AppLockLifecycle
 import com.openhand.khata.sms.ingest.SmsImportSettings
 import com.openhand.khata.sms.ingest.TransferBackfillWork
@@ -20,6 +21,8 @@ class KhataApp : Application() {
 
     @Inject lateinit var backupReminderScheduler: BackupReminderScheduler
 
+    @Inject lateinit var cardDueScheduler: CardDueScheduler
+
     @Inject lateinit var smsImportSettings: SmsImportSettings
 
     @Inject lateinit var transferBackfillWork: TransferBackfillWork
@@ -32,6 +35,7 @@ class KhataApp : Application() {
         super.onCreate()
         appLockLifecycle.start()
         backupReminderScheduler.start()
+        cardDueScheduler.start()
         smsImportSettings.syncReceiver()
         transferBackfillWork.start()
         // Once, after the #144 update: gives back event tags that reviewing took off.

@@ -24,6 +24,7 @@ import com.openhand.khata.core.ui.ScreenTitle
 import com.openhand.khata.core.ui.SectionHeader
 import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.Segments
+import com.openhand.khata.core.ui.segment
 import java.time.LocalDate
 
 /** Cards tab (#155), wired to its [CardsViewModel]. The rows open each card's page by its id. */
@@ -35,7 +36,13 @@ fun CardsScreen(
     viewModel: CardsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    CardsContent(state, onOpenCreditCard, onOpenDebitCard, modifier)
+    CardsContent(
+        state,
+        onOpenCreditCard,
+        onOpenDebitCard,
+        modifier,
+        reminders = { CardReminderSection(it) }
+    )
 }
 
 /**
@@ -47,7 +54,9 @@ fun CardsContent(
     state: CardsState?,
     onOpenCreditCard: (Long) -> Unit,
     onOpenDebitCard: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Due date reminders (#156): their own ViewModel, so a slot that tests can leave empty. */
+    reminders: @Composable (Modifier) -> Unit = {}
 ) {
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenTitle(stringResource(R.string.cards_title))
@@ -66,6 +75,8 @@ fun CardsContent(
                             onOpenCreditCard(card.card.id)
                         }
                     }
+                    SectionHeader(stringResource(R.string.card_reminder_section))
+                    reminders(Modifier.segment(0, 1))
                 }
                 if (state.debit.isNotEmpty()) {
                     SectionHeader(stringResource(R.string.cards_debit))
