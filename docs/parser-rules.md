@@ -7,7 +7,7 @@ There are two kinds of rule:
 - **Transaction** rules (the default, and the only kind in version 1) read a debit, credit or refund.
 - **Statement** rules (version 2) read a credit card statement: the card, the total due, the minimum due and the due date. See [Statement rules](#statement-rules-version-2).
 
-**Versions.** Version 1 rules and codes keep working unchanged. Version 2 adds `kind`, `dueDateFormat`, the any-sender `*`, the `bank` group and the statement groups. A rule that uses none of these is still written as version 1 (by the rule maker and the editor too), so older versions of Khata can read its code. A version 1 rule that uses something from version 2 is refused with `needs_v2`.
+**Versions.** Version 1 rules and codes keep working unchanged. Version 2 adds `kind`, `dueDateFormat`, the any-sender `*`, the `bank` and `linkedAccount` groups and the statement groups. A rule that uses none of these is still written as version 1 (by the rule maker and the editor too), so older versions of Khata can read its code. A version 1 rule that uses something from version 2 is refused with `needs_v2`.
 
 ## Example
 
@@ -62,6 +62,7 @@ Unknown fields are an error, so a typo such as `patern` is caught instead of ign
 | `balance` | no | Read so a pattern can include it, but **never stored**. |
 | `dir` | no | The part of the SMS that `directionWords` are checked against. |
 | `bank` | no (v2) | The bank named in the SMS, such as `ICICI` in "ICICI Bank Credit Card". Used instead of the rule's `bank` when it matches, so a rule for any sender puts a payment on the right bank's card. |
+| `linkedAccount` | no (v2) | In a debit card rule, the bank account the card spends from, when the SMS names both, such as `A/c XX1234` in "Debit Card XX5678 used… from A/c XX1234". Read like `account`. A debit card with no bank account yet is linked to it (found by bank and last 4 digits, or made), so its spending counts under that account too. |
 
 Any other group name is an error, and so is a statement group in a transaction rule.
 
@@ -164,7 +165,7 @@ Every rule, built-in, made in the app or pasted, is checked first (`RuleValidato
 | Code | Meaning |
 |---|---|
 | `unknown_version` | `v` isn't `1` or `2` |
-| `needs_v2` | A version 1 rule uses something only version 2 has: `kind`, `dueDateFormat`, the `*` sender, or a `bank` or statement group |
+| `needs_v2` | A version 1 rule uses something only version 2 has: `kind`, `dueDateFormat`, the `*` sender, or a `bank`, `linkedAccount` or statement group |
 | `not_for_kind` | A field or group the rule's kind doesn't have: `amount`, `direction` or `accountType` in a statement rule, or `total` or `dueDateFormat` in a transaction rule |
 | `missing_account_type` | A transaction rule has no `accountType` |
 | `missing_card` | A statement rule has no `account` group |

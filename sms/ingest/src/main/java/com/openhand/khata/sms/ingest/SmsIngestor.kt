@@ -202,7 +202,8 @@ class SmsIngestor @Inject constructor(
         accountLast4 = accountLast4,
         payee = payee,
         referenceNo = reference,
-        rawSms = body
+        rawSms = body,
+        linkedAccountLast4 = linkedAccountLast4
     )
 }
 

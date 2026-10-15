@@ -3,6 +3,8 @@ package com.openhand.khata.feature.insights
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openhand.khata.core.data.BackupReminderRepository
+import com.openhand.khata.core.data.CardDue
+import com.openhand.khata.core.data.CardRepository
 import com.openhand.khata.core.data.ReviewRepository
 import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.model.CategoryBreakdown
@@ -13,6 +15,7 @@ import com.openhand.khata.core.model.TransactionListItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -21,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 /**
@@ -47,20 +51,28 @@ data class HomeSummary(
     }
 }
 
+/** The next credit card bill not paid in full (#155), and how many days until it's due. */
+data class BillDue(val due: CardDue, val today: LocalDate) {
+    /** Negative once it's overdue. */
+    val daysLeft: Long get() = ChronoUnit.DAYS.between(today, due.statement.statement.dueDate)
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HomeViewModel internal constructor(
     transactions: TransactionRepository,
     reminders: BackupReminderRepository,
     review: ReviewRepository,
+    cards: CardRepository,
     today: Flow<LocalDate>,
     zone: ZoneId
 ) : ViewModel() {
     @Inject constructor(
         transactions: TransactionRepository,
         reminders: BackupReminderRepository,
-        review: ReviewRepository
-    ) : this(transactions, reminders, review, currentDate(), ZoneId.systemDefault())
+        review: ReviewRepository,
+        cards: CardRepository
+    ) : this(transactions, reminders, review, cards, currentDate(), ZoneId.systemDefault())
 
     /** Null until the first load; then updated live as transactions change. */
     val summary: StateFlow<HomeSummary?> = today
@@ -88,6 +100,14 @@ class HomeViewModel internal constructor(
     /** The reminder interval in days while a backup is due (PRD feature 6), else null. */
     val backupDueDays: StateFlow<Int?> = reminders.observeDue()
         .combine(reminders.settings) { due, settings -> settings.interval.days.takeIf { due } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+
+    /** The soonest unpaid credit card bill; null when every bill is paid. */
+    val billDue: StateFlow<BillDue?> = today
+        .distinctUntilChanged()
+        .flatMapLatest { date ->
+            cards.observeNextDue(date, zone).map { due -> due?.let { BillDue(it, date) } }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     /** Transactions from new payees waiting in To review (PRD feature 4). */

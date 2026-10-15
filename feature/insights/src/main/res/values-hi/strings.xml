@@ -105,4 +105,63 @@
     <string name="insights_move_between">%1$s ↔ %2$s</string>
     <string name="insights_move_unknown_end">पता नहीं</string>
     <string name="insights_moves_show_all">सभी %d दिखाएँ</string>
+
+    <string name="cards_title">कार्ड</string>
+    <string name="cards_credit">क्रेडिट कार्ड</string>
+    <string name="cards_debit">डेबिट कार्ड</string>
+    <string name="cards_empty_title">अभी कोई कार्ड नहीं</string>
+    <string name="cards_empty_body">कार्ड आपके बैंक के SMS से यहाँ आते हैं, या आप सेटिंग्स &gt; खाते में कोई कार्ड जोड़ सकते हैं।</string>
+    <string name="cards_card_last4">%1$s ··%2$s</string>
+    <string name="cards_due">%1$s, देय %2$s</string>
+    <string name="cards_spent_this_cycle">इस साइकिल में %1$s खर्च</string>
+    <string name="cards_spent_this_month">इस महीने %1$s</string>
+    <string name="cards_linked_to">%1$s से जुड़ा</string>
+    <string name="cards_not_linked">किसी खाते से नहीं जुड़ा</string>
+    <string name="cards_status_paid">भुगतान हो गया</string>
+    <string name="cards_status_minimum">न्यूनतम भुगतान हुआ</string>
+    <string name="cards_status_partly">आंशिक भुगतान (%2$s में से %1$s)</string>
+    <string name="cards_status_not_paid">भुगतान नहीं हुआ</string>
+    <string name="cards_status_overdue">देय तिथि निकल गई</string>
+
+    <string name="card_statement_title">मौजूदा स्टेटमेंट</string>
+    <string name="card_statement_total">कुल देय</string>
+    <string name="card_statement_minimum">न्यूनतम देय</string>
+    <string name="card_statement_due_date">देय तिथि</string>
+    <string name="card_statement_status">स्थिति</string>
+    <string name="card_payments">भुगतान</string>
+    <string name="card_payment">%2$s को %1$s</string>
+    <string name="card_no_payments">अभी कोई भुगतान नहीं</string>
+    <string name="card_no_statement_title">अभी कोई स्टेटमेंट नहीं</string>
+    <string name="card_no_statement_body">बैंक का स्टेटमेंट SMS आने पर बिल यहाँ दिखेगा। तब तक, इस साइकिल में आपका खर्च यह है।</string>
+    <string name="card_bank_vs_khata">बैंक के अनुसार %1$s देय · Khata में इस साइकिल के %2$s के खर्च दर्ज हैं</string>
+    <string name="card_bank_vs_khata_note">ब्याज, शुल्क, EMI या छूटा हुआ SMS इनमें अंतर ला सकते हैं।</string>
+    <string name="card_spending">श्रेणी के अनुसार खर्च</string>
+    <string name="card_cycle">%1$s – %2$s</string>
+    <string name="card_this_cycle">यह साइकिल</string>
+    <string name="card_statement_cycle">%1$s का स्टेटमेंट</string>
+    <string name="card_show_this_cycle">यह साइकिल दिखाएँ</string>
+    <string name="card_nothing_spent_body">इस साइकिल में इस कार्ड पर कोई खर्च नहीं।</string>
+    <string name="card_past_statements">पिछले स्टेटमेंट</string>
+    <string name="card_settings">कार्ड सेटिंग्स</string>
+    <string name="card_billing_day">बिलिंग दिन</string>
+    <string name="card_billing_day_value">हर महीने की %1$d तारीख</string>
+    <string name="card_billing_day_none">सेट नहीं</string>
+    <string name="card_billing_day_help">जिस दिन बैंक आपका स्टेटमेंट बनाता है। स्टेटमेंट SMS आने तक Khata साइकिल के लिए इसका इस्तेमाल करता है।</string>
+
+    <string name="debit_linked_account">बैंक खाता</string>
+    <string name="debit_not_linked">नहीं जुड़ा</string>
+    <string name="debit_linked_help">कार्ड का खर्च इस खाते में भी गिना जाता है, दो बार कभी नहीं।</string>
+    <string name="debit_nothing_spent_body">इस अवधि में इस कार्ड पर कोई खर्च नहीं।</string>
+
+    <string name="home_bill_title">कार्ड बिल</string>
+    <string name="home_bill_body">%1$s · %2$s, देय %3$s · %4$s</string>
+    <string name="home_bill_today">आज</string>
+    <plurals name="home_bill_in_days">
+        <item quantity="one">%d दिन में</item>
+        <item quantity="other">%d दिन में</item>
+    </plurals>
+    <plurals name="home_bill_overdue">
+        <item quantity="one">%d दिन पहले देय था</item>
+        <item quantity="other">%d दिन पहले देय था</item>
+    </plurals>
 </resources>

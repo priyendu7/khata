@@ -7,9 +7,11 @@ import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.Tag
 
-internal fun AccountEntity.toModel() = Account(id, name, type, bank, last4, billingDay)
+internal fun AccountEntity.toModel() =
+    Account(id, name, type, bank, last4, billingDay, linkedAccountId)
 
-internal fun Account.toEntity() = AccountEntity(id, name, type, bank, last4, billingDay)
+internal fun Account.toEntity() =
+    AccountEntity(id, name, type, bank, last4, billingDay, linkedAccountId)
 
 internal fun CategoryEntity.toModel() = Category(id, name, seedKey, color, icon, archived)
 

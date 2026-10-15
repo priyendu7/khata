@@ -49,11 +49,13 @@ fun HomeScreen(
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val backupDueDays by viewModel.backupDueDays.collectAsStateWithLifecycle()
     val reviewCount by viewModel.reviewCount.collectAsStateWithLifecycle()
-    HomeContent(title, summary, modifier, backupDueDays, reviewCount, actions)
+    val billDue by viewModel.billDue.collectAsStateWithLifecycle()
+    HomeContent(title, summary, modifier, backupDueDays, reviewCount, actions, billDue)
 }
 
 /**
- * Top to bottom (#130): the To review count while [reviewCount] > 0; this month against last;
+ * Top to bottom (#130): the To review count while [reviewCount] > 0; the next unpaid credit card
+ * bill while there's one ([billDue], #155); this month against last;
  * the top categories; the latest transactions; and the backup reminder while [backupDueDays] is
  * set. With no transactions at all, a card on how to start takes the middle three's place.
  */
@@ -64,7 +66,8 @@ fun HomeContent(
     modifier: Modifier = Modifier,
     backupDueDays: Int? = null,
     reviewCount: Int = 0,
-    actions: HomeActions = HomeActions()
+    actions: HomeActions = HomeActions(),
+    billDue: BillDue? = null
 ) {
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenTitle(title)
@@ -80,6 +83,7 @@ fun HomeContent(
             )
         ) {
             if (reviewCount > 0) ReviewCard(reviewCount, actions.onReview)
+            billDue?.let { BillDueCard(it) { actions.onOpenCard(it.due.card.id) } }
             if (summary.hasTransactions) {
                 MonthCard(summary)
                 TopCategoriesCard(summary, actions.onSeeAllInsights)

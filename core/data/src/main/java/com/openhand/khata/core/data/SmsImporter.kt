@@ -6,6 +6,7 @@ import com.openhand.khata.core.database.entity.AccountEntity
 import com.openhand.khata.core.database.entity.PayeeEntity
 import com.openhand.khata.core.database.entity.TransactionEntity
 import com.openhand.khata.core.model.Account
+import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.DefaultCategory
 import com.openhand.khata.core.model.Direction
@@ -103,6 +104,26 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
         val transfer: TransferMatch?
     )
 
+    /**
+     * Links debit card [cardId] to the bank account [sms] names alongside it (#155), found by
+     * bank and last 4 digits or made, as the card was.
+     */
+    private suspend fun linkCard(database: KhataDatabase, cardId: Long, sms: SmsTransaction) {
+        val last4 = sms.linkedAccountLast4 ?: return
+        if (sms.accountType != AccountType.DEBIT_CARD) return
+        val dao = database.accountDao()
+        val account = AccountMatch.find(dao, sms.bank, last4) { it.type == AccountType.BANK }
+        val accountId = account?.id ?: dao.insert(
+            AccountEntity(
+                name = "${sms.bank} $last4",
+                type = AccountType.BANK,
+                bank = sms.bank,
+                last4 = last4
+            )
+        )
+        dao.setLinkedAccount(cardId, accountId)
+    }
+
     private suspend fun duplicateOf(
         database: KhataDatabase,
         sms: SmsTransaction,
@@ -140,6 +161,10 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
                 last4 = sms.accountLast4
             )
         )
+        val card = plan.account
+        if (card == null || card.type == AccountType.DEBIT_CARD && card.linkedAccountId == null) {
+            linkCard(database, accountId, sms)
+        }
         val payee = plan.payee ?: payeeIdentifier(sms.payee)?.let { newPayee(database, it) }
         val memory = plan.memory
         val transfer = plan.transfer != null

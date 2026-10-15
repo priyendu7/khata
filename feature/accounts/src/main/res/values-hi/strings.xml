@@ -12,6 +12,10 @@
     <string name="accounts_last4">आख़िरी 4 अंक (वैकल्पिक)</string>
     <string name="accounts_last4_help">सिर्फ़ आख़िरी 4 अंक ही सहेजे जाते हैं।</string>
     <string name="accounts_last4_display">••%1$s</string>
+    <string name="accounts_linked_account">बैंक खाता</string>
+    <string name="accounts_not_linked">नहीं जुड़ा</string>
+    <string name="accounts_linked_help">कार्ड का खर्च इस खाते में भी गिना जाता है।</string>
+    <string name="accounts_linked_to">%1$s से जुड़ा</string>
     <string name="accounts_delete_title">%1$s मिटाएँ?</string>
     <string name="accounts_delete_unused">कोई लेन-देन इस खाते का इस्तेमाल नहीं करता।</string>
     <plurals name="accounts_delete_move">

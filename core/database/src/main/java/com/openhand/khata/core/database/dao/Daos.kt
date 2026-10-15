@@ -81,6 +81,12 @@ data class AccountSpendRow(
     @ColumnInfo(name = "spent_paise") val spentPaise: Long
 )
 
+/** One card's spending in a period. */
+data class CardTotalRow(
+    @ColumnInfo(name = "account_id") val accountId: Long,
+    @ColumnInfo(name = "spent_paise") val spentPaise: Long
+)
+
 /** An expense, refund or income, with just what the charts need. */
 data class AmountRow(
     val timestamp: Long,
@@ -187,6 +193,14 @@ interface AccountDao {
     @Query("UPDATE accounts SET billing_day = :day WHERE id = :id")
     suspend fun setBillingDay(id: Long, day: Int?)
 
+    /** Links debit card [id] to bank account [accountId] (#155), or unlinks it with null. */
+    @Query("UPDATE accounts SET linked_account_id = :accountId WHERE id = :id")
+    suspend fun setLinkedAccount(id: Long, accountId: Long?)
+
+    /** Unlinks every debit card linked to [accountId]. */
+    @Query("UPDATE accounts SET linked_account_id = NULL WHERE linked_account_id = :accountId")
+    suspend fun unlinkCardsOf(accountId: Long)
+
     /**
      * Moves the account's transactions to [moveTo] (null = no account), and its card statements
      * (#154) too, then deletes it. With nowhere to move them, its statements go with it.
@@ -195,13 +209,15 @@ interface AccountDao {
     suspend fun deleteMovingTransactions(id: Long, moveTo: Long?) {
         moveTransactions(id, moveTo)
         moveTo?.let { moveStatements(id, it) }
+        unlinkCardsOf(id)
         deleteById(id)
     }
 
     /**
      * Every account's spending (expenses minus refunds) for timestamps in [from, until), biggest
-     * first, with the transactions with no account as a null account. Each transaction has at
-     * most one account, so these add up to [TransactionDao.observeTotals]' spent figure.
+     * first, with the transactions with no account as a null account. A linked debit card's
+     * spending counts under its bank account (#155), not on its own. Each transaction counts in
+     * one account, so these add up to [TransactionDao.observeTotals]' spent figure.
      * Accounts that net to zero are left out; more refunds than spending is negative, so last.
      */
     @Query(
@@ -209,14 +225,31 @@ interface AccountDao {
             "a.bank AS account_bank, a.last4 AS account_last4, " +
             "SUM(CASE t.direction WHEN 'debit' THEN t.amount_paise ELSE -t.amount_paise END) " +
             "AS spent_paise " +
-            "FROM transactions t LEFT JOIN accounts a ON a.id = t.account_id " +
+            "FROM transactions t LEFT JOIN accounts own ON own.id = t.account_id " +
+            "LEFT JOIN accounts a ON a.id = COALESCE(own.linked_account_id, own.id) " +
             "WHERE t.direction IN ('debit', 'refund') " +
             "AND COALESCE(t.counts_at, t.timestamp) >= :from " +
             "AND COALESCE(t.counts_at, t.timestamp) < :until " +
-            "GROUP BY t.account_id HAVING spent_paise != 0 " +
+            "GROUP BY a.id HAVING spent_paise != 0 " +
             "ORDER BY spent_paise DESC, a.id IS NULL, a.name"
     )
     fun observeAccountSpending(from: Long, until: Long): Flow<List<AccountSpendRow>>
+
+    /**
+     * Each debit card's own spending for timestamps in [from, until), for the Cards tab (#155).
+     * Cards with none aren't listed.
+     */
+    @Query(
+        "SELECT t.account_id, " +
+            "SUM(CASE t.direction WHEN 'debit' THEN t.amount_paise ELSE -t.amount_paise END) " +
+            "AS spent_paise " +
+            "FROM transactions t JOIN accounts a ON a.id = t.account_id " +
+            "WHERE a.type = 'debit_card' AND t.direction IN ('debit', 'refund') " +
+            "AND COALESCE(t.counts_at, t.timestamp) >= :from " +
+            "AND COALESCE(t.counts_at, t.timestamp) < :until " +
+            "GROUP BY t.account_id"
+    )
+    fun observeDebitCardSpending(from: Long, until: Long): Flow<List<CardTotalRow>>
 }
 
 @Dao
@@ -519,7 +552,8 @@ interface TransactionDao {
      * first, with the same rules as [observeTopCategory]. A category with more refunds than
      * spending comes last with a negative total; categories that net to zero are left out.
      * [tagId] limits it to one tag's transactions, and [untagged] to those with no tag;
-     * [accountId] to one account's, and [noAccount] to those with no account.
+     * [accountId] to one account's (with its linked debit cards', #155), and [noAccount] to
+     * those with no account.
      */
     @Query(
         "SELECT c.id AS category_id, c.name AS category_name, " +
@@ -535,7 +569,8 @@ interface TransactionDao {
             "WHERE x.transaction_id = t.id AND x.tag_id = :tagId)) " +
             "AND (NOT :untagged OR NOT EXISTS (SELECT 1 FROM transaction_tags x " +
             "WHERE x.transaction_id = t.id)) " +
-            "AND (:accountId IS NULL OR t.account_id = :accountId) " +
+            "AND (:accountId IS NULL OR t.account_id = :accountId " +
+            "OR t.account_id IN (SELECT id FROM accounts WHERE linked_account_id = :accountId)) " +
             "AND (NOT :noAccount OR t.account_id IS NULL) " +
             "GROUP BY c.id HAVING spent_paise != 0 ORDER BY spent_paise DESC, c.id"
     )
@@ -565,6 +600,7 @@ interface TransactionDao {
      * The transactions list, newest first. Each null argument means "any"; the rest combine.
      * [categoryIds] is ignored when [anyCategory]; SQLite reads an empty `IN ()` as no match.
      * [query] matches the payee name or note and must have `%`, `_` and `\` escaped with `\`.
+     * An [accountId] includes its linked debit cards' transactions (#155).
      * [limit] keeps only the newest ones.
      */
     @Query(
@@ -580,7 +616,8 @@ interface TransactionDao {
             "LEFT JOIN payees p ON p.id = t.payee_id " +
             "LEFT JOIN accounts a ON a.id = t.account_id " +
             "WHERE (:anyCategory OR t.category_id IN (:categoryIds)) " +
-            "AND (:accountId IS NULL OR t.account_id = :accountId) " +
+            "AND (:accountId IS NULL OR t.account_id = :accountId " +
+            "OR t.account_id IN (SELECT id FROM accounts WHERE linked_account_id = :accountId)) " +
             "AND (NOT :noAccount OR t.account_id IS NULL) " +
             "AND (:tagId IS NULL OR EXISTS (SELECT 1 FROM transaction_tags x " +
             "WHERE x.transaction_id = t.id AND x.tag_id = :tagId)) " +

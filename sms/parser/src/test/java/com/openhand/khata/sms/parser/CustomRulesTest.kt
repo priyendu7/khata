@@ -155,6 +155,25 @@ class CustomRulesTest {
         assertEquals(listOf("kotak-atm"), rules.map { it.rule.id })
     }
 
+    @Test
+    fun aDebitCardRuleReadsTheAccountItSpendsFrom() {
+        val rule = atm.copy(
+            v = 2,
+            id = "hdfc-debit-card",
+            pattern = "(?<amount>Rs\\.[\\d,]+) spent on Debit Card XX(?<account>\\d{4}) " +
+                "from A/c XX(?<linkedAccount>\\d{4})"
+        )
+        val compiled = (CustomRules.check(RuleCode.encode(rule)) as CodeCheck.Valid).rule
+
+        val body = "Rs.500 spent on Debit Card XX5678 from A/c XX1234 at Big Bazaar"
+        val result = SmsParser(listOf(compiled)).parse("JM-KOTAKB-S", body, AT)
+        val parsed = (result as ParseResult.Parsed).sms
+        assertEquals("5678", parsed.accountLast4)
+        assertEquals("1234", parsed.linkedAccountLast4)
+        // It's new in version 2.
+        assertEquals(RuleFormat.VERSION, RuleFormat.versionFor(rule))
+    }
+
     private companion object {
         const val AT = 1_790_000_000_000L
     }

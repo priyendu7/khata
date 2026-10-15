@@ -1,7 +1,9 @@
 package com.openhand.khata.core.data
 
+import androidx.room.withTransaction
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.model.Account
+import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.CardCycles
 import dagger.Lazy
 import javax.inject.Inject
@@ -17,25 +19,47 @@ class AccountRepository @Inject constructor(private val db: Lazy<KhataDatabase>)
 
     /**
      * Adds a new account (id 0) or updates an existing one, and returns its id. Blank bank and
-     * last-4 fields are stored as empty; last 4 must be exactly four digits.
+     * last-4 fields are stored as empty; last 4 must be exactly four digits. Only a debit card
+     * keeps a linked account, and only a bank account it can be; an account that stops being a
+     * bank account loses its cards (#155).
      */
     suspend fun save(account: Account): Long {
         val clean = account.copy(
             name = account.name.trim(),
             bank = account.bank?.trim()?.ifEmpty { null },
-            last4 = account.last4?.trim()?.ifEmpty { null }
+            last4 = account.last4?.trim()?.ifEmpty { null },
+            linkedAccountId = account.linkedAccountId
+                ?.takeIf { account.type == AccountType.DEBIT_CARD && it != account.id }
         )
         require(clean.name.isNotEmpty()) { "Account name is empty" }
         require(Account.isValidLast4(clean.last4)) { "Last 4 must be exactly 4 digits" }
         require(CardCycles.isValidBillingDay(clean.billingDay)) { "Billing day must be 1 to 31" }
         return db.io { database ->
-            val dao = database.accountDao()
-            if (clean.id == 0L) {
-                dao.insert(clean.toEntity())
-            } else {
-                dao.update(clean.toEntity())
-                clean.id
+            database.withTransaction {
+                val dao = database.accountDao()
+                val linked = clean.linkedAccountId
+                    ?.takeIf { dao.getById(it)?.type == AccountType.BANK }
+                val entity = clean.copy(linkedAccountId = linked).toEntity()
+                if (clean.id == 0L) {
+                    dao.insert(entity)
+                } else {
+                    dao.update(entity)
+                    if (clean.type != AccountType.BANK) dao.unlinkCardsOf(clean.id)
+                    clean.id
+                }
             }
+        }
+    }
+
+    /** Links debit card [cardId] to bank account [accountId] (#155), or unlinks it with null. */
+    suspend fun setLinkedAccount(cardId: Long, accountId: Long?) {
+        db.io { database ->
+            val dao = database.accountDao()
+            require(dao.getById(cardId)?.type == AccountType.DEBIT_CARD) { "Only debit cards link" }
+            require(accountId == null || dao.getById(accountId)?.type == AccountType.BANK) {
+                "Debit cards link to bank accounts"
+            }
+            dao.setLinkedAccount(cardId, accountId)
         }
     }
 

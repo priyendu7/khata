@@ -19,5 +19,10 @@ data class SmsTransaction(
     /** UPI or bank reference number. */
     val referenceNo: String?,
     /** The whole SMS text, kept with the transaction. */
-    val rawSms: String
+    val rawSms: String,
+    /**
+     * The bank account a debit card spend is from (#155), when the SMS names both: a debit card
+     * with no bank account yet is linked to it.
+     */
+    val linkedAccountLast4: String? = null
 )

@@ -121,6 +121,12 @@ object RuleFormat {
     /** v2: the bank named in the SMS, used instead of [ParserRule.bank] when it matches. */
     const val BANK = "bank"
 
+    /**
+     * v2: the bank account a debit card spend is from, when the SMS names both (#155). A new debit
+     * card is linked to it.
+     */
+    const val LINKED_ACCOUNT = "linkedAccount"
+
     /** v2 statement groups. */
     const val TOTAL = "total"
     const val MIN_DUE = "minDue"
@@ -128,7 +134,7 @@ object RuleFormat {
     const val STATEMENT_DATE = "statementDate"
 
     val V1_GROUPS = setOf(AMOUNT, PAYEE, ACCOUNT, REF, DATE, BALANCE, DIR)
-    val TRANSACTION_GROUPS = V1_GROUPS + BANK
+    val TRANSACTION_GROUPS = V1_GROUPS + BANK + LINKED_ACCOUNT
     val STATEMENT_GROUPS = setOf(ACCOUNT, BANK, TOTAL, MIN_DUE, DUE_DATE, STATEMENT_DATE, BALANCE)
     val GROUPS = TRANSACTION_GROUPS + STATEMENT_GROUPS
 

@@ -11,5 +11,7 @@ class HomeActions(
     val onAddTransaction: () -> Unit = {},
     val onTurnOnSms: () -> Unit = {},
     val onSeeAllTransactions: () -> Unit = {},
-    val onSeeAllInsights: () -> Unit = {}
+    val onSeeAllInsights: () -> Unit = {},
+    /** A credit card's page, by its id. */
+    val onOpenCard: (Long) -> Unit = {}
 )

@@ -43,7 +43,7 @@ import com.openhand.khata.core.database.entity.TransactionTagEntity
         BuiltInRuleOverrideEntity::class,
         CardStatementEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = true
 )
 @TypeConverters(EnumConverters::class)

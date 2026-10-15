@@ -4,15 +4,20 @@ import android.content.Context
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import com.openhand.khata.core.data.BackupReminderRepository
 import com.openhand.khata.core.data.BackupRepository
+import com.openhand.khata.core.data.CardRepository
 import com.openhand.khata.core.data.ReviewRepository
+import com.openhand.khata.core.data.StatementSaveResult
 import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.SmsStatement
 import com.openhand.khata.core.model.Transaction
+import com.openhand.khata.core.model.TransferSide
 import dagger.Lazy
 import java.time.LocalDate
 import java.time.YearMonth
@@ -45,6 +50,7 @@ import org.robolectric.annotation.Config
 class HomeViewModelTest {
     private lateinit var db: KhataDatabase
     private lateinit var transactions: TransactionRepository
+    private lateinit var cards: CardRepository
     private val zone = ZoneId.of("Asia/Kolkata")
     private val today = LocalDate.of(2026, 9, 27)
     private val lastMonth = LocalDate.of(2026, 8, 10)
@@ -58,6 +64,7 @@ class HomeViewModelTest {
             KhataDatabase::class.java
         ).addCallback(DefaultCategorySeeder.callback).allowMainThreadQueries().build()
         transactions = TransactionRepository(Lazy { db })
+        cards = CardRepository(Lazy { db }, transactions)
     }
 
     @After
@@ -94,6 +101,7 @@ class HomeViewModelTest {
             transactions
         ),
         ReviewRepository(Lazy { db }),
+        cards,
         flowOf(today),
         zone
     ).also { viewModels += it }
@@ -195,6 +203,55 @@ class HomeViewModelTest {
             assertEquals(1, summary.recent.size)
             assertEquals("food", summary.topCategories.single().category.seedKey)
             cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    private fun statement(bank: String, last4: String, total: Long, due: LocalDate) = SmsStatement(
+        bank = bank,
+        cardLast4 = last4,
+        totalPaise = total,
+        minDuePaise = null,
+        dueDate = due,
+        statementDate = due.minusDays(20),
+        rawSms = "$bank card $last4: $total due on $due"
+    )
+
+    private suspend fun saved(sms: SmsStatement) =
+        (cards.save(sms) as StatementSaveResult.Saved).cardId
+
+    @Test
+    fun theNextBillIsTheSoonestUnpaidOneAndGoesOnceAllArePaid() = runTest {
+        val axis = saved(statement("Axis", "5678", 8_695_00, today.plusDays(18)))
+        val icici = saved(statement("ICICI", "1234", 2_000_00, today.plusDays(5)))
+        val viewModel = viewModel()
+
+        viewModel.billDue.test {
+            assertEquals(icici, awaitMatching { it != null }!!.due.card.id)
+            pay(icici, 2_000_00)
+            assertEquals(axis, awaitMatching { it?.due?.card?.id == axis }!!.due.card.id)
+            pay(axis, 8_695_00)
+            assertNull(awaitMatching { it == null })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /** The card's "payment received": a transfer into it, after its statement. */
+    private suspend fun pay(card: Long, paise: Long) = transactions.save(
+        Transaction(
+            amountPaise = paise,
+            direction = Direction.TRANSFER,
+            timestamp = today.atTime(10, 0).atZone(zone).toInstant().toEpochMilli(),
+            accountId = card,
+            transferSide = TransferSide.IN
+        ),
+        zone = zone
+    )
+
+    /** The next item that passes [accept], skipping any before it. */
+    private suspend fun <T> ReceiveTurbine<T>.awaitMatching(accept: (T) -> Boolean): T {
+        while (true) {
+            val item = awaitItem()
+            if (accept(item)) return item
         }
     }
 }

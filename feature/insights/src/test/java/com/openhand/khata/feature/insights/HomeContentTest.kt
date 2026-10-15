@@ -9,10 +9,12 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import com.openhand.khata.core.data.CardDue
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.CategoryBreakdown
 import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.PaymentStatus
 import com.openhand.khata.core.model.Totals
 import com.openhand.khata.core.model.TransactionListItem
 import org.junit.Assert.assertEquals
@@ -221,6 +223,53 @@ class HomeContentTest {
         compose.setContent { HomeContent("Khata", refunded) }
 
         compose.onNodeWithText("-₹500").assertIsDisplayed()
+    }
+
+    @Test
+    fun theNextBillOpensItsCardAndHidesWhenPaid() {
+        val axis = CardSamples.creditCard(5, "Axis", "5678")
+        val bill = CardSamples.bill(
+            1,
+            5,
+            8_695_00,
+            CardSamples.TODAY.plusDays(18),
+            PaymentStatus.NOT_PAID
+        )
+        var due by mutableStateOf<BillDue?>(BillDue(CardDue(axis, bill), CardSamples.TODAY))
+        var opened: Long? = null
+        compose.setContent {
+            HomeContent(
+                "Khata",
+                summary,
+                actions = HomeActions(onOpenCard = { opened = it }),
+                billDue = due
+            )
+        }
+
+        compose.onNodeWithText("Axis ··5678 · ₹8,695 due 2 Nov · in 18 days").performClick()
+        assertEquals(5L, opened)
+
+        due = null
+        compose.onNodeWithText("Card bill").assertDoesNotExist()
+    }
+
+    @Test
+    fun anOverdueBillSaysBySoMuch() {
+        val axis = CardSamples.creditCard(5, "Axis", "5678")
+        val bill = CardSamples.bill(
+            1,
+            5,
+            8_695_00,
+            CardSamples.TODAY.minusDays(3),
+            PaymentStatus.OVERDUE
+        )
+        compose.setContent {
+            HomeContent("Khata", summary, billDue = BillDue(CardDue(axis, bill), CardSamples.TODAY))
+        }
+
+        compose.onNodeWithText("Axis ··5678 · ₹8,695 due 12 Oct · overdue by 3 days")
+            .assertIsDisplayed()
+        compose.onNodeWithText("Overdue").assertIsDisplayed()
     }
 
     @Test

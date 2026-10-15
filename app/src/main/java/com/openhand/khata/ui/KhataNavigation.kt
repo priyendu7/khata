@@ -44,6 +44,10 @@ import com.openhand.khata.feature.categories.TagsScreen
 import com.openhand.khata.feature.csv.BackupReminderNotifier
 import com.openhand.khata.feature.csv.ExportScreen
 import com.openhand.khata.feature.csv.ImportScreen
+import com.openhand.khata.feature.insights.CARD_ID_ARG
+import com.openhand.khata.feature.insights.CardsScreen
+import com.openhand.khata.feature.insights.CreditCardScreen
+import com.openhand.khata.feature.insights.DebitCardScreen
 import com.openhand.khata.feature.insights.HomeActions
 import com.openhand.khata.feature.insights.HomeScreen
 import com.openhand.khata.feature.insights.InsightsScreen
@@ -136,7 +140,26 @@ private fun KhataNavHost(
                 onOpen = { page -> navController.navigate(page.route()) },
                 onOpenTransaction = { id -> navController.navigate(Route.transaction(id)) },
                 onOpenTransactions = { navController.navigate(Route.transactions(it)) },
-                onReview = { navController.navigate(Route.REVIEW) { launchSingleTop = true } }
+                onReview = { navController.navigate(Route.REVIEW) { launchSingleTop = true } },
+                onOpenCard = { id, credit -> navController.navigate(Route.card(id, credit)) }
+            )
+        }
+        composable(
+            Route.CREDIT_CARD,
+            arguments = listOf(navArgument(CARD_ID_ARG) { type = NavType.LongType })
+        ) {
+            CreditCardScreen(
+                onBack = back,
+                onOpenTransactions = { navController.navigate(Route.transactions(it)) }
+            )
+        }
+        composable(
+            Route.DEBIT_CARD,
+            arguments = listOf(navArgument(CARD_ID_ARG) { type = NavType.LongType })
+        ) {
+            DebitCardScreen(
+                onBack = back,
+                onOpenTransactions = { navController.navigate(Route.transactions(it)) }
             )
         }
         composable(
@@ -332,6 +355,11 @@ private object Route {
 
     fun editParser(ruleId: String, builtIn: Boolean) = "parsers/edit/${Uri.encode(ruleId)}/$builtIn"
     const val REVIEW = "review"
+    const val CREDIT_CARD = "cards/credit/{$CARD_ID_ARG}"
+    const val DEBIT_CARD = "cards/debit/{$CARD_ID_ARG}"
+
+    /** A credit card's page, or a debit card's. */
+    fun card(id: Long, credit: Boolean) = if (credit) "cards/credit/$id" else "cards/debit/$id"
     const val IGNORE_LIKE_THIS = "review/ignore/{$IGNORE_FROM_UNPARSED_ARG}"
 
     fun ignoreLikeThis(unparsedId: Long) = "review/ignore/$unparsedId"
@@ -407,13 +435,15 @@ private fun SettingsPage.route() = when (this) {
 /** From the welcome's "Read messages automatically? Yes" (#128). */
 const val OPEN_SMS_IMPORT = "sms_import"
 
-/** Bottom-navigation shell: Home, Transactions, Insights, Settings. */
+/** Bottom-navigation shell: Home, Transactions, Insights, Cards, Settings. */
 @Composable
 private fun MainTabs(
     onOpen: (SettingsPage) -> Unit,
     onOpenTransaction: (Long) -> Unit,
     onOpenTransactions: (TransactionFilter) -> Unit,
     onReview: () -> Unit,
+    /** A card's page: its id, and whether it's a credit card. */
+    onOpenCard: (Long, Boolean) -> Unit,
     reviewCount: ReviewCountViewModel = hiltViewModel()
 ) {
     var current by rememberSaveable { mutableStateOf(Destination.HOME) }
@@ -458,7 +488,8 @@ private fun MainTabs(
                     onAddTransaction = { onOpenTransaction(0L) },
                     onTurnOnSms = { onOpen(SettingsPage.SMS_IMPORT) },
                     onSeeAllTransactions = { current = Destination.TRANSACTIONS },
-                    onSeeAllInsights = { current = Destination.INSIGHTS }
+                    onSeeAllInsights = { current = Destination.INSIGHTS },
+                    onOpenCard = { onOpenCard(it, true) }
                 )
             )
             Destination.TRANSACTIONS -> TransactionsScreen(
@@ -467,6 +498,11 @@ private fun MainTabs(
                 onReview = onReview
             )
             Destination.INSIGHTS -> InsightsScreen(onOpenTransactions, onOpenTransaction, modifier)
+            Destination.CARDS -> CardsScreen(
+                onOpenCreditCard = { onOpenCard(it, true) },
+                onOpenDebitCard = { onOpenCard(it, false) },
+                modifier = modifier
+            )
             Destination.SETTINGS -> SettingsRoute(
                 modifier,
                 security = { LockSettingsRows(onOpenLock = { onOpen(SettingsPage.LOCK) }) },
