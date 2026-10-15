@@ -69,7 +69,7 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
      * whether it's a transfer.
      */
     private suspend fun plan(database: KhataDatabase, sms: SmsTransaction): Plan {
-        val account = findAccount(database, sms)
+        val account = AccountMatch.find(database.accountDao(), sms.bank, sms.accountLast4)
         val payee = payeeIdentifier(sms.payee)?.let { database.payeeDao().findByName(it) }
         val duplicate = duplicateOf(database, sms, account?.id)
         val otherSide =
@@ -126,25 +126,6 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
                 until = at + NEAR_WINDOW
             )?.let { SmsImportResult.Duplicate(it, DuplicateMatch.AMOUNT_AND_TIME) }
     }
-
-    /**
-     * The account with the SMS's last 4 digits whose bank is the SMS's bank, or contains it (a
-     * user may have typed "Kotak Mahindra Bank"), or, failing that, the only such account with no
-     * bank set. Without last 4 digits, only an account with none and the same bank.
-     */
-    private suspend fun findAccount(database: KhataDatabase, sms: SmsTransaction): AccountEntity? {
-        val candidates = database.accountDao().getByLast4(sms.accountLast4)
-        fun AccountEntity.bankIs(exact: Boolean): Boolean {
-            val bank = bank ?: return false
-            return bank.equals(sms.bank, ignoreCase = true) || !exact && sameBank(bank, sms.bank)
-        }
-        return candidates.firstOrNull { it.bankIs(exact = true) }
-            ?: candidates.firstOrNull { it.bankIs(exact = false) }
-            ?: candidates.singleOrNull { it.bank == null }?.takeIf { sms.accountLast4 != null }
-    }
-
-    private fun sameBank(a: String, b: String) =
-        a.contains(b, ignoreCase = true) || b.contains(a, ignoreCase = true)
 
     private suspend fun save(
         database: KhataDatabase,

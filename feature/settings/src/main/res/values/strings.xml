@@ -470,6 +470,6 @@
     <string name="parser_rule_missing_due_date">The pattern has no dueDate group.</string>
     <string name="parser_rule_due_date_without_format">It has a dueDate group but no due date format.</string>
     <string name="parser_rule_due_date_format_without_due_date">It has a due date format but no dueDate group.</string>
-    <string name="test_sms_statement_not_saved">Khata doesn\'t save card statements yet. They\'ll show with your cards in a later update.</string>
-    <string name="sms_summary_statements">Card statements read: %1$d (not saved yet)</string>
+    <string name="test_sms_statement_saved">Import saves it as this card\'s statement, once, and works out whether it\'s paid from the payments to the card.</string>
+    <string name="sms_summary_statements">Card statements saved: %1$d</string>
 </resources>

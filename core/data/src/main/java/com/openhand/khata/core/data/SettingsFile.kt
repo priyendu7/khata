@@ -103,7 +103,9 @@ data class AccountData(
     /** `bank`, `credit_card`, `debit_card` or `wallet`. */
     val type: String = "bank",
     val bank: String? = null,
-    val last4: String? = null
+    val last4: String? = null,
+    /** A credit card's billing day, 1–31 (#154). Null leaves the one here as it is. */
+    val billingDay: Int? = null
 )
 
 @Serializable

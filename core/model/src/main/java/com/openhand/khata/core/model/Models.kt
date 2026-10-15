@@ -6,7 +6,9 @@ data class Account(
     val name: String,
     val type: AccountType,
     val bank: String? = null,
-    val last4: String? = null
+    val last4: String? = null,
+    /** A credit card's statement day of the month (#154), or null; see [CardCycles]. */
+    val billingDay: Int? = null
 ) {
     companion object {
         const val LAST_DIGITS = 4

@@ -103,7 +103,13 @@ class SettingsBackupRepository @Inject constructor(private val db: Lazy<KhataDat
                 CategoryData(it.seedKey, it.name, colorHex(it.color), it.icon, it.archived)
             },
             accounts = database.accountDao().getAll().map {
-                AccountData(it.name, converters.fromAccountType(it.type), it.bank, it.last4)
+                AccountData(
+                    it.name,
+                    converters.fromAccountType(it.type),
+                    it.bank,
+                    it.last4,
+                    it.billingDay
+                )
             },
             payees = payees.getAll().map {
                 PayeeData(

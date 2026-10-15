@@ -251,4 +251,40 @@ class MigrationsTest {
             }
         }
     }
+
+    @Test
+    fun version10To11AddsCardStatementsAndBillingDayAndKeepsAccounts() {
+        helper.createDatabase(dbName, 10).use { db ->
+            db.execSQL(
+                "INSERT INTO accounts (id, name, type, bank, last4) " +
+                    "VALUES (3, 'ICICI 1234', 'credit_card', 'ICICI', '1234')"
+            )
+        }
+
+        helper.runMigrationsAndValidate(dbName, 11, true, *KhataMigrations.ALL).use { db ->
+            db.query("SELECT name, billing_day FROM accounts WHERE id = 3").use {
+                it.moveToFirst()
+                assertEquals("ICICI 1234", it.getString(0))
+                assertTrue(it.isNull(1))
+            }
+            db.execSQL("UPDATE accounts SET billing_day = 17 WHERE id = 3")
+            db.execSQL(
+                "INSERT INTO card_statements (account_id, statement_date, due_date, " +
+                    "total_paise, min_due_paise, raw_sms) " +
+                    "VALUES (3, 20743, 20749, 3529972, 345000, 'Statement')"
+            )
+            db.query("SELECT total_paise, min_due_paise FROM card_statements").use {
+                it.moveToFirst()
+                assertEquals(3529972L, it.getLong(0))
+                assertEquals(345000L, it.getLong(1))
+            }
+            // A card's statements go with it.
+            db.execSQL("PRAGMA foreign_keys = ON")
+            db.execSQL("DELETE FROM accounts WHERE id = 3")
+            db.query("SELECT COUNT(*) FROM card_statements").use {
+                it.moveToFirst()
+                assertEquals(0, it.getInt(0))
+            }
+        }
+    }
 }

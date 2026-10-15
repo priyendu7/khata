@@ -153,7 +153,7 @@ class TestMessageContentTest {
         compose.onNodeWithText(
             "Statement for card ··1234: total ₹35,299.72, minimum ₹3,450, due 23 Oct 2026"
         ).assertExists()
-        compose.onNodeWithText("Khata doesn't save card statements yet", substring = true)
+        compose.onNodeWithText("Import saves it as this card's statement", substring = true)
             .assertExists()
     }
 

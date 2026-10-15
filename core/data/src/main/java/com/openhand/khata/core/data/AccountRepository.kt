@@ -2,6 +2,7 @@ package com.openhand.khata.core.data
 
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.model.Account
+import com.openhand.khata.core.model.CardCycles
 import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,6 +27,7 @@ class AccountRepository @Inject constructor(private val db: Lazy<KhataDatabase>)
         )
         require(clean.name.isNotEmpty()) { "Account name is empty" }
         require(Account.isValidLast4(clean.last4)) { "Last 4 must be exactly 4 digits" }
+        require(CardCycles.isValidBillingDay(clean.billingDay)) { "Billing day must be 1 to 31" }
         return db.io { database ->
             val dao = database.accountDao()
             if (clean.id == 0L) {
@@ -37,13 +39,19 @@ class AccountRepository @Inject constructor(private val db: Lazy<KhataDatabase>)
         }
     }
 
+    /** Sets a credit card's billing day (#154), 1–31, or clears it with null. */
+    suspend fun setBillingDay(accountId: Long, day: Int?) {
+        require(CardCycles.isValidBillingDay(day)) { "Billing day must be 1 to 31" }
+        db.io { it.accountDao().setBillingDay(accountId, day) }
+    }
+
     suspend fun transactionCount(accountId: Long): Int = db.io {
         it.accountDao().transactionCount(accountId)
     }
 
     /**
-     * Deletes an account. Its transactions move to [moveTransactionsTo], or to no account when
-     * that's null, so no transaction is ever lost.
+     * Deletes an account. Its transactions and card statements move to [moveTransactionsTo], or
+     * its transactions to no account when that's null, so no transaction is ever lost.
      */
     suspend fun delete(accountId: Long, moveTransactionsTo: Long?) {
         require(moveTransactionsTo != accountId) {

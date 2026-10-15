@@ -129,6 +129,29 @@ object KhataMigrations {
         }
     }
 
+    /**
+     * 10 → 11: credit card statements, and each card's billing day (#154). A card's statements go
+     * with it when it's deleted.
+     */
+    val MIGRATION_10_11 = object : Migration(10, 11) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `accounts` ADD COLUMN `billing_day` INTEGER")
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `card_statements` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`account_id` INTEGER NOT NULL, `statement_date` INTEGER NOT NULL, " +
+                    "`due_date` INTEGER NOT NULL, `total_paise` INTEGER NOT NULL, " +
+                    "`min_due_paise` INTEGER, `raw_sms` TEXT NOT NULL, " +
+                    "FOREIGN KEY(`account_id`) REFERENCES `accounts`(`id`) " +
+                    "ON UPDATE NO ACTION ON DELETE CASCADE )"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_card_statements_account_id_statement_date` " +
+                    "ON `card_statements` (`account_id`, `statement_date`)"
+            )
+        }
+    }
+
     val ALL: Array<Migration> = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
@@ -138,6 +161,7 @@ object KhataMigrations {
         MIGRATION_6_7,
         MIGRATION_7_8,
         MIGRATION_8_9,
-        MIGRATION_9_10
+        MIGRATION_9_10,
+        MIGRATION_10_11
     )
 }

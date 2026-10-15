@@ -283,6 +283,31 @@ class SettingsBackupRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun billingDaysGoOutAndComeBack() = runTest {
+        val card = db.accountDao().insert(
+            AccountEntity(
+                name = "ICICI card",
+                type = AccountType.CREDIT_CARD,
+                bank = "ICICI",
+                last4 = "1234",
+                billingDay = 17
+            )
+        )
+        val file = repository.gather()
+        assertEquals(17, file.accounts.single().billingDay)
+
+        db.accountDao().setBillingDay(card, null)
+        apply(file)
+        assertEquals(17, db.accountDao().getById(card)!!.billingDay)
+
+        // A file without a billing day, or with one that isn't a day, leaves it as it is.
+        val plain = AccountData("ICICI card", "credit_card", "ICICI", "1234")
+        apply(file.copy(accounts = listOf(plain)))
+        apply(file.copy(accounts = listOf(plain.copy(billingDay = 40))))
+        assertEquals(17, db.accountDao().getById(card)!!.billingDay)
+    }
+
+    @Test
     fun eventTimesRoundTripAndOlderFilesImportWholeDays() = runTest {
         val events = EventRepository(lazyDb)
         val party = Event(
