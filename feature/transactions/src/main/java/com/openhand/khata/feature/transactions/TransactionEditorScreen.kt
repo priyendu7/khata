@@ -8,17 +8,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -36,7 +38,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,27 +48,21 @@ import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.CountsIn
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.TransferSide
-import com.openhand.khata.core.ui.CategoryBadge
 import com.openhand.khata.core.ui.CategoryEditor
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
 import com.openhand.khata.core.ui.DateDialog
-import com.openhand.khata.core.ui.NewCategoryRow
-import com.openhand.khata.core.ui.PickerField
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SegmentedTabs
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.TagInput
 import com.openhand.khata.core.ui.TimeDialog
-import com.openhand.khata.core.ui.categoryName
-import com.openhand.khata.core.ui.dateLabel
 import com.openhand.khata.core.ui.defaultCategoryNames
 import com.openhand.khata.core.ui.focusOnAppear
 import com.openhand.khata.core.ui.incomeColor
 import com.openhand.khata.core.ui.label
 import com.openhand.khata.core.ui.monthLabel
 import com.openhand.khata.core.ui.newCategory
-import com.openhand.khata.core.ui.timeLabel
 import java.time.YearMonth
 
 /** Add (transaction id 0) or edit a transaction; [onDone] closes the screen. */
@@ -102,7 +97,7 @@ fun TransactionEditorScreen(
     )
 }
 
-private enum class EditorDialog { DATE, TIME, COUNTS_IN, CATEGORY, NEW_CATEGORY, ACCOUNT, DELETE }
+internal enum class EditorDialog { DATE, TIME, COUNTS_IN, NEW_CATEGORY, ACCOUNT, DELETE }
 
 /** The editor without its ViewModel, so UI tests can drive it directly. */
 @Composable
@@ -125,102 +120,70 @@ internal fun TransactionEditorContent(
         title = stringResource(
             if (isNew) R.string.transactions_add else R.string.transactions_edit
         ),
-        onBack = onBack,
-        actions = {
-            TextButton(onClick = onSave, enabled = form != null) {
-                Text(stringResource(UiR.string.save))
-            }
-        }
+        onBack = onBack
     ) { padding ->
         if (form == null) return@SubScreen
         Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier
+            Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .consumeWindowInsets(padding)
                 .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
         ) {
-            DirectionChips(form.direction) { onChange(form.withDirection(it)) }
-            if (form.direction == Direction.TRANSFER) {
-                TransferSideChips(form.transferSide) { onChange(form.copy(transferSide = it)) }
-            }
-            AmountField(form, showErrors, focus = isNew) { onChange(form.copy(amount = it)) }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                PickerField(
-                    label = stringResource(R.string.field_date),
-                    value = dateLabel(form.date),
-                    onClick = { dialog = EditorDialog.DATE },
-                    modifier = Modifier.weight(1f)
-                )
-                PickerField(
-                    label = stringResource(R.string.field_time),
-                    value = timeLabel(form.time),
-                    onClick = { dialog = EditorDialog.TIME },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            PickerField(
-                label = stringResource(R.string.field_counts_in),
-                value = form.countsIn?.let { monthLabel(it) }
-                    ?: stringResource(R.string.counts_in_same),
-                onClick = { dialog = EditorDialog.COUNTS_IN }
-            )
-            OutlinedTextField(
-                value = form.payee,
-                onValueChange = { onChange(form.copy(payee = it)) },
-                label = { Text(stringResource(R.string.field_payee)) },
-                placeholder = { Text(stringResource(R.string.field_payee_hint)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Words,
-                    imeAction = ImeAction.Next
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-            PayeeMemory(form, onChange)
-            val category = categories.firstOrNull { it.id == form.categoryId }
-                ?: categories.firstOrNull { it.isUncategorized }
-            PickerField(
-                label = stringResource(R.string.field_category),
-                value = category?.let { categoryName(it.name, it.seedKey) }
-                    ?: stringResource(UiR.string.category_uncategorized),
-                onClick = { dialog = EditorDialog.CATEGORY },
-                leading = category?.let { { CategoryBadge(it.icon, it.color, size = 32.dp) } }
-            )
-            PickerField(
-                label = stringResource(R.string.field_account),
-                value = accounts.firstOrNull { it.id == form.accountId }?.name
-                    ?: stringResource(R.string.no_account),
-                onClick = { dialog = EditorDialog.ACCOUNT }
-            )
-            TagInput(
-                tags = form.tags,
-                label = stringResource(R.string.field_tags),
-                suggestions = tagSuggestions,
-                onQueryChange = onTagQueryChange,
-                onAdd = { onChange(form.withTag(it)) },
-                onRemove = { onChange(form.withoutTag(it)) }
-            )
-            OutlinedTextField(
-                value = form.note,
-                onValueChange = { onChange(form.copy(note = it)) },
-                label = { Text(stringResource(R.string.field_note)) },
-                minLines = 2,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-            if (!isNew) {
-                TextButton(onClick = { dialog = EditorDialog.DELETE }) {
-                    Text(
-                        stringResource(R.string.transaction_delete),
-                        color = MaterialTheme.colorScheme.error
+            Column(
+                verticalArrangement = Arrangement.spacedBy(18.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                DirectionChips(form.direction) { onChange(form.withDirection(it)) }
+                if (form.direction == Direction.TRANSFER) {
+                    TransferSideChips(form.transferSide) {
+                        onChange(form.copy(transferSide = it))
+                    }
+                }
+                AmountField(form, showErrors, focus = isNew) { onChange(form.copy(amount = it)) }
+                AccountPill(form, accounts, Modifier.align(Alignment.CenterHorizontally)) {
+                    dialog = EditorDialog.ACCOUNT
+                }
+                DetailsCard(form, onChange) { dialog = it }
+                PayeeMemory(form, onChange)
+                EditorSection(stringResource(R.string.field_category)) {
+                    CategoryGrid(
+                        categories = categories,
+                        selectedId = form.categoryId,
+                        onSelect = { onChange(form.copy(categoryId = it)) },
+                        onNew = { dialog = EditorDialog.NEW_CATEGORY }
                     )
                 }
+                TagInput(
+                    tags = form.tags,
+                    label = stringResource(R.string.field_tags),
+                    suggestions = tagSuggestions,
+                    onQueryChange = onTagQueryChange,
+                    onAdd = { onChange(form.withTag(it)) },
+                    onRemove = { onChange(form.withoutTag(it)) }
+                )
+                if (!isNew) {
+                    TextButton(onClick = { dialog = EditorDialog.DELETE }) {
+                        Text(
+                            stringResource(R.string.transaction_delete),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+            // Always in reach, above the keyboard too.
+            Button(
+                onClick = onSave,
+                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .heightIn(min = 56.dp)
+            ) {
+                Text(stringResource(UiR.string.save), style = MaterialTheme.typography.titleSmall)
             }
         }
         EditorDialogs(
@@ -257,30 +220,14 @@ private fun EditorDialogs(
         EditorDialog.DATE -> DateDialog(form.date, { pick(form.withDate(it)) }, close)
         EditorDialog.TIME -> TimeDialog(form.time, { pick(form.copy(time = it)) }, close)
         EditorDialog.COUNTS_IN -> CountsInDialog(form, ::pick, close)
-        EditorDialog.CATEGORY -> ChoiceDialog(
-            title = stringResource(R.string.field_category),
-            choices = categories.sortedBy { it.isUncategorized }.map {
-                Choice<Long?>(
-                    value = if (it.isUncategorized) null else it.id,
-                    label = categoryName(it.name, it.seedKey),
-                    leading = { CategoryBadge(it.icon, it.color, size = 32.dp) }
-                )
-            },
-            selected = form.categoryId?.takeUnless { id ->
-                categories.any { it.id == id && it.isUncategorized }
-            },
-            onSelect = { pick(form.copy(categoryId = it)) },
-            onDismiss = close,
-            footer = { NewCategoryRow { show(EditorDialog.NEW_CATEGORY) } }
-        )
-        // Cancelling goes back to the picker; saving selects the new category.
+        // Saving selects the new category.
         EditorDialog.NEW_CATEGORY -> CategoryEditor(
             category = newCategory(categories),
             onSave = {
                 onAddCategory(it)
                 close()
             },
-            onDismiss = { show(EditorDialog.CATEGORY) }
+            onDismiss = close
         )
         EditorDialog.ACCOUNT -> ChoiceDialog(
             title = stringResource(R.string.field_account),

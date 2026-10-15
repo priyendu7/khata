@@ -182,8 +182,8 @@ class TransactionEditorTest {
         compose.onNodeWithTag(AMOUNT_FIELD_TAG).performTextInput("250.5")
         compose.onNodeWithText("Income").performClick()
         compose.onNodeWithText("Paid to or received from (optional)").performTextInput("Acme Ltd")
-        compose.onNodeWithText("Category").performScrollTo().performClick()
-        compose.onNodeWithText("Food").performClick()
+        // Categories are tiles on the form.
+        compose.onNodeWithText("Food").performScrollTo().performClick()
         compose.onNodeWithText("Account").performScrollTo().performClick()
         compose.onNodeWithText("Cash").performClick()
         compose.onNodeWithText("Tags (optional)").performScrollTo().performTextInput("salary")
@@ -232,8 +232,8 @@ class TransactionEditorTest {
         compose.onNodeWithText("Edit transaction").assertIsDisplayed()
         compose.onNodeWithTag(AMOUNT_FIELD_TAG).performTextReplacement("150")
         compose.onNodeWithContentDescription("Remove family").performScrollTo().performClick()
-        compose.onNodeWithText("Category").performScrollTo().performClick()
-        compose.onNodeWithText("Uncategorized").performClick()
+        // Categories are tiles on the form.
+        compose.onNodeWithText("Uncategorized").performScrollTo().performClick()
         compose.onNodeWithText("Save").performClick()
 
         val transaction = saved!!
@@ -280,8 +280,8 @@ class TransactionEditorTest {
         show(blank.copy(amount = "120"), isNew = true, payees = listOf(swiggy))
 
         compose.onNodeWithText("Paid to or received from (optional)").performTextInput("Swiggy")
-        compose.onNodeWithText("Category").performScrollTo().performClick()
-        compose.onNodeWithText("Groceries").performClick()
+        // Categories are tiles on the form.
+        compose.onNodeWithText("Groceries").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Remove online").performScrollTo().performClick()
         compose.onNodeWithText("Save").performClick()
 
@@ -312,11 +312,10 @@ class TransactionEditorTest {
             isNew = true
         )
 
-        compose.onNodeWithText("Category").performScrollTo().performClick()
-        compose.onNodeWithText("New category").performClick()
-        // Cancelling goes back to the picker with nothing added.
+        compose.onNodeWithText("New category").performScrollTo().performClick()
+        // Cancelling adds nothing.
         compose.onNodeWithText("Cancel").performScrollTo().performClick()
-        compose.onNodeWithText("New category").performClick()
+        compose.onNodeWithText("New category").performScrollTo().performClick()
         compose.onNodeWithText("Name").performTextInput("Pets")
         // The form's Save, not the editor's behind it.
         compose.onAllNodesWithText("Save").onLast().performScrollTo().performClick()
