@@ -466,6 +466,6 @@
     <string name="parser_rule_missing_due_date">पैटर्न में dueDate ग्रुप नहीं है।</string>
     <string name="parser_rule_due_date_without_format">इसमें dueDate ग्रुप है, पर देय तारीख़ का फ़ॉर्मेट नहीं है।</string>
     <string name="parser_rule_due_date_format_without_due_date">इसमें देय तारीख़ का फ़ॉर्मेट है, पर dueDate ग्रुप नहीं है।</string>
-    <string name="test_sms_statement_not_saved">खाता अभी कार्ड स्टेटमेंट सहेजता नहीं है। ये आगे के अपडेट में आपके कार्ड के साथ दिखेंगे।</string>
-    <string name="sms_summary_statements">पढ़े गए कार्ड स्टेटमेंट: %1$d (अभी सहेजे नहीं गए)</string>
+    <string name="test_sms_statement_saved">इंपोर्ट इसे इस कार्ड के स्टेटमेंट के रूप में एक बार सहेजता है, और कार्ड में हुए भुगतानों से पता लगाता है कि यह चुकाया गया या नहीं।</string>
+    <string name="sms_summary_statements">सहेजे गए कार्ड स्टेटमेंट: %1$d</string>
 </resources>

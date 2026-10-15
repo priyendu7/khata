@@ -4,9 +4,11 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.openhand.khata.core.data.BuiltInRuleOverrideRepository
+import com.openhand.khata.core.data.CardRepository
 import com.openhand.khata.core.data.CustomParserRepository
 import com.openhand.khata.core.data.IgnoreRuleRepository
 import com.openhand.khata.core.data.SmsImporter
+import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
@@ -50,6 +52,7 @@ class SmsIgnoringTest {
         ignoring = SmsIgnoring(rules, unparsed)
         ingestor = SmsIngestor(
             SmsImporter(Lazy { db }),
+            CardRepository(Lazy { db }, TransactionRepository(Lazy { db })),
             unparsed,
             CustomParserRepository(Lazy { db }),
             BuiltInRuleOverrideRepository(Lazy { db }),

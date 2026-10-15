@@ -158,7 +158,7 @@ private fun Answer(
                     RuleUsed(answer.rulesTried.last())
                     Text(statementText(result.statement))
                     Text(
-                        stringResource(R.string.test_sms_statement_not_saved),
+                        stringResource(R.string.test_sms_statement_saved),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }

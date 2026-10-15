@@ -18,7 +18,9 @@ data class AccountEntity(
     val name: String,
     val type: AccountType,
     val bank: String?,
-    val last4: String?
+    val last4: String?,
+    /** A credit card's statement day of the month, 1–31 (#154); null for none. */
+    @ColumnInfo(name = "billing_day") val billingDay: Int? = null
 )
 
 /**

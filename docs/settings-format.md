@@ -63,7 +63,9 @@ Decrypted, the file is UTF-8 JSON. Every field is optional on import, so a file 
     { "seedKey": "food", "name": "Khana", "color": "#FFE65100", "icon": "food", "archived": false },
     { "name": "Pets", "color": "#FF445566", "icon": "pets", "archived": false }
   ],
-  "accounts": [{ "name": "HDFC card", "type": "credit_card", "bank": "HDFC", "last4": "4321" }],
+  "accounts": [
+    { "name": "HDFC card", "type": "credit_card", "bank": "HDFC", "last4": "4321", "billingDay": 17 }
+  ],
   "payees": [
     {
       "identifier": "vet@upi", "displayName": "Vet", "defaultCategory": { "name": "Pets" },
@@ -85,7 +87,7 @@ Decrypted, the file is UTF-8 JSON. Every field is optional on import, so a file 
 | `preferences.lockMethod` | `device` or `pin`. `pin` on a phone with no app PIN keeps the phone's lock and offers to set a PIN |
 | `preferences.lockTimeout` | `immediately`, `30s`, `1m` or `5m` |
 | `categories` | `seedKey` for the default categories, `name` when the user renamed or made one; `color` is `#AARRGGBB` |
-| `accounts` | `type` is `bank`, `credit_card`, `debit_card` or `wallet`; only ever the last 4 digits |
+| `accounts` | `type` is `bank`, `credit_card`, `debit_card` or `wallet`; only ever the last 4 digits; `billingDay` (1–31) is a credit card's statement day, left out when there's none. Card statements stay with the transactions, not in this file |
 | `payees` | `defaultCategory` refers to a category by `seedKey` and/or `name` |
 | `events` | Local dates, both included |
 
@@ -101,5 +103,5 @@ Decrypted, the file is UTF-8 JSON. Every field is optional on import, so a file 
   - payees by identifier, then by name;
   - events by name.
 
-  New ones are added. Matching ones take the file's details: colour, icon and archived; type, bank and last 4 digits; display name, default category, default tags (created as needed) and own account; an event's dates, moving its tag to the transactions in the new dates.
+  New ones are added. Matching ones take the file's details: colour, icon and archived; type, bank, last 4 digits and billing day (one missing from the file leaves the billing day here); display name, default category, default tags (created as needed) and own account; an event's dates, moving its tag to the transactions in the new dates.
 - Afterwards, SMS waiting in To review are read again with the new rules.

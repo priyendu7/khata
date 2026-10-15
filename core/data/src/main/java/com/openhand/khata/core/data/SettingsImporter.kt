@@ -13,6 +13,7 @@ import com.openhand.khata.core.database.entity.CategoryEntity
 import com.openhand.khata.core.database.entity.EnumConverters
 import com.openhand.khata.core.database.entity.PayeeEntity
 import com.openhand.khata.core.model.AccountType
+import com.openhand.khata.core.model.CardCycles
 import com.openhand.khata.core.model.DefaultCategory
 import com.openhand.khata.core.model.IgnoreKind
 import com.openhand.khata.sms.parser.CodeCheck
@@ -336,7 +337,8 @@ internal class SettingsImporter(
             type = runCatching { converters.toAccountType(data.type) }.getOrDefault(saved.type),
             bank = data.bank?.trim()?.ifEmpty { null },
             // Only ever the last 4 digits, whatever the file says.
-            last4 = data.last4?.filter(Char::isDigit)?.takeLast(LAST_DIGITS)?.ifEmpty { null }
+            last4 = data.last4?.filter(Char::isDigit)?.takeLast(LAST_DIGITS)?.ifEmpty { null },
+            billingDay = data.billingDay?.takeIf(CardCycles::isValidBillingDay) ?: saved.billingDay
         )
 
         /**

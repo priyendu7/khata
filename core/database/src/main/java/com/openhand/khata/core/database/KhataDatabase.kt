@@ -40,9 +40,10 @@ import com.openhand.khata.core.database.entity.TransactionTagEntity
         CustomParserEntity::class,
         IgnoreRuleEntity::class,
         EventEntity::class,
-        BuiltInRuleOverrideEntity::class
+        BuiltInRuleOverrideEntity::class,
+        CardStatementEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 @TypeConverters(EnumConverters::class)
@@ -76,6 +77,8 @@ abstract class KhataDatabase : RoomDatabase() {
     abstract fun eventDao(): EventDao
 
     abstract fun builtInRuleOverrideDao(): BuiltInRuleOverrideDao
+
+    abstract fun cardStatementDao(): CardStatementDao
 
     companion object {
         const val NAME = "khata.db"

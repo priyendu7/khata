@@ -93,7 +93,9 @@ It has no `amount`, `payee`, `ref`, `date`, `dir`, `direction`, `directionWords`
 }
 ```
 
-Khata doesn't save statements yet (#154): they're counted in the inbox import's summary and shown in **Test a message**, as "Statement for card ··1234: total ₹35,299.72, minimum ₹3,450, due 23 Oct 2026".
+Statements are saved with their credit card (#154), found by bank and last 4 digits like a transaction's account, or made when there's none. The same statement seen twice (the receiver and an inbox scan) is saved once, and links are taken out of the SMS before it's kept. A statement without a `statementDate` is dated the day it arrived. **Test a message** shows one as "Statement for card ··1234: total ₹35,299.72, minimum ₹3,450, due 23 Oct 2026".
+
+From the statements Khata works out each card's **cycle** (the day after one statement's date to the next statement's date; the card's billing day fills in before the first statement or for a missing one) and whether each statement is **paid**: from transfers into the card after its statement date, counting a CRED payment and the card's "payment received" once when they're linked (#113).
 
 ## Generic rules
 

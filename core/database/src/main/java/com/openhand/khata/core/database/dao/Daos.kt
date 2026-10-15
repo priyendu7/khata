@@ -181,10 +181,20 @@ interface AccountDao {
     @Query("DELETE FROM accounts WHERE id = :id")
     suspend fun deleteById(id: Long)
 
-    /** Moves the account's transactions to [moveTo] (null = no account), then deletes it. */
+    @Query("UPDATE card_statements SET account_id = :to WHERE account_id = :from")
+    suspend fun moveStatements(from: Long, to: Long)
+
+    @Query("UPDATE accounts SET billing_day = :day WHERE id = :id")
+    suspend fun setBillingDay(id: Long, day: Int?)
+
+    /**
+     * Moves the account's transactions to [moveTo] (null = no account), and its card statements
+     * (#154) too, then deletes it. With nowhere to move them, its statements go with it.
+     */
     @Transaction
     suspend fun deleteMovingTransactions(id: Long, moveTo: Long?) {
         moveTransactions(id, moveTo)
+        moveTo?.let { moveStatements(id, it) }
         deleteById(id)
     }
 

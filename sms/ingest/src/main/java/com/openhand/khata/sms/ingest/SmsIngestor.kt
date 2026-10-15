@@ -1,12 +1,15 @@
 package com.openhand.khata.sms.ingest
 
 import com.openhand.khata.core.data.BuiltInRuleOverrideRepository
+import com.openhand.khata.core.data.CardRepository
 import com.openhand.khata.core.data.CustomParserRepository
 import com.openhand.khata.core.data.IgnoreRuleRepository
 import com.openhand.khata.core.data.SmsImportPreview
 import com.openhand.khata.core.data.SmsImportResult
 import com.openhand.khata.core.data.SmsImporter
+import com.openhand.khata.core.data.StatementSaveResult
 import com.openhand.khata.core.data.UnparsedSmsRepository
+import com.openhand.khata.core.model.SmsStatement
 import com.openhand.khata.core.model.SmsTransaction
 import com.openhand.khata.sms.parser.BuiltInRules
 import com.openhand.khata.sms.parser.CompiledRule
@@ -15,19 +18,26 @@ import com.openhand.khata.sms.parser.IgnoreRule
 import com.openhand.khata.sms.parser.IgnoreRules
 import com.openhand.khata.sms.parser.ParseResult
 import com.openhand.khata.sms.parser.ParsedSms
+import com.openhand.khata.sms.parser.ParsedStatement
 import com.openhand.khata.sms.parser.RuleOverride
 import com.openhand.khata.sms.parser.SmsFilters
 import com.openhand.khata.sms.parser.SmsParser
+import java.time.Instant
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * The one path every SMS takes, from the inbox import or the new-SMS receiver: parse it with the
- * rules, and save a transaction through [SmsImporter].
+ * rules, and save a transaction through [SmsImporter] or a credit card statement through
+ * [CardRepository].
  */
+// Hilt injects each part it saves to or reads rules from.
+@Suppress("LongParameterList")
 @Singleton
 class SmsIngestor @Inject constructor(
     private val importer: SmsImporter,
+    private val cards: CardRepository,
     private val unparsed: UnparsedSmsRepository,
     private val customParsers: CustomParserRepository,
     private val builtInOverrides: BuiltInRuleOverrideRepository,
@@ -108,8 +118,7 @@ class SmsIngestor @Inject constructor(
         parser: SmsParser
     ): IngestOutcome = when (val result = parser.parse(sender, body, receivedAt)) {
         is ParseResult.Parsed -> save(result.sms, body)
-        // Counted, but saving statements comes with card cycles (#154).
-        is ParseResult.Statement -> IngestOutcome.STATEMENT
+        is ParseResult.Statement -> save(result.statement, body, receivedAt)
         // Kept with its raw text for the review inbox, so a new format is noticed.
         is ParseResult.Unparsed ->
             if (unparsed.save(sender, body, receivedAt)) {
@@ -144,12 +153,12 @@ class SmsIngestor @Inject constructor(
     suspend fun retryUnparsed(): Int {
         val parser = parser()
         return unparsed.getAll().count { sms ->
-            val result = parser.parse(sms.sender, sms.body, sms.receivedAt)
-            if (result is ParseResult.Parsed) {
-                save(result.sms, sms.body)
-                unparsed.delete(sms.id)
+            val read = when (val result = parser.parse(sms.sender, sms.body, sms.receivedAt)) {
+                is ParseResult.Parsed -> save(result.sms, sms.body)
+                is ParseResult.Statement -> save(result.statement, sms.body, sms.receivedAt)
+                else -> null
             }
-            result is ParseResult.Parsed
+            read?.also { unparsed.delete(sms.id) } != null
         }
     }
 
@@ -161,6 +170,28 @@ class SmsIngestor @Inject constructor(
                 else -> IngestOutcome.RECORDED
             }
         }
+
+    /** A statement without its own date is dated the day it arrived. */
+    private suspend fun save(
+        statement: ParsedStatement,
+        body: String,
+        receivedAt: Long
+    ): IngestOutcome {
+        val sms = SmsStatement(
+            bank = statement.bank,
+            cardLast4 = statement.cardLast4,
+            totalPaise = statement.totalPaise,
+            minDuePaise = statement.minDuePaise,
+            dueDate = statement.dueDate,
+            statementDate = statement.statementDate
+                ?: Instant.ofEpochMilli(receivedAt).atZone(ZoneId.systemDefault()).toLocalDate(),
+            rawSms = body
+        )
+        return when (cards.save(sms)) {
+            is StatementSaveResult.Saved -> IngestOutcome.STATEMENT
+            is StatementSaveResult.Duplicate -> IngestOutcome.ALREADY_THERE
+        }
+    }
 
     private fun ParsedSms.toTransaction(body: String) = SmsTransaction(
         amountPaise = amountPaise,
@@ -200,6 +231,6 @@ enum class IngestOutcome {
     /** Dropped by a filter: a sender switched off, or not a transaction (an OTP, an offer…). */
     FILTERED,
 
-    /** A credit card statement a rule read. Not saved yet (#154). */
+    /** A credit card statement, saved with its card (#154). */
     STATEMENT
 }

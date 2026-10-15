@@ -4,9 +4,11 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.openhand.khata.core.data.BuiltInRuleOverrideRepository
+import com.openhand.khata.core.data.CardRepository
 import com.openhand.khata.core.data.CustomParserRepository
 import com.openhand.khata.core.data.IgnoreRuleRepository
 import com.openhand.khata.core.data.SmsImporter
+import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
@@ -15,6 +17,7 @@ import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.TransactionSource
 import com.openhand.khata.sms.parser.SmsFilters
 import dagger.Lazy
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlinx.coroutines.flow.first
@@ -33,6 +36,7 @@ import org.robolectric.annotation.Config
 class InboxScannerTest {
     private lateinit var db: KhataDatabase
     private lateinit var scanner: InboxScanner
+    private lateinit var ingestor: SmsIngestor
     private lateinit var settings: SmsImportSettings
 
     private fun at(day: Int, hour: Int = 12) = LocalDateTime.of(
@@ -78,18 +82,16 @@ class InboxScannerTest {
             FakeSmsInbox.Sms("VM-KOTAKB-P", "Pre-approved loan of Rs.5,00,000!", at(15))
         )
         settings = SmsImportSettings(context)
-        scanner =
-            InboxScanner(
-                SmsInbox(context),
-                SmsIngestor(
-                    SmsImporter(Lazy { db }),
-                    UnparsedSmsRepository(Lazy { db }),
-                    CustomParserRepository(Lazy { db }),
-                    BuiltInRuleOverrideRepository(Lazy { db }),
-                    IgnoreRuleRepository(Lazy { db }),
-                    settings
-                )
-            )
+        ingestor = SmsIngestor(
+            SmsImporter(Lazy { db }),
+            CardRepository(Lazy { db }, TransactionRepository(Lazy { db })),
+            UnparsedSmsRepository(Lazy { db }),
+            CustomParserRepository(Lazy { db }),
+            BuiltInRuleOverrideRepository(Lazy { db }),
+            IgnoreRuleRepository(Lazy { db }),
+            settings
+        )
+        scanner = InboxScanner(SmsInbox(context), ingestor)
     }
 
     @After
@@ -140,22 +142,40 @@ class InboxScannerTest {
     }
 
     @Test
-    fun aCardStatementIsCountedButNotSavedYet() = runTest {
+    fun aCardStatementIsSavedOnceWithoutItsLinks() = runTest {
         val statement = "HDFC Bank Credit Card XX4321 Statement:\nTotal due: Rs.8,363.00\n" +
             "Min.due: Rs.2,268.00\nPay by 02-10-2026\nView: https://example.com/xyz"
         FakeSmsInbox.messages += FakeSmsInbox.Sms("VM-HDFCBK-S", statement, at(16))
 
         val summary = scanner.scan(since = at(16))
 
-        // Read by the generic rules (#153), not dropped as a bill reminder; saved by #154.
+        // Read by the generic rules (#153), not dropped as a bill reminder, and saved (#154).
         assertEquals(1, summary.statements)
         assertEquals(0, summary.filtered)
         assertEquals(0, summary.unreadable)
         assertEquals(0, db.transactionDao().observeAll().first().size)
         assertEquals(emptyList<String>(), db.unparsedSmsDao().observeAll().first().map { it.body })
+        val saved = db.cardStatementDao().observeAll().first().single()
+        assertEquals(
+            listOf(836_300L, 226_800L, LocalDate.of(2026, 10, 2).toEpochDay()),
+            listOf(saved.totalPaise, saved.minDuePaise, saved.dueDate)
+        )
+        // No date in the SMS: it's dated the day it arrived.
+        assertEquals(LocalDate.of(2026, 9, 16).toEpochDay(), saved.statementDate)
+        assertEquals(
+            "HDFC Bank Credit Card XX4321 Statement:\nTotal due: Rs.8,363.00\n" +
+                "Min.due: Rs.2,268.00\nPay by 02-10-2026\nView:",
+            saved.rawSms
+        )
+        val card = db.accountDao().getById(saved.accountId)!!
+        assertEquals(listOf(AccountType.CREDIT_CARD, "4321"), listOf(card.type, card.last4))
         settings.saveSummary(summary)
         val reread = SmsImportSettings(ApplicationProvider.getApplicationContext())
         assertEquals(1, reread.lastScan.value?.statements)
+
+        // The receiver saw it too: it's saved once.
+        assertEquals(IngestOutcome.ALREADY_THERE, ingestor.ingest("VM-HDFCBK-S", statement, at(16)))
+        assertEquals(1, db.cardStatementDao().observeAll().first().size)
     }
 
     @Test
