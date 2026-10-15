@@ -29,7 +29,7 @@ class SampleSmsTest {
 
     @Test
     fun everyBuiltInBankHasSamples() {
-        assertEquals(BuiltInRules.BANKS.map { "$it.json" }, files.map { it.name })
+        assertEquals(BuiltInRules.BANKS.map { "$it.json" }.sorted(), files.map { it.name })
     }
 
     @Test
@@ -44,7 +44,9 @@ class SampleSmsTest {
                     sample.string("body"),
                     millis(sample.string("receivedAt"))
                 )
-                expected(sample.getValue("expect")) != actual(result)
+                val expected = expected(sample.getValue("expect"))
+                // A sample lists the values it checks; generic ones add the bank.
+                expected != actual(result).filterKeys { it in expected }
             }
             wrong.forEach { println("WRONG ${file.name}: ${it.string("body")}") }
             val correct = samples.size - wrong.size
@@ -60,11 +62,6 @@ class SampleSmsTest {
         }
     }
 
-    /**
-     * The samples are public, so no real personal numbers: fails on masked account numbers that
-     * show more than 4 digits, card-length numbers, and long numbers that aren't a labelled
-     * reference or a toll-free helpline.
-     */
     /**
      * The samples are public, so no real personal numbers: fails on masked account numbers that
      * show more than 4 digits, card-length numbers, and long numbers that aren't a labelled
@@ -105,30 +102,44 @@ class SampleSmsTest {
             unlabelled.map { it.value }
     }
 
+    /** A transaction unless `result` says `statement`. */
     private fun expected(expect: kotlinx.serialization.json.JsonElement): Map<String, Any?> =
         if (expect is JsonPrimitive) {
             mapOf("result" to expect.content)
         } else {
-            expect.jsonObject.mapValues { (key, value) ->
+            mapOf("result" to "parsed") + expect.jsonObject.mapValues { (key, value) ->
                 when {
                     value is JsonNull -> null
                     key == "timestamp" -> millis(value.jsonPrimitive.content)
-                    key == "amountPaise" -> value.jsonPrimitive.content.toLong()
+                    key in PAISE -> value.jsonPrimitive.content.toLong()
                     else -> value.jsonPrimitive.content
                 }
-            } + ("result" to "parsed")
+            }
         }
 
     private fun actual(result: ParseResult): Map<String, Any?> = when (result) {
         is ParseResult.Parsed -> with(result.sms) {
             mapOf(
                 "result" to "parsed",
+                "bank" to bank,
                 "amountPaise" to amountPaise,
                 "direction" to direction.name.lowercase(),
+                "accountType" to accountType.name.lowercase(),
                 "account" to accountLast4,
                 "payee" to payee,
                 "ref" to reference,
                 "timestamp" to timestamp
+            )
+        }
+        is ParseResult.Statement -> with(result.statement) {
+            mapOf(
+                "result" to "statement",
+                "bank" to bank,
+                "card" to cardLast4,
+                "totalPaise" to totalPaise,
+                "minDuePaise" to minDuePaise,
+                "dueDate" to dueDate.toString(),
+                "statementDate" to statementDate?.toString()
             )
         }
         // Samples say "not_transaction" for anything a filter drops.
@@ -143,6 +154,7 @@ class SampleSmsTest {
         const val PERCENT = 100
         const val TARGET_PERCENT = 95
         const val LABEL_WINDOW = 12
+        val PAISE = setOf("amountPaise", "totalPaise", "minDuePaise")
 
         /** `XXXX509183`: a mask that still shows more than the last 4 digits. */
         val MASKED_TOO_SHORT = Regex("""[Xx*]{2,}\d{5,}""")

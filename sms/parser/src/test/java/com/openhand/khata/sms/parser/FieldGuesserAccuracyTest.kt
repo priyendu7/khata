@@ -1,5 +1,6 @@
 package com.openhand.khata.sms.parser
 
+import com.openhand.khata.core.model.SenderId
 import com.openhand.khata.sms.parser.RuleMaker.Field
 import java.io.File
 import java.time.LocalDate
@@ -110,11 +111,12 @@ class FieldGuesserAccuracyTest {
         assertTrue("all fields $allRight/$total", allRight * PERCENT >= total * FIELDS_TARGET)
     }
 
-    /** A rule made from the guesses reads the SMS it was made from, for every Kotak sample. */
+    /** A rule made from the guesses reads the SMS it was made from, for every bank sample. */
     @Test
     fun ruleFromGuessReadsItsSms() {
         read("samples").forEach { sample ->
-            val draft = FieldGuesser.guess(sample.body).draft("guess", "Bank", listOf("KOTAKB"))
+            val header = requireNotNull(SenderId.parse(sample.sender)).header
+            val draft = FieldGuesser.guess(sample.body).draft("guess", "Bank", listOf(header))
             val check = RuleValidator.validate(RuleMaker.rule(requireNotNull(draft)))
             val rule = (check as? RuleCheck.Valid)?.rule
             val read = rule?.let {

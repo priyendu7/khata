@@ -229,7 +229,7 @@ internal class RuleSaving(
 
 /**
  * The last [RECENT_COUNT] SMS from [headers] in the last [RECENT_DAYS] days that [parser]'s sender
- * filters let through, newest first.
+ * filters let through, newest first. No headers is a rule for any sender: SMS from any of them.
  */
 internal fun recentSms(
     inbox: SmsInbox,
@@ -238,7 +238,7 @@ internal fun recentSms(
     now: Long
 ): List<SmsInbox.Message> = try {
     inbox.businessMessages(now - TimeUnit.DAYS.toMillis(RECENT_DAYS)) { sender ->
-        parser.accepts(sender) && SenderId.parse(sender)?.header in headers
+        parser.accepts(sender) && (headers.isEmpty() || SenderId.parse(sender)?.header in headers)
     }.takeLast(RECENT_COUNT).reversed()
 } catch (_: SecurityException) {
     // The permission was taken away while the screen was open.

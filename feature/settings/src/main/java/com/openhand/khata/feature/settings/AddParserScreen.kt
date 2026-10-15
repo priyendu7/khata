@@ -179,12 +179,18 @@ private fun RuleSummary(rule: CompiledRule, replaces: Boolean) {
             Text(
                 stringResource(
                     R.string.parser_rule_senders,
-                    rule.headers.sorted().joinToString(", ")
+                    if (rule.rule.anySender) {
+                        stringResource(R.string.parser_any_sender)
+                    } else {
+                        rule.headers.sorted().joinToString(", ")
+                    }
                 ),
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
-                stringResource(accountTypeLabel(rule.rule.accountType)),
+                stringResource(
+                    rule.rule.accountType?.let(::accountTypeLabel) ?: R.string.parser_kind_statement
+                ),
                 style = MaterialTheme.typography.bodyMedium
             )
         }

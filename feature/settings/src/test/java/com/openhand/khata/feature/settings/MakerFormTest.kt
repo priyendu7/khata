@@ -1,9 +1,11 @@
 package com.openhand.khata.feature.settings
 
+import com.openhand.khata.sms.parser.ParseResult
 import com.openhand.khata.sms.parser.RuleAccountType
 import com.openhand.khata.sms.parser.RuleCheck
 import com.openhand.khata.sms.parser.RuleDirection
 import com.openhand.khata.sms.parser.RuleError
+import com.openhand.khata.sms.parser.RuleKind
 import com.openhand.khata.sms.parser.RuleMaker.Field
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -54,7 +56,7 @@ class MakerFormTest {
         assertNull(done.step)
         assertEquals(emptySet<Field>(), done.guessed)
         val rule = (done.check(emptySet()) as RuleCheck.Valid).rule
-        val read = requireNotNull(testRule(rule, done.sender, sms, AT))
+        val read = (testRule(rule, done.sender, sms, AT) as ParseResult.Parsed).sms
         assertEquals(45_000L, read.amountPaise)
         assertEquals("CITY PHARMACY", read.payee)
         assertEquals("4321", read.accountLast4)
@@ -182,5 +184,43 @@ class MakerFormTest {
 
     private companion object {
         const val AT = 1_790_000_000_000L
+    }
+
+    @Test
+    fun aStatementIsMarkedAsOne() {
+        val body = "HDFC Bank Credit Card XX4321 Statement:\nTotal due: Rs.8,363.00\n" +
+            "Min.due: Rs.2,268.00\nPay by 02-10-2025\nView: https://example.com/xyz"
+        val statement = MakerForm.start("VM-HDFCBK-S", body, AT, knownBank = null)
+
+        assertEquals(RuleKind.STATEMENT, statement.kind)
+        assertEquals(
+            listOf(Field.ACCOUNT, Field.TOTAL, Field.MIN_DUE, Field.DUE_DATE),
+            statement.fields
+        )
+        assertEquals(Field.ACCOUNT, statement.step)
+        assertFalse(statement.canSkip)
+        assertEquals("dd-MM-yyyy", statement.dateFormat)
+        val atMinimum = statement.next().next()
+        assertEquals(Field.MIN_DUE, atMinimum.step)
+        // The minimum is optional; the card, total and due date aren't.
+        assertTrue(atMinimum.canSkip)
+        val rule = (statement.confirmAll().check(emptySet()) as RuleCheck.Valid).rule
+        assertEquals("hdfcbk-statement", rule.rule.id)
+        assertTrue(rule.rule.isStatement)
+        val read = testRule(rule, statement.sender, body, AT) as ParseResult.Statement
+        assertEquals(836_300L, read.statement.totalPaise)
+        assertEquals(226_800L, read.statement.minDuePaise)
+    }
+
+    @Test
+    fun switchingKindGuessesAgainAndStartsOver() {
+        val transaction = MakerForm.start("VM-HDFCBK-S", sms, AT, null)
+        val statement = transaction.withKind(RuleKind.STATEMENT)
+
+        assertEquals(Field.ACCOUNT, statement.step)
+        assertTrue(statement.marks.none { it.field == Field.PAYEE })
+        // Nothing to make a statement rule from in a spend SMS.
+        assertNull(statement.check(emptySet()))
+        assertEquals(Field.AMOUNT, statement.withKind(RuleKind.TRANSACTION).step)
     }
 }

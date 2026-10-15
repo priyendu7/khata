@@ -19,7 +19,7 @@
     {
       "name": "newer format version",
       "rule": {
-        "v": 2,
+        "v": 3,
         "id": "test",
         "bank": "Test Bank",
         "senders": [
@@ -545,6 +545,388 @@
       },
       "errors": [
         "pattern_too_long"
+      ]
+    },
+    {
+      "name": "v2 statement rule (control)",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: total (?<total>[\\d,.]+), min (?<minDue>[\\d,.]+), due (?<dueDate>\\d{2}-\\d{2}-\\d{2})",
+        "kind": "statement",
+        "dueDateFormat": "dd-MM-yy"
+      },
+      "errors": []
+    },
+    {
+      "name": "v2 transaction rule (control)",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": []
+    },
+    {
+      "name": "v2 transaction rule with a bank group",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "(?<bank>\\w+) Bank: paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": []
+    },
+    {
+      "name": "v2 rule for any sender",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "*"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": []
+    },
+    {
+      "name": "statement date with its format",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: total (?<total>[\\d,.]+), min (?<minDue>[\\d,.]+), due (?<dueDate>\\d{2}-\\d{2}-\\d{2}) on (?<statementDate>\\d{2}-\\d{2}-\\d{2})",
+        "kind": "statement",
+        "dueDateFormat": "dd-MM-yy",
+        "dateFormat": "dd-MM-yy"
+      },
+      "errors": []
+    },
+    {
+      "name": "due date in several formats",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: total (?<total>[\\d,.]+), min (?<minDue>[\\d,.]+), due (?<dueDate>\\d{2}-\\d{2}-\\d{2})",
+        "kind": "statement",
+        "dueDateFormat": "[dd-MMM-yy][dd-MM-yy]"
+      },
+      "errors": []
+    },
+    {
+      "name": "kind in a v1 rule",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: total (?<total>[\\d,.]+), min (?<minDue>[\\d,.]+), due (?<dueDate>\\d{2}-\\d{2}-\\d{2})",
+        "kind": "statement",
+        "dueDateFormat": "dd-MM-yy"
+      },
+      "errors": [
+        "needs_v2"
+      ]
+    },
+    {
+      "name": "any sender in a v1 rule",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "*"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "needs_v2"
+      ]
+    },
+    {
+      "name": "bank group in a v1 rule",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "(?<bank>\\w+) Bank: paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "needs_v2"
+      ]
+    },
+    {
+      "name": "any sender with others",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "*",
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "bad_senders"
+      ]
+    },
+    {
+      "name": "transaction rule without an account type",
+      "rule": {
+        "v": 1,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit"
+      },
+      "errors": [
+        "missing_account_type"
+      ]
+    },
+    {
+      "name": "statement rule with a direction",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: total (?<total>[\\d,.]+), min (?<minDue>[\\d,.]+), due (?<dueDate>\\d{2}-\\d{2}-\\d{2})",
+        "kind": "statement",
+        "dueDateFormat": "dd-MM-yy",
+        "direction": "debit"
+      },
+      "errors": [
+        "not_for_kind"
+      ]
+    },
+    {
+      "name": "statement rule with an account type",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: total (?<total>[\\d,.]+), min (?<minDue>[\\d,.]+), due (?<dueDate>\\d{2}-\\d{2}-\\d{2})",
+        "kind": "statement",
+        "dueDateFormat": "dd-MM-yy",
+        "accountType": "credit_card"
+      },
+      "errors": [
+        "not_for_kind"
+      ]
+    },
+    {
+      "name": "statement rule with an amount group",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: total (?<total>[\\d,.]+), min (?<minDue>[\\d,.]+), due (?<dueDate>\\d{2}-\\d{2}-\\d{2}) (?<amount>Rs\\.\\d+)",
+        "kind": "statement",
+        "dueDateFormat": "dd-MM-yy"
+      },
+      "errors": [
+        "not_for_kind"
+      ]
+    },
+    {
+      "name": "transaction rule with a total group",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+) of (?<total>\\d+)",
+        "direction": "debit",
+        "accountType": "bank"
+      },
+      "errors": [
+        "not_for_kind"
+      ]
+    },
+    {
+      "name": "transaction rule with a due date format",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Paid (?<amount>Rs\\.\\d+)",
+        "direction": "debit",
+        "accountType": "bank",
+        "dueDateFormat": "dd-MM-yy"
+      },
+      "errors": [
+        "not_for_kind"
+      ]
+    },
+    {
+      "name": "statement without a card",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "statement: total (?<total>[\\d,.]+), due (?<dueDate>\\d{2}-\\d{2}-\\d{2})",
+        "kind": "statement",
+        "dueDateFormat": "dd-MM-yy"
+      },
+      "errors": [
+        "missing_card"
+      ]
+    },
+    {
+      "name": "statement without a total",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: due (?<dueDate>\\d{2}-\\d{2}-\\d{2})",
+        "kind": "statement",
+        "dueDateFormat": "dd-MM-yy"
+      },
+      "errors": [
+        "missing_total"
+      ]
+    },
+    {
+      "name": "statement without a due date",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: total (?<total>[\\d,.]+)",
+        "kind": "statement"
+      },
+      "errors": [
+        "missing_due_date"
+      ]
+    },
+    {
+      "name": "due date without a format",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: total (?<total>[\\d,.]+), min (?<minDue>[\\d,.]+), due (?<dueDate>\\d{2}-\\d{2}-\\d{2})",
+        "kind": "statement"
+      },
+      "errors": [
+        "due_date_without_format"
+      ]
+    },
+    {
+      "name": "due date format without a due date",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: total (?<total>[\\d,.]+)",
+        "kind": "statement",
+        "dueDateFormat": "dd-MM-yy"
+      },
+      "errors": [
+        "missing_due_date",
+        "due_date_format_without_due_date"
+      ]
+    },
+    {
+      "name": "statement date without a format",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: total (?<total>[\\d,.]+), min (?<minDue>[\\d,.]+), due (?<dueDate>\\d{2}-\\d{2}-\\d{2}) on (?<statementDate>\\d{2}-\\d{2}-\\d{2})",
+        "kind": "statement",
+        "dueDateFormat": "dd-MM-yy"
+      },
+      "errors": [
+        "date_without_format"
+      ]
+    },
+    {
+      "name": "statement rule with a date group",
+      "rule": {
+        "v": 2,
+        "id": "test",
+        "bank": "Test Bank",
+        "senders": [
+          "TESTBK"
+        ],
+        "pattern": "Card XX(?<account>\\d{4}) statement: total (?<total>[\\d,.]+), min (?<minDue>[\\d,.]+), due (?<dueDate>\\d{2}-\\d{2}-\\d{2}) on (?<date>\\d{2}-\\d{2}-\\d{2})",
+        "kind": "statement",
+        "dueDateFormat": "dd-MM-yy"
+      },
+      "errors": [
+        "not_for_kind"
       ]
     }
   ]

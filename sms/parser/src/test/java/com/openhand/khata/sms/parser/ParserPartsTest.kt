@@ -116,7 +116,7 @@ class ParserPartsTest {
         assertEquals(RuleCodeResult.Error(RuleCodeError.BAD_JSON), RuleCode.decode(code("[1,2]")))
         assertEquals(
             RuleCodeResult.Error(RuleCodeError.UNKNOWN_VERSION),
-            RuleCode.decode(code("""{"v":2,"future":true}"""))
+            RuleCode.decode(code("""{"v":3,"future":true}"""))
         )
         assertEquals(
             RuleCodeResult.Error(RuleCodeError.UNKNOWN_VERSION),

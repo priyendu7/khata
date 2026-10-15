@@ -108,6 +108,8 @@ class SmsIngestor @Inject constructor(
         parser: SmsParser
     ): IngestOutcome = when (val result = parser.parse(sender, body, receivedAt)) {
         is ParseResult.Parsed -> save(result.sms, body)
+        // Counted, but saving statements comes with card cycles (#154).
+        is ParseResult.Statement -> IngestOutcome.STATEMENT
         // Kept with its raw text for the review inbox, so a new format is noticed.
         is ParseResult.Unparsed ->
             if (unparsed.save(sender, body, receivedAt)) {
@@ -196,5 +198,8 @@ enum class IngestOutcome {
     UNREADABLE,
 
     /** Dropped by a filter: a sender switched off, or not a transaction (an OTP, an offer…). */
-    FILTERED
+    FILTERED,
+
+    /** A credit card statement a rule read. Not saved yet (#154). */
+    STATEMENT
 }

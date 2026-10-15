@@ -13,12 +13,13 @@ internal object PatternParts {
     fun group(text: String, field: RuleMaker.Field, dateFormat: String?, last: Boolean): String {
         val name = field.group
         return when (field) {
-            RuleMaker.Field.AMOUNT -> amount(text)
+            RuleMaker.Field.AMOUNT, RuleMaker.Field.TOTAL, RuleMaker.Field.MIN_DUE ->
+                amount(text, name)
             // Lazy, so it stops at the text after it; greedy only at the very end of the SMS.
             RuleMaker.Field.PAYEE -> "(?<$name>" + (if (last) ".+" else ".+?") + ")"
             RuleMaker.Field.ACCOUNT -> labelled(text, "(?<$name>[^\\s\\d]*\\d{3,})")
             RuleMaker.Field.REF -> labelled(text, "(?<$name>[a-z0-9]+)")
-            RuleMaker.Field.DATE ->
+            RuleMaker.Field.DATE, RuleMaker.Field.DUE_DATE ->
                 "(?<$name>" + (dateFormat?.let(DateFormats::regex) ?: ".+?") + ")"
         }
     }
@@ -50,11 +51,11 @@ internal object PatternParts {
     }
 
     /**
-     * `Rs.500/-` → a currency (any of `Rs.`, `Rs`, `INR`, `₹`), the amount group, then the `/-`
-     * as literal text.
+     * `Rs.500/-` → a currency (any of `Rs.`, `Rs`, `INR`, `₹`), the amount group [name], then
+     * the `/-` as literal text.
      */
-    private fun amount(text: String): String {
-        val group = "(?<${RuleFormat.AMOUNT}>[\\d,]+(?:\\.\\d{1,2})?)"
+    private fun amount(text: String, name: String): String {
+        val group = "(?<$name>[\\d,]+(?:\\.\\d{1,2})?)"
         val number = AMOUNT_NUMBER.find(text) ?: return group
         val before = text.substring(0, number.range.first)
         val prefix = CURRENCY.find(before)?.let { currency ->

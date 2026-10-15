@@ -37,7 +37,12 @@ internal fun RuleListItem(row: RuleRow, index: Int, count: Int, actions: RuleAct
         headlineContent = { Text(rule.id) },
         supportingContent = {
             Column {
-                Text(rule.bank + " · " + rule.senders.joinToString(", "))
+                val senders = if (rule.anySender) {
+                    stringResource(R.string.parser_any_sender)
+                } else {
+                    rule.senders.joinToString(", ")
+                }
+                Text("${rule.bank} · $senders")
                 Text(reads(rule))
                 ruleState(row)?.let {
                     Text(
@@ -66,13 +71,14 @@ internal fun RuleListItem(row: RuleRow, index: Int, count: Int, actions: RuleAct
     )
 }
 
-/** What a rule reads, such as "Expense · Bank account". */
+/** What a rule reads, such as "Expense · Bank account", or "Card statement". */
 @Composable
 private fun reads(rule: ParserRule): String {
+    val type = rule.accountType ?: return stringResource(R.string.parser_kind_statement)
     val directions = rule.direction?.let(::listOf) ?: rule.directionWords?.keys.orEmpty().toList()
     return (
         directions.map { stringResource(directionLabel(it.direction)) } +
-            stringResource(accountTypeLabel(rule.accountType))
+            stringResource(accountTypeLabel(type))
         ).joinToString(" · ")
 }
 

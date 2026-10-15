@@ -62,6 +62,7 @@ class SmsImportSettings @Inject constructor(@ApplicationContext private val cont
             .putInt(ALREADY_THERE, summary.alreadyThere)
             .putInt(UNREADABLE, summary.unreadable)
             .putInt(FILTERED, summary.filtered)
+            .putInt(STATEMENTS, summary.statements)
             .apply()
         _lastScan.value = summary
     }
@@ -74,7 +75,8 @@ class SmsImportSettings @Inject constructor(@ApplicationContext private val cont
             toReview = prefs.getInt(TO_REVIEW, 0),
             alreadyThere = prefs.getInt(ALREADY_THERE, 0),
             unreadable = prefs.getInt(UNREADABLE, 0),
-            filtered = prefs.getInt(FILTERED, 0)
+            filtered = prefs.getInt(FILTERED, 0),
+            statements = prefs.getInt(STATEMENTS, 0)
         )
     }
 
@@ -97,6 +99,7 @@ class SmsImportSettings @Inject constructor(@ApplicationContext private val cont
         const val ALREADY_THERE = "scan_already_there"
         const val UNREADABLE = "scan_unreadable"
         const val FILTERED = "scan_filtered"
+        const val STATEMENTS = "scan_statements"
         const val DROP_PROMOTIONAL = "filter_drop_promotional"
         const val DROP_GOVERNMENT = "filter_drop_government"
         const val ONLY_SERVICE = "filter_only_service"
@@ -119,5 +122,7 @@ data class ScanSummary(
     /** SMS that got past the filters but no rule could read. */
     val unreadable: Int,
     /** SMS a filter dropped. 0 for an import from before filters had a count. */
-    val filtered: Int = 0
+    val filtered: Int = 0,
+    /** Credit card statements read (#153); not saved yet. */
+    val statements: Int = 0
 )

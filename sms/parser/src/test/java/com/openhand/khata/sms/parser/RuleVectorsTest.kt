@@ -89,7 +89,7 @@ class RuleVectorsTest {
         when {
             value is JsonNull -> null
             key == "timestamp" -> millis(value.jsonPrimitive.content)
-            key == "amountPaise" -> value.jsonPrimitive.content.toLong()
+            key in PAISE -> value.jsonPrimitive.content.toLong()
             else -> (value as JsonPrimitive).contentOrNull
         }
     }
@@ -108,6 +108,18 @@ class RuleVectorsTest {
                 "payee" to payee,
                 "ref" to reference,
                 "timestamp" to timestamp
+            )
+        }
+        is ParseResult.Statement -> with(result.statement) {
+            mapOf(
+                "result" to "statement",
+                "ruleId" to ruleId,
+                "bank" to bank,
+                "card" to cardLast4,
+                "totalPaise" to totalPaise,
+                "minDuePaise" to minDuePaise,
+                "dueDate" to dueDate.toString(),
+                "statementDate" to statementDate?.toString()
             )
         }
         is ParseResult.Filtered -> filtered(result.reason)
@@ -151,4 +163,8 @@ class RuleVectorsTest {
     private fun JsonObject.string(key: String): String = getValue(key).jsonPrimitive.content
 
     private fun millis(iso: String): Long = OffsetDateTime.parse(iso).toInstant().toEpochMilli()
+
+    private companion object {
+        val PAISE = setOf("amountPaise", "totalPaise", "minDuePaise")
+    }
 }

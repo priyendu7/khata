@@ -1,0 +1,48 @@
+[
+  {
+    "v": 2,
+    "id": "generic-card-statement",
+    "bank": "Any bank",
+    "senders": [
+      "*"
+    ],
+    "pattern": "\\b(?<bank>[a-z]+)\\s+bank\\s+credit\\s+card(?:\\s+no\\.?|\\s+ending(?:\\s+with|\\s+in)?)?\\s*[x*]*(?<account>\\d{4})\\b[\\s\\S]*?\\bstatement\\b[\\s\\S]*?\\btotal\\b(?:\\s*(?:of|due|amt|amount))*[\\s:.]*(?:(?:rs\\.?|inr|₹)\\s*)?(?:dr\\.?\\s*)?(?<total>\\d[\\d,]*(?:\\.\\d{1,2})?)[\\s\\S]*?\\bmin(?:imum)?\\b\\.?(?:\\s*(?:of|due|amt|amount))*[\\s:.]*(?:(?:rs\\.?|inr|₹)\\s*)?(?:dr\\.?\\s*)?(?<minDue>\\d[\\d,]*(?:\\.\\d{1,2})?)[\\s\\S]*?\\b(?:due\\s+(?:by|on|date)|pay\\s+by)\\b[\\s:]*(?<dueDate>\\d{1,2}[-/][a-z0-9]{2,3}[-/]\\d{2,4})",
+    "kind": "statement",
+    "dueDateFormat": "[d-MMM-yyyy][d-MMM-yy][d-M-yyyy][d-M-yy][d/M/yyyy][d/M/yy]"
+  },
+  {
+    "v": 2,
+    "id": "generic-card-statement-due-first",
+    "bank": "Any bank",
+    "senders": [
+      "*"
+    ],
+    "pattern": "\\bstatement\\b[\\s\\S]*?\\b(?<bank>[a-z]+)\\s+bank\\s+credit\\s+card(?:\\s+no\\.?|\\s+ending(?:\\s+with|\\s+in)?)?\\s*[x*]*(?<account>\\d{4})\\b[\\s\\S]*?\\b(?:due\\s+(?:by|on|date)|pay\\s+by)\\b[\\s:]*(?<dueDate>\\d{1,2}[-/][a-z0-9]{2,3}[-/]\\d{2,4})[\\s\\S]*?\\btotal\\b(?:\\s*(?:of|due|amt|amount))*[\\s:.]*(?:(?:rs\\.?|inr|₹)\\s*)?(?:dr\\.?\\s*)?(?<total>\\d[\\d,]*(?:\\.\\d{1,2})?)[\\s\\S]*?\\bmin(?:imum)?\\b\\.?(?:\\s*(?:of|due|amt|amount))*[\\s:.]*(?:(?:rs\\.?|inr|₹)\\s*)?(?:dr\\.?\\s*)?(?<minDue>\\d[\\d,]*(?:\\.\\d{1,2})?)",
+    "kind": "statement",
+    "dueDateFormat": "[d-MMM-yyyy][d-MMM-yy][d-M-yyyy][d-M-yy][d/M/yyyy][d/M/yy]"
+  },
+  {
+    "v": 2,
+    "id": "generic-card-payment",
+    "bank": "Any bank",
+    "senders": [
+      "*"
+    ],
+    "pattern": "payment\\s+of\\s+(?:rs\\.?|inr|₹)\\s*(?<amount>\\d[\\d,]*(?:\\.\\d{1,2})?)\\s+(?:has\\s+been\\s+)?received\\s+(?:on|towards|in|for)\\s+your\\s+(?<bank>[a-z]+)\\s+bank\\s+credit\\s+card(?:\\s+no\\.?|\\s+ending(?:\\s+with|\\s+in)?)?\\s*[x*]*(?<account>\\d{4})\\b[\\s\\S]*?\\bon\\s+(?<date>\\d{1,2}[-/][a-z0-9]{2,3}[-/]\\d{2,4})",
+    "direction": "credit",
+    "accountType": "credit_card",
+    "dateFormat": "[d-MMM-yyyy][d-MMM-yy][d-M-yyyy][d-M-yy][d/M/yyyy][d/M/yy]"
+  },
+  {
+    "v": 2,
+    "id": "generic-card-payment-greeting",
+    "bank": "Any bank",
+    "senders": [
+      "*"
+    ],
+    "pattern": "\\bdear\\s+(?<bank>[a-z]+?)\\s*bank\\b[\\s\\S]{0,40}?payment\\s+of\\s+(?:rs\\.?|inr|₹)\\s*(?<amount>\\d[\\d,]*(?:\\.\\d{1,2})?)\\s+(?:has\\s+been\\s+)?received\\s+(?:on|towards|in|for)\\s+your\\s+credit\\s+card(?:\\s+no\\.?|\\s+ending(?:\\s+with|\\s+in)?)?\\s*[x*]*(?<account>\\d{4})\\b[\\s\\S]*?\\bon\\s+(?<date>\\d{1,2}[-/][a-z0-9]{2,3}[-/]\\d{2,4})",
+    "direction": "credit",
+    "accountType": "credit_card",
+    "dateFormat": "[d-MMM-yyyy][d-MMM-yy][d-M-yyyy][d-M-yy][d/M/yyyy][d/M/yy]"
+  }
+]

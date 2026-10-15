@@ -7,10 +7,13 @@ import kotlinx.serialization.builtins.ListSerializer
  * The rules that ship with the app, one JSON file per bank in `src/main/resources/rules/`, in the
  * same format as custom rules (docs/parser-rules.md). Adding a bank means adding its file here and
  * its samples in `src/test/resources/samples/`.
+ *
+ * `generic.json` reads common credit card formats from any bank sender. Its rules are for any
+ * sender, so the engine tries them after every bank's own rules.
  */
 object BuiltInRules {
     /** In the order they're tried. Resources can't be listed on Android, so they're named here. */
-    internal val BANKS = listOf("kotak")
+    internal val BANKS = listOf("kotak", "generic")
 
     /** Every built-in rule, checked. A rule that fails its checks is a bug, so it throws. */
     fun load(): List<CompiledRule> = all().map { rule ->

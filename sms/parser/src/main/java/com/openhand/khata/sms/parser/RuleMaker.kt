@@ -4,7 +4,8 @@ import java.util.Locale
 
 /**
  * Makes a parser rule from one SMS (PRD feature 8): the user marks which words are the amount,
- * payee and so on, and the rest of the SMS around them becomes literal text. Pure Kotlin, so the
+ * payee and so on (or, for a card statement, the card, total, minimum and due date), and the rest
+ * of the SMS around them becomes literal text. Pure Kotlin, so the
  * rule is checked by the same [RuleValidator] and [SmsParser] that run it.
  *
  * The pattern keeps a couple of words before the first marked part and one after the last, so it
@@ -12,13 +13,32 @@ import java.util.Locale
  * any run of whitespace, and numbers in it (a balance, a time) match any number.
  */
 object RuleMaker {
-    /** What a marked part of the SMS is. */
+    /** What a marked part of the SMS is. [Field.of] says which a rule kind has. */
     enum class Field(val group: String) {
         AMOUNT(RuleFormat.AMOUNT),
         PAYEE(RuleFormat.PAYEE),
         ACCOUNT(RuleFormat.ACCOUNT),
         REF(RuleFormat.REF),
-        DATE(RuleFormat.DATE)
+        DATE(RuleFormat.DATE),
+        TOTAL(RuleFormat.TOTAL),
+        MIN_DUE(RuleFormat.MIN_DUE),
+        DUE_DATE(RuleFormat.DUE_DATE);
+
+        /** Read with the rule's date format. */
+        val isDate: Boolean get() = this == DATE || this == DUE_DATE
+
+        companion object {
+            private val TRANSACTION = listOf(AMOUNT, PAYEE, ACCOUNT, REF, DATE)
+            private val STATEMENT = listOf(ACCOUNT, TOTAL, MIN_DUE, DUE_DATE)
+
+            /** The fields a rule of [kind] marks, in the order they're asked for. */
+            fun of(kind: RuleKind): List<Field> =
+                if (kind == RuleKind.STATEMENT) STATEMENT else TRANSACTION
+
+            /** The fields a rule of [kind] can't do without. */
+            fun requiredFor(kind: RuleKind): Set<Field> =
+                if (kind == RuleKind.STATEMENT) setOf(ACCOUNT, TOTAL, DUE_DATE) else setOf(AMOUNT)
+        }
     }
 
     /** A word of the SMS: a run of non-space characters at [start] until [end] (exclusive). */
@@ -27,7 +47,10 @@ object RuleMaker {
     /** Characters [start] until [end] (exclusive) of the SMS are [field]. */
     data class Mark(val field: Field, val start: Int, val end: Int)
 
-    /** Everything needed to make a rule. [dateFormat] is needed when a date is marked. */
+    /**
+     * Everything needed to make a rule. [dateFormat] is needed when a date (the due date, in a
+     * statement) is marked. A statement has no direction or account type, so those are left out.
+     */
     data class Draft(
         val id: String,
         val bank: String,
@@ -36,7 +59,8 @@ object RuleMaker {
         val marks: List<Mark>,
         val direction: RuleDirection,
         val accountType: RuleAccountType,
-        val dateFormat: String? = null
+        val dateFormat: String? = null,
+        val kind: RuleKind = RuleKind.TRANSACTION
     )
 
     private const val WORDS_BEFORE = 2
@@ -46,17 +70,29 @@ object RuleMaker {
     fun words(body: String): List<Word> =
         WORD.findAll(body).map { Word(it.value, it.range.first, it.range.last + 1) }.toList()
 
-    /** [draft] as a rule. It still has to pass [RuleValidator]. */
-    fun rule(draft: Draft): ParserRule = ParserRule(
-        v = RuleFormat.VERSION,
-        id = draft.id,
-        bank = draft.bank.trim(),
-        senders = draft.senders,
-        pattern = pattern(draft.body, draft.marks, draft.dateFormat),
-        direction = draft.direction,
-        accountType = draft.accountType,
-        dateFormat = draft.dateFormat.takeIf { draft.marks.any { it.field == Field.DATE } }
-    )
+    /**
+     * [draft] as a rule, using only the marks its kind has. A transaction rule is written as v1,
+     * so older versions of Khata can read its code. It still has to pass [RuleValidator].
+     */
+    fun rule(draft: Draft): ParserRule {
+        val statement = draft.kind == RuleKind.STATEMENT
+        val fields = Field.of(draft.kind)
+        val marks = draft.marks.filter { it.field in fields }
+        val format = draft.dateFormat.takeIf { marks.any { it.field.isDate } }
+        val rule = ParserRule(
+            v = RuleFormat.VERSION,
+            id = draft.id,
+            bank = draft.bank.trim(),
+            senders = draft.senders,
+            pattern = pattern(draft.body, marks, format),
+            kind = RuleKind.STATEMENT.takeIf { statement },
+            direction = draft.direction.takeUnless { statement },
+            accountType = draft.accountType.takeUnless { statement },
+            dateFormat = format.takeUnless { statement },
+            dueDateFormat = format.takeIf { statement }
+        )
+        return rule.copy(v = RuleFormat.versionFor(rule))
+    }
 
     /**
      * The pattern for [body] with [marks] as named groups. Marks are trimmed of punctuation at
@@ -86,12 +122,13 @@ object RuleMaker {
 
     /**
      * A rule id from the bank and direction that isn't in [taken]: `hdfc-bank-debit`, then
-     * `hdfc-bank-debit-2` and so on.
+     * `hdfc-bank-debit-2` and so on. A statement rule has no direction: `hdfc-bank-statement`.
      */
-    fun ruleId(bank: String, direction: RuleDirection, taken: Set<String>): String {
+    fun ruleId(bank: String, direction: RuleDirection?, taken: Set<String>): String {
+        val what = direction?.name?.lowercase(Locale.ROOT) ?: "statement"
         val slug = bank.lowercase(Locale.ROOT).replace(Regex("[^a-z0-9]+"), "-").trim('-')
             .take(MAX_ID_BASE).trim('-').ifEmpty { "custom" }
-        val base = slug + "-" + direction.name.lowercase(Locale.ROOT)
+        val base = "$slug-$what"
         return generateSequence(1) { it + 1 }
             .map { if (it == 1) base else "$base-$it" }
             .first { it !in taken }

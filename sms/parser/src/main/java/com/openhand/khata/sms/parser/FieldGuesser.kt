@@ -5,7 +5,8 @@ import kotlin.math.abs
 
 /**
  * Guesses where the amount, payee, account, reference and date are in a bank SMS (PRD feature 8),
- * so the rule maker starts with them marked and the user only confirms. Plain patterns over the
+ * or the card, total, minimum and due date in a card statement, so the rule maker starts with them
+ * marked and the user only confirms. Plain patterns over the
  * shapes Indian bank SMS share: no network and no model, so the same answer on every phone.
  *
  * A balance or limit (`Avl bal Rs.12,000`) is never taken as the amount.
@@ -18,11 +19,12 @@ object FieldGuesser {
     data class Guesses(
         val body: String,
         val fields: Map<RuleMaker.Field, Guess>,
-        /** The format that reads the guessed date. */
+        /** The format that reads the guessed date (the due date, in a statement). */
         val dateFormat: String?,
         /** Null when the SMS has no transaction word. */
         val direction: RuleDirection?,
-        val accountType: RuleAccountType
+        val accountType: RuleAccountType,
+        val kind: RuleKind = RuleKind.TRANSACTION
     ) {
         operator fun get(field: RuleMaker.Field): Guess? = fields[field]
 
@@ -33,11 +35,14 @@ object FieldGuesser {
 
         /**
          * A rule made from the guesses, as Make a parser would make it if every guess were
-         * confirmed. Null without an amount and a direction.
+         * confirmed. Null without the fields the kind needs, or a transaction's direction.
          */
         fun draft(id: String, bank: String, senders: List<String>): RuleMaker.Draft? {
-            val direction = direction
-            return if (direction == null || get(RuleMaker.Field.AMOUNT) == null) {
+            val statement = kind == RuleKind.STATEMENT
+            val direction = direction ?: RuleDirection.DEBIT.takeIf { statement }
+            return if (direction == null ||
+                !RuleMaker.Field.requiredFor(kind).all { it in fields }
+            ) {
                 null
             } else {
                 RuleMaker.Draft(
@@ -48,13 +53,14 @@ object FieldGuesser {
                     marks = marks,
                     direction = direction,
                     accountType = accountType,
-                    dateFormat = dateFormat
+                    dateFormat = dateFormat,
+                    kind = kind
                 )
             }
         }
     }
 
-    private const val SURE = 0.9f
+    internal const val SURE = 0.9f
     private const val LIKELY = 0.7f
     private const val UNSURE = 0.5f
 
@@ -63,9 +69,9 @@ object FieldGuesser {
     private const val NEAR_WORD = 40
     private const val MIN_REF_LENGTH = 6
 
-    private val OPTIONS = setOf(RegexOption.IGNORE_CASE)
-    private const val WORD_START = """(?<![\p{L}\p{N}])"""
-    private const val NUMBER = """\d(?:[\d,]*\d)?(?:\.\d{1,2})?"""
+    internal val OPTIONS = setOf(RegexOption.IGNORE_CASE)
+    internal const val WORD_START = """(?<![\p{L}\p{N}])"""
+    internal const val NUMBER = """\d(?:[\d,]*\d)?(?:\.\d{1,2})?"""
 
     private val CURRENCY_AMOUNT =
         Regex("""$WORD_START(?:rs\.?|inr|₹)\s*$NUMBER(?!\d|\.\d)""", OPTIONS)
@@ -98,11 +104,11 @@ object FieldGuesser {
     )
 
     private const val TIME = """(?:,?\s*(?:at\s*)?\d{1,2}:\d{2}(?::\d{2})?)?"""
-    private val DATE = Regex(
+    internal const val DATE_TEXT =
         """(?<![\d\p{L}])(?:\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|\d{1,2}[- ]?[a-z]{3}[- ]?\d{2,4}""" +
-            """|\d{4}-\d{2}-\d{2})(?![\d\p{L}])$TIME""",
-        OPTIONS
-    )
+            """|\d{4}-\d{2}-\d{2})(?![\d\p{L}])"""
+    private val DATE = Regex("$DATE_TEXT$TIME", OPTIONS)
+
     private val TIME_AT_END = Regex("""$TIME$""", OPTIONS)
 
     private val PAYEE_WORD = Regex(
@@ -152,7 +158,19 @@ object FieldGuesser {
         RuleDirection.REFUND to listOf("from", "at", "towards", "info:", "to")
     )
 
-    fun guess(body: String): Guesses {
+    /**
+     * The guesses for [kind]: a card statement's fields ([StatementGuesser]) when the SMS looks
+     * like one, otherwise a transaction's.
+     */
+    fun guess(
+        body: String,
+        kind: RuleKind = if (StatementGuesser.looksLikeStatement(body)) {
+            RuleKind.STATEMENT
+        } else {
+            RuleKind.TRANSACTION
+        }
+    ): Guesses {
+        if (kind == RuleKind.STATEMENT) return StatementGuesser.guess(body)
         val direction = direction(body)
         val fields = mutableMapOf<RuleMaker.Field, Guess>()
         fun add(field: RuleMaker.Field, guess: Guess?) {
@@ -206,7 +224,7 @@ object FieldGuesser {
         }
     }
 
-    private fun account(body: String): Guess? =
+    internal fun account(body: String): Guess? =
         LABELLED_ACCOUNT.find(body)?.groups?.get(1)?.let { group ->
             Guess(group.range.first, group.range.last + 1, group.value, SURE)
         } ?: MASKED_ACCOUNT.find(body)?.toGuess(LIKELY)
@@ -262,5 +280,5 @@ object FieldGuesser {
     private fun MatchResult.toGuess(confidence: Float) =
         Guess(range.first, range.last + 1, value, confidence)
 
-    private fun Guess.overlaps(other: Guess) = start < other.end && other.start < end
+    internal fun Guess.overlaps(other: Guess) = start < other.end && other.start < end
 }

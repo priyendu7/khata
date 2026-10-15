@@ -14,6 +14,7 @@ import com.openhand.khata.sms.parser.RuleCode
 import com.openhand.khata.sms.parser.RuleCodeResult
 import com.openhand.khata.sms.parser.RuleMaker
 import com.openhand.khata.sms.parser.SmsParser
+import com.openhand.khata.sms.parser.StatementGuesser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -63,7 +64,10 @@ class MakeParserViewModel @Inject constructor(
 
     private val _candidates = MutableStateFlow<List<SmsInbox.Message>?>(null)
 
-    /** Recent SMS from any business sender that may be a transaction. Null until loaded. */
+    /**
+     * Recent SMS from any business sender that may be a transaction or a card statement. Null
+     * until loaded.
+     */
     val candidates: StateFlow<List<SmsInbox.Message>?> = _candidates.asStateFlow()
 
     private val _recent = MutableStateFlow<List<SmsInbox.Message>>(emptyList())
@@ -142,12 +146,16 @@ class MakeParserViewModel @Inject constructor(
 
 /**
  * The last [CANDIDATE_COUNT] SMS in the last [CANDIDATE_DAYS] days that get past [parser]'s
- * filters (a business sender, and text that may be a transaction), newest first.
+ * filters (a business sender, and text that may be a transaction), or look like a card statement
+ * (which the reminder filter would drop), newest first.
  */
 internal fun candidateSms(inbox: SmsInbox, parser: SmsParser, now: Long): List<SmsInbox.Message> =
     try {
         inbox.businessMessages(now - TimeUnit.DAYS.toMillis(CANDIDATE_DAYS), parser::accepts)
-            .filter { RuleMaker.mayBeTransaction(it.body, parser.filters) }
+            .filter {
+                RuleMaker.mayBeTransaction(it.body, parser.filters) ||
+                    StatementGuesser.looksLikeStatement(it.body)
+            }
             .takeLast(CANDIDATE_COUNT).reversed()
     } catch (_: SecurityException) {
         // The permission was taken away while the screen was open.

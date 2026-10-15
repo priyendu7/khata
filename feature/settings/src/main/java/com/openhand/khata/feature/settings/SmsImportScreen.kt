@@ -314,6 +314,9 @@ private fun LastImport(summary: ScanSummary, dateFormat: DateTimeFormatter) {
         Text(stringResource(R.string.sms_summary_already_there, summary.alreadyThere))
         Text(stringResource(R.string.sms_summary_unreadable, summary.unreadable))
         Text(stringResource(R.string.sms_summary_filtered, summary.filtered))
+        if (summary.statements > 0) {
+            Text(stringResource(R.string.sms_summary_statements, summary.statements))
+        }
     }
 }
 

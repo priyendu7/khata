@@ -34,7 +34,8 @@ class InboxScanner @Inject constructor(
             toReview = forReview,
             alreadyThere = counts.getValue(IngestOutcome.ALREADY_THERE),
             unreadable = counts.getValue(IngestOutcome.UNREADABLE),
-            filtered = counts.getValue(IngestOutcome.FILTERED)
+            filtered = counts.getValue(IngestOutcome.FILTERED),
+            statements = counts.getValue(IngestOutcome.STATEMENT)
         )
     }
 }

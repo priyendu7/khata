@@ -10,6 +10,7 @@ import com.openhand.khata.core.data.SmsImporter
 import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
+import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.TransactionSource
 import com.openhand.khata.sms.parser.SmsFilters
@@ -136,6 +137,40 @@ class InboxScannerTest {
         assertEquals(1, summary.unreadable)
         assertEquals(1, summary.filtered)
         assertEquals(listOf(shop), db.unparsedSmsDao().observeAll().first().map { it.body })
+    }
+
+    @Test
+    fun aCardStatementIsCountedButNotSavedYet() = runTest {
+        val statement = "HDFC Bank Credit Card XX4321 Statement:\nTotal due: Rs.8,363.00\n" +
+            "Min.due: Rs.2,268.00\nPay by 02-10-2026\nView: https://example.com/xyz"
+        FakeSmsInbox.messages += FakeSmsInbox.Sms("VM-HDFCBK-S", statement, at(16))
+
+        val summary = scanner.scan(since = at(16))
+
+        // Read by the generic rules (#153), not dropped as a bill reminder; saved by #154.
+        assertEquals(1, summary.statements)
+        assertEquals(0, summary.filtered)
+        assertEquals(0, summary.unreadable)
+        assertEquals(0, db.transactionDao().observeAll().first().size)
+        assertEquals(emptyList<String>(), db.unparsedSmsDao().observeAll().first().map { it.body })
+        settings.saveSummary(summary)
+        val reread = SmsImportSettings(ApplicationProvider.getApplicationContext())
+        assertEquals(1, reread.lastScan.value?.statements)
+    }
+
+    @Test
+    fun aCardPaymentFromAnyBankIsRecordedOnTheCard() = runTest {
+        val payment = "Payment of INR 1290.82 has been received towards your Axis Bank Credit " +
+            "Card XX5678 on 16-09-26 - Axis Bank"
+        FakeSmsInbox.messages += FakeSmsInbox.Sms("AX-AXISBK-S", payment, at(16))
+
+        assertEquals(1, scanner.scan(since = at(16)).recorded)
+
+        val saved = db.transactionDao().observeAll().first().single()
+        assertEquals(129_082L, saved.amountPaise)
+        val card = db.accountDao().getByLast4("5678").single()
+        assertEquals("Axis", card.bank)
+        assertEquals(AccountType.CREDIT_CARD, card.type)
     }
 
     @Test

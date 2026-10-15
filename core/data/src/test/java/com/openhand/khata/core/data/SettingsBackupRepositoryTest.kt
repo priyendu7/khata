@@ -125,6 +125,23 @@ class SettingsBackupRepositoryTest : RepositoryTest() {
     }
 
     @Test
+    fun v2StatementRulesGoOutAndComeBack() = runTest {
+        val statement = RuleCode.encode(builtIn.first { it.isStatement }.copy(id = "my-statement"))
+        addCustom("my-statement", statement)
+        val file = repository.gather()
+        assertEquals(listOf(CustomParserData(statement)), file.customParsers)
+        db.customParserDao().deleteById(requireNotNull(db.customParserDao().idOf("my-statement")))
+
+        assertEquals(
+            listOf(RuleComparison("my-statement", RuleStatus.NEW, true)),
+            repository.preview(file).customRules
+        )
+        apply(file)
+
+        assertEquals(statement, db.customParserDao().getAll().single().code)
+    }
+
+    @Test
     fun replaceAndKeepMineAreHonouredPerRule() = runTest {
         addCustom("replace-me", code("replace-me"), at = 1)
         addCustom("keep-me", code("keep-me"), enabled = false, at = 2)

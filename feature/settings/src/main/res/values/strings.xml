@@ -443,4 +443,33 @@
         <item quantity="one">Saved. %d waiting SMS recorded.</item>
         <item quantity="other">Saved. %d waiting SMS recorded.</item>
     </plurals>
+    <!-- Card statements (#153) -->
+    <string name="parser_kind_transaction">Transaction</string>
+    <string name="parser_kind_statement">Card statement</string>
+    <string name="parser_make_kind">This SMS is a</string>
+    <string name="parser_any_sender">any bank sender</string>
+    <string name="parser_field_total">Total due</string>
+    <string name="parser_field_min_due">Minimum due</string>
+    <string name="parser_field_due_date">Due date</string>
+    <string name="parser_step_total">Tap the total due</string>
+    <string name="parser_step_min_due">Tap the minimum due</string>
+    <string name="parser_step_due_date">Tap the due date</string>
+    <string name="parser_guess_total">Is this the total due?</string>
+    <string name="parser_guess_min_due">Is this the minimum due?</string>
+    <string name="parser_guess_due_date">Is this the due date?</string>
+    <string name="parser_make_need_statement">Mark the card, the total due and the due date to make a rule.</string>
+    <string name="parser_statement">Statement for card ··%1$s: total %2$s, minimum %3$s, due %4$s</string>
+    <string name="parser_statement_no_minimum">Statement for card ··%1$s: total %2$s, due %3$s</string>
+    <string name="parser_edit_statement_note">This rule reads credit card statements: the card, the total due, the minimum due and the due date.</string>
+    <string name="parser_edit_due_date_format">Due date format</string>
+    <string name="parser_rule_needs_v2">It uses something only format version 2 has (a kind, a due date, any sender or a new group), but says version 1.</string>
+    <string name="parser_rule_not_for_kind">It has a field or group this kind of rule doesn\'t use, such as an amount in a statement rule.</string>
+    <string name="parser_rule_missing_account_type">It has no account type.</string>
+    <string name="parser_rule_missing_card">The pattern has no account group for the card number.</string>
+    <string name="parser_rule_missing_total">The pattern has no total group.</string>
+    <string name="parser_rule_missing_due_date">The pattern has no dueDate group.</string>
+    <string name="parser_rule_due_date_without_format">It has a dueDate group but no due date format.</string>
+    <string name="parser_rule_due_date_format_without_due_date">It has a due date format but no dueDate group.</string>
+    <string name="test_sms_statement_not_saved">Khata doesn\'t save card statements yet. They\'ll show with your cards in a later update.</string>
+    <string name="sms_summary_statements">Card statements read: %1$d (not saved yet)</string>
 </resources>

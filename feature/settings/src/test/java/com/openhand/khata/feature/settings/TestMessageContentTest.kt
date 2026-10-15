@@ -129,7 +129,12 @@ class TestMessageContentTest {
         test("VM-HDFCBK-S", "Rs.450.00 spent on HDFC Bank Card x4321 at CITY PHARMACY")
 
         compose.onNodeWithText("Would go to To review").performScrollTo().assertExists()
-        compose.onNodeWithText("No parser is for this sender.").assertExists()
+        // No HDFC parser, so only the generic card ones (#153) were tried.
+        compose.onNodeWithText(
+            "Parsers tried for this sender: generic-card-statement",
+            substring = true
+        )
+            .assertExists()
         compose.onNodeWithText("Make a parser from this SMS").performScrollTo().performClick()
         assertEquals(
             listOf("VM-HDFCBK-S" to "Rs.450.00 spent on HDFC Bank Card x4321 at CITY PHARMACY"),
@@ -137,8 +142,26 @@ class TestMessageContentTest {
         )
     }
 
+    @Test
+    fun aCardStatementShowsItsTotalMinimumAndDueDate() {
+        show()
+
+        test("JM-ICICIT-S", ICICI_STATEMENT)
+
+        compose.onNodeWithText("Read by parser generic-card-statement").performScrollTo()
+            .assertExists()
+        compose.onNodeWithText(
+            "Statement for card ··1234: total ₹35,299.72, minimum ₹3,450, due 23 Oct 2026"
+        ).assertExists()
+        compose.onNodeWithText("Khata doesn't save card statements yet", substring = true)
+            .assertExists()
+    }
+
     private companion object {
         const val AT = 1_790_000_000_000L
+        const val ICICI_STATEMENT =
+            "ICICI Bank Credit Card XX1234 Statement is sent to a*****1@example.com. " +
+                "Total of Rs 35,299.72 or minimum of Rs 3,450.00 is due by 23-OCT-26."
         const val KOTAK_SMS =
             "Sent Rs.366.00 from Kotak Bank A/c X1234 to GENERAL STORE on 23-09-26. " +
                 "UPI Ref 111122223333. Not done by you? Tap https://kotak.bank.in/KBANKT/Fraud"

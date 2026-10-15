@@ -23,30 +23,18 @@ object RuleValidator {
 
     fun validate(rule: ParserRule): RuleCheck {
         val errors = mutableListOf<RuleError>()
-        if (rule.v != RuleFormat.VERSION) errors += RuleError.UNKNOWN_VERSION
+        if (rule.v !in RuleFormat.V1..RuleFormat.VERSION) errors += RuleError.UNKNOWN_VERSION
         if (rule.id.length > MAX_ID_LENGTH || !ID.matches(rule.id)) errors += RuleError.BAD_ID
         if (rule.bank.isBlank() || rule.bank.length > MAX_BANK_LENGTH) errors += RuleError.BAD_BANK
-        val senders = rule.senders.mapNotNull {
-            SenderId.parse(it)?.takeUnless { id -> id.category == SenderCategory.PROMOTIONAL }
-        }
-        if (senders.isEmpty() || senders.size != rule.senders.size || senders.size > MAX_SENDERS) {
-            errors += RuleError.BAD_SENDERS
-        }
-        if (!directionValid(rule)) errors += RuleError.DIRECTION
-        if (rule.dateFormat != null && !dateFormatValid(rule.dateFormat)) {
-            errors += RuleError.BAD_DATE_FORMAT
+        val senders = senders(rule)
+        if (senders == null) errors += RuleError.BAD_SENDERS
+        errors += kindErrors(rule)
+        listOfNotNull(rule.dateFormat, rule.dueDateFormat).forEach { format ->
+            if (!dateFormatValid(format)) errors += RuleError.BAD_DATE_FORMAT
         }
         val pattern = compile(rule, errors)
-        return if (errors.isEmpty() && pattern != null) {
-            RuleCheck.Valid(
-                CompiledRule(
-                    rule,
-                    pattern,
-                    senders.mapTo(mutableSetOf()) {
-                        it.header
-                    }
-                )
-            )
+        return if (errors.isEmpty() && pattern != null && senders != null) {
+            RuleCheck.Valid(CompiledRule(rule, pattern, senders))
         } else {
             RuleCheck.Invalid(errors.distinct())
         }
@@ -54,6 +42,37 @@ object RuleValidator {
 
     /** The named groups in [pattern], or null if it uses something outside the allowed subset. */
     fun groups(pattern: String): Set<String>? = RegexSubset.namedGroups(pattern)
+
+    /**
+     * [rule]'s sender headers, or null if they aren't 1 to [MAX_SENDERS] non-promotional
+     * headers. `["*"]` is any sender, with no headers.
+     */
+    private fun senders(rule: ParserRule): Set<String>? {
+        if (rule.anySender) return emptySet()
+        val headers = rule.senders.mapNotNull {
+            SenderId.parse(it)?.takeUnless { id -> id.category == SenderCategory.PROMOTIONAL }
+        }
+        val valid = headers.isNotEmpty() &&
+            headers.size == rule.senders.size &&
+            headers.size <= MAX_SENDERS
+        return if (valid) headers.mapTo(mutableSetOf()) { it.header } else null
+    }
+
+    /** What a transaction rule must have and a statement rule mustn't, and the other way round. */
+    private fun kindErrors(rule: ParserRule): List<RuleError> = buildList {
+        if (rule.v == RuleFormat.V1 && RuleFormat.versionFor(rule) != RuleFormat.V1) {
+            add(RuleError.NEEDS_V2)
+        }
+        if (rule.isStatement) {
+            val transactionOnly =
+                rule.direction != null || rule.directionWords != null || rule.accountType != null
+            if (transactionOnly) add(RuleError.NOT_FOR_KIND)
+        } else {
+            if (!directionValid(rule)) add(RuleError.DIRECTION)
+            if (rule.accountType == null) add(RuleError.MISSING_ACCOUNT_TYPE)
+            if (rule.dueDateFormat != null) add(RuleError.NOT_FOR_KIND)
+        }
+    }
 
     /** Exactly one of `direction` and `directionWords`, with no empty or blank word lists. */
     private fun directionValid(rule: ParserRule): Boolean {
@@ -98,10 +117,26 @@ object RuleValidator {
     }
 
     private fun groupErrors(rule: ParserRule, groups: Set<String>): List<RuleError> = buildList {
-        if (RuleFormat.AMOUNT !in groups) add(RuleError.MISSING_AMOUNT)
-        val hasDate = RuleFormat.DATE in groups
+        if (!RuleFormat.groupsFor(rule.kind).containsAll(groups)) add(RuleError.NOT_FOR_KIND)
+        if (rule.isStatement) {
+            addAll(statementGroupErrors(rule, groups))
+        } else if (RuleFormat.AMOUNT !in groups) {
+            add(RuleError.MISSING_AMOUNT)
+        }
+        val date = if (rule.isStatement) RuleFormat.STATEMENT_DATE else RuleFormat.DATE
+        val hasDate = date in groups
         if (rule.dateFormat != null && !hasDate) add(RuleError.DATE_FORMAT_WITHOUT_DATE)
         if (hasDate && rule.dateFormat == null) add(RuleError.DATE_WITHOUT_FORMAT)
+    }
+
+    /** A statement needs its card, total and due date, with the due date's format. */
+    private fun statementGroupErrors(rule: ParserRule, groups: Set<String>) = buildList {
+        if (RuleFormat.ACCOUNT !in groups) add(RuleError.MISSING_CARD)
+        if (RuleFormat.TOTAL !in groups) add(RuleError.MISSING_TOTAL)
+        val hasDue = RuleFormat.DUE_DATE in groups
+        if (!hasDue) add(RuleError.MISSING_DUE_DATE)
+        if (hasDue && rule.dueDateFormat == null) add(RuleError.DUE_DATE_WITHOUT_FORMAT)
+        if (!hasDue && rule.dueDateFormat != null) add(RuleError.DUE_DATE_FORMAT_WITHOUT_DUE_DATE)
     }
 }
 
@@ -109,7 +144,7 @@ object RuleValidator {
 class CompiledRule internal constructor(
     val rule: ParserRule,
     internal val pattern: Pattern,
-    /** [ParserRule.senders] as parsed headers. */
+    /** [ParserRule.senders] as parsed headers; empty for [ParserRule.anySender]. */
     val headers: Set<String>
 )
 
@@ -135,6 +170,22 @@ enum class RuleError(val code: String) {
     UNSUPPORTED_PATTERN("unsupported_pattern"),
     BAD_PATTERN("bad_pattern"),
     MISSING_AMOUNT("missing_amount"),
+
+    /** A `dateFormat` without the `date` group (`statementDate` in a statement rule). */
     DATE_FORMAT_WITHOUT_DATE("date_format_without_date"),
-    DATE_WITHOUT_FORMAT("date_without_format")
+    DATE_WITHOUT_FORMAT("date_without_format"),
+
+    /** A v1 rule using something only v2 has: `kind`, `dueDateFormat`, `*`, a v2 group. */
+    NEEDS_V2("needs_v2"),
+
+    /** A field or group the rule's kind doesn't have, such as `amount` in a statement rule. */
+    NOT_FOR_KIND("not_for_kind"),
+    MISSING_ACCOUNT_TYPE("missing_account_type"),
+
+    /** A statement rule with no `account` group: the statement can't be put on a card. */
+    MISSING_CARD("missing_card"),
+    MISSING_TOTAL("missing_total"),
+    MISSING_DUE_DATE("missing_due_date"),
+    DUE_DATE_WITHOUT_FORMAT("due_date_without_format"),
+    DUE_DATE_FORMAT_WITHOUT_DUE_DATE("due_date_format_without_due_date")
 }

@@ -22,6 +22,8 @@ class ExplainTest {
         val samples = RuleCode.json.parseToJsonElement(file.readText()).jsonObject
             .getValue("samples").jsonArray.map { it.jsonObject }
         val kotakIds = rules.filter { "KOTAKB" in it.headers }.map { it.rule.id }
+        // Rules for any sender come after the bank's own.
+        val tried = kotakIds + rules.filter { it.rule.anySender }.map { it.rule.id }
         samples.forEach { sample ->
             val sender = sample.getValue("sender").jsonPrimitive.content
             val body = sample.getValue("body").jsonPrimitive.content
@@ -34,13 +36,13 @@ class ExplainTest {
 
             assertEquals(body, parser.parse(sender, body, receivedAt), explanation.result)
             assertTrue(body, explanation.rulesTried.isNotEmpty())
-            assertTrue(body, kotakIds.containsAll(explanation.rulesTried))
+            assertTrue(body, tried.containsAll(explanation.rulesTried))
             val parsed = explanation.result as? ParseResult.Parsed
             if (parsed != null) {
                 assertEquals(body, parsed.sms.ruleId, explanation.rulesTried.last())
             } else {
-                // Nothing read it, so every Kotak rule was tried.
-                assertEquals(body, kotakIds, explanation.rulesTried)
+                // Nothing read it, so every Kotak rule was tried, then the generic ones.
+                assertEquals(body, tried, explanation.rulesTried)
             }
         }
     }

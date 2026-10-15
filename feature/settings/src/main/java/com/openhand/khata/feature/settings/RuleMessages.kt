@@ -30,6 +30,15 @@ internal fun ruleErrorMessage(error: RuleError): Int = when (error) {
     RuleError.MISSING_AMOUNT -> R.string.parser_rule_missing_amount
     RuleError.DATE_FORMAT_WITHOUT_DATE -> R.string.parser_rule_date_format_without_date
     RuleError.DATE_WITHOUT_FORMAT -> R.string.parser_rule_date_without_format
+    RuleError.NEEDS_V2 -> R.string.parser_rule_needs_v2
+    RuleError.NOT_FOR_KIND -> R.string.parser_rule_not_for_kind
+    RuleError.MISSING_ACCOUNT_TYPE -> R.string.parser_rule_missing_account_type
+    RuleError.MISSING_CARD -> R.string.parser_rule_missing_card
+    RuleError.MISSING_TOTAL -> R.string.parser_rule_missing_total
+    RuleError.MISSING_DUE_DATE -> R.string.parser_rule_missing_due_date
+    RuleError.DUE_DATE_WITHOUT_FORMAT -> R.string.parser_rule_due_date_without_format
+    RuleError.DUE_DATE_FORMAT_WITHOUT_DUE_DATE ->
+        R.string.parser_rule_due_date_format_without_due_date
 }
 
 @StringRes
