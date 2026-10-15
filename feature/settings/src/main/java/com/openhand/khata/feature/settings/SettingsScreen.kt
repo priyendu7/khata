@@ -33,6 +33,8 @@ import com.openhand.khata.core.ui.segment
 fun SettingsRoute(
     modifier: Modifier = Modifier,
     security: @Composable () -> Unit = {},
+    /** Card due date reminders (#156), supplied by :feature:insights through :app. */
+    cardReminder: @Composable (Modifier) -> Unit = {},
     onOpen: (SettingsPage) -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -46,6 +48,7 @@ fun SettingsRoute(
         summary = summary,
         security = security,
         backupReminder = { BackupReminderSection(it) },
+        cardReminder = cardReminder,
         onOpen = onOpen,
         // The browser does the fetching; Khata itself has no internet permission.
         onOpenLink = { runCatching { uriHandler.openUri(it) } },
@@ -85,6 +88,8 @@ fun SettingsScreen(
     security: @Composable () -> Unit = {},
     /** Its own ViewModel, so it's a slot that tests can leave empty. Drawn as the last segment. */
     backupReminder: @Composable (Modifier) -> Unit = {},
+    /** Card due date reminders (#156); empty in tests, like [backupReminder]. */
+    cardReminder: @Composable (Modifier) -> Unit = {},
     onOpen: (SettingsPage) -> Unit = {},
     onOpenLink: (String) -> Unit = {},
     language: AppLanguage = AppLanguage.SYSTEM,
@@ -98,6 +103,8 @@ fun SettingsScreen(
             SmsSection(summary, onOpen)
             ListsSection(summary, onOpen)
             BackupSection(summary, onOpen, backupReminder)
+            SectionHeader(stringResource(R.string.settings_section_cards))
+            cardReminder(Modifier.segment(0, 1))
             SectionHeader(stringResource(R.string.settings_section_security))
             security()
             SectionHeader(stringResource(R.string.settings_section_app))

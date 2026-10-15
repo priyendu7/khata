@@ -249,6 +249,7 @@
     <string name="settings_section_sms">SMS</string>
     <string name="settings_section_lists">Your lists</string>
     <string name="settings_section_backup">Backup &amp; restore</string>
+    <string name="settings_section_cards">Credit cards</string>
     <string name="settings_section_security">Security</string>
     <string name="settings_section_app">App</string>
     <string name="settings_section_about">About</string>

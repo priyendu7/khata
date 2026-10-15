@@ -188,4 +188,30 @@
         <item quantity="one">overdue by %d day</item>
         <item quantity="other">overdue by %d days</item>
     </plurals>
+
+    <!-- Credit card due date reminders (#156). -->
+    <string name="card_reminder_section">Reminders</string>
+    <string name="card_reminder_setting">Due date reminders</string>
+    <string name="card_reminder_summary">Remind me before a card bill is due, until it\'s paid in full</string>
+    <string name="card_reminder_when">When</string>
+    <plurals name="card_reminder_days_before">
+        <item quantity="one">%d day before</item>
+        <item quantity="other">%d days before</item>
+    </plurals>
+    <string name="card_reminder_on_the_day">on the due date</string>
+    <string name="card_reminder_no_days">No days picked</string>
+    <string name="card_reminder_off">Off</string>
+    <string name="card_reminder_home_only_short">On Home only: notifications are off</string>
+    <string name="card_reminder_home_only">Notifications are off for Khata, so the bill shows only on Home.</string>
+    <string name="card_reminder_card_help">Before this card\'s bill is due, until it\'s paid in full.</string>
+    <string name="card_reminder_all_off">Due date reminders are off for every card. Turn them on under Reminders on the Cards tab.</string>
+    <!-- The notification channel's name in the phone's settings. -->
+    <string name="card_reminder_channel">Card due dates</string>
+    <string name="card_reminder_title">Credit card bill due</string>
+    <!-- Card, amount still to pay and due date, e.g. "Axis ··5678: ₹8,695 due on 2 Nov". -->
+    <string name="card_reminder_text">%1$s: %2$s due on %3$s</string>
+    <!-- Card and amount still to pay, e.g. "Axis ··5678: ₹8,695 due today". -->
+    <string name="card_reminder_text_today">%1$s: %2$s due today</string>
+    <!-- On a lock screen that hides private content: no card or amount. -->
+    <string name="card_reminder_public">A credit card bill is due soon</string>
 </resources>

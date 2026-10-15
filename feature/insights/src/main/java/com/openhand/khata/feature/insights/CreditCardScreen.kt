@@ -14,21 +14,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.openhand.khata.core.model.CardCycles
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.StatementSummary
 import com.openhand.khata.core.model.TransactionFilter
-import com.openhand.khata.core.ui.Choice
-import com.openhand.khata.core.ui.ChoiceDialog
 import com.openhand.khata.core.ui.SectionHeader
 import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.Segments
@@ -45,12 +39,17 @@ fun CreditCardScreen(
     viewModel: CreditCardViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val askNotifications = rememberAskNotifications {}
     CreditCardContent(
         state,
         CreditCardActions(
             onBack = onBack,
             onShowStatement = viewModel::showStatement,
             onSetBillingDay = viewModel::setBillingDay,
+            onSetReminders = { on ->
+                viewModel.setReminders(on)
+                if (on) askNotifications()
+            },
             onOpenCategory = { id -> viewModel.filter(id)?.let(onOpenTransactions) }
         )
     )
@@ -83,7 +82,7 @@ fun CreditCardContent(state: CreditCardState?, actions: CreditCardActions = Cred
             }
             CycleSpendingCard(state, actions)
             PastStatements(state, actions.onShowStatement)
-            BillingDaySetting(state.summary.card.billingDay, actions.onSetBillingDay)
+            CardSettings(state, actions)
         }
     }
 }
@@ -222,50 +221,6 @@ private fun PastStatements(state: CreditCardState, onShow: (Long?) -> Unit) {
         }
     }
 }
-
-/** The card's billing day (#154), picked from 1–31 or none. */
-@Composable
-private fun BillingDaySetting(billingDay: Int?, onSet: (Int?) -> Unit) {
-    var choosing by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.padding(horizontal = Segments.Inset)) {
-        SectionHeader(stringResource(R.string.card_settings))
-        SegmentListItem(
-            index = 0,
-            count = 1,
-            headlineContent = { Text(stringResource(R.string.card_billing_day)) },
-            supportingContent = {
-                Column {
-                    Text(billingDayLabel(billingDay))
-                    Text(
-                        stringResource(R.string.card_billing_day_help),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            },
-            modifier = Modifier.clickable { choosing = true }
-        )
-    }
-    if (choosing) {
-        ChoiceDialog(
-            title = stringResource(R.string.card_billing_day),
-            choices = listOf(Choice<Int?>(null, billingDayLabel(null))) +
-                (CardCycles.FIRST_BILLING_DAY..CardCycles.LAST_BILLING_DAY).map {
-                    Choice(it, billingDayLabel(it))
-                },
-            selected = billingDay,
-            onSelect = {
-                onSet(it)
-                choosing = false
-            },
-            onDismiss = { choosing = false }
-        )
-    }
-}
-
-@Composable
-private fun billingDayLabel(day: Int?): String = day?.let {
-    stringResource(R.string.card_billing_day_value, it)
-} ?: stringResource(R.string.card_billing_day_none)
 
 /** A payment's day, where the phone is. */
 private fun Long.toLocalDate(): LocalDate =
