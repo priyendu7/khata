@@ -14,7 +14,8 @@ import org.junit.Test
 class MakerFormTest {
     private val sms =
         "Rs.450.00 spent on HDFC Bank Credit Card x4321 at CITY PHARMACY on 2026-09-20."
-    private val form = MakerForm.start("AX-HDFCBK-S", sms, AT, knownBank = null)
+    private val guessed = MakerForm.start("AX-HDFCBK-S", sms, AT, knownBank = null)
+    private val form = guessed.unguessed()
 
     private fun index(word: String) = form.words.indexOfFirst { it.text == word }
 
@@ -26,6 +27,53 @@ class MakerFormTest {
         assertEquals(RuleAccountType.CREDIT_CARD, form.accountType)
         assertEquals("Kotak", MakerForm.start("AX-KOTAKB-S", sms, AT, "Kotak").bank)
         assertEquals("", MakerForm.start(null, sms, AT, null).senders)
+    }
+
+    @Test
+    fun opensWithTheGuessesMarked() {
+        val marked = guessed.marks.associate { it.field to guessed.markedText(it) }
+        assertEquals(
+            mapOf(
+                Field.AMOUNT to "Rs.450.00",
+                Field.ACCOUNT to "x4321",
+                Field.PAYEE to "CITY PHARMACY",
+                Field.DATE to "2026-09-20"
+            ),
+            marked
+        )
+        assertEquals("yyyy-MM-dd", guessed.dateFormat)
+        assertEquals(Field.AMOUNT, guessed.step)
+        assertTrue(guessed.isGuess(Field.AMOUNT))
+        assertTrue(guessed.canGoOn)
+    }
+
+    @Test
+    fun looksRightConfirmsEveryGuessAndGoesToTheCheck() {
+        val done = guessed.copy(bank = "HDFC Bank").confirmAll()
+
+        assertNull(done.step)
+        assertEquals(emptySet<Field>(), done.guessed)
+        val rule = (done.check(emptySet()) as RuleCheck.Valid).rule
+        val read = requireNotNull(testRule(rule, done.sender, sms, AT))
+        assertEquals(45_000L, read.amountPaise)
+        assertEquals("CITY PHARMACY", read.payee)
+        assertEquals("4321", read.accountLast4)
+        // Without an amount there's nothing to confirm.
+        assertFalse(form.canConfirmAll)
+        assertEquals(form, form.confirmAll())
+    }
+
+    @Test
+    fun fixingOneGuessKeepsTheOthers() {
+        val payee = guessed.next()
+        assertFalse(payee.isGuess(Field.AMOUNT))
+        assertTrue(payee.isGuess(Field.PAYEE))
+
+        val fixed = payee.tapInStep(index("PHARMACY"))
+        assertEquals("PHARMACY", fixed.markedText(fixed.marks.first { it.field == Field.PAYEE }))
+        assertFalse(fixed.isGuess(Field.PAYEE))
+        assertEquals(setOf(Field.ACCOUNT, Field.DATE), fixed.guessed)
+        assertTrue(fixed.isMarked(Field.AMOUNT) && fixed.isMarked(Field.DATE))
     }
 
     @Test

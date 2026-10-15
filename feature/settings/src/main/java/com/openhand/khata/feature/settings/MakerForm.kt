@@ -2,6 +2,7 @@ package com.openhand.khata.feature.settings
 
 import com.openhand.khata.core.model.SenderId
 import com.openhand.khata.sms.parser.DateFormats
+import com.openhand.khata.sms.parser.FieldGuesser
 import com.openhand.khata.sms.parser.ParserRule
 import com.openhand.khata.sms.parser.RuleAccountType
 import com.openhand.khata.sms.parser.RuleCheck
@@ -15,7 +16,8 @@ import java.util.Locale
  * details. [selection] is the run of words picked but not yet marked, as word indexes.
  *
  * Fields are marked one at a time, in [RuleMaker.Field] order: [step] is the one being marked,
- * and null once each has been marked or skipped.
+ * and null once each has been marked or skipped. The form starts with [FieldGuesser]'s guesses
+ * marked; [guessed] are the ones the user hasn't confirmed or changed yet.
  */
 data class MakerForm(
     /** Null for a pasted SMS. */
@@ -34,7 +36,8 @@ data class MakerForm(
     val fixedId: String? = null,
     val step: RuleMaker.Field? = RuleMaker.Field.AMOUNT,
     /** The step was opened again from its chip, so finishing it goes back to the rest. */
-    val revisiting: Boolean = false
+    val revisiting: Boolean = false,
+    val guessed: Set<RuleMaker.Field> = emptySet()
 ) {
     val words: List<RuleMaker.Word> = RuleMaker.words(body)
 
@@ -90,10 +93,11 @@ data class MakerForm(
             if (takesOthers) copy(selection = index..index) else tapped
         }
         val run = tapped.selection
+        // A tap changes the field, so it's no longer a guess.
         return when {
             field == null || other -> this
-            run == null -> tapped.unmark(field)
-            else -> tapped.mark(field).copy(selection = run)
+            run == null -> tapped.unmark(field).copy(guessed = guessed - field)
+            else -> tapped.mark(field).copy(selection = run, guessed = guessed - field)
         }
     }
 
@@ -104,11 +108,25 @@ data class MakerForm(
 
     fun isMarked(field: RuleMaker.Field): Boolean = marks.any { it.field == field }
 
-    /** On to the next field, or back to the rest after a step opened from its chip. */
+    /** [field] is marked with a guess the user hasn't confirmed yet. */
+    fun isGuess(field: RuleMaker.Field): Boolean = field in guessed && isMarked(field)
+
+    /** "Looks right": every guess at once, straight on to checking the rule. Needs an amount. */
+    val canConfirmAll: Boolean
+        get() = step != null && guessed.isNotEmpty() && isMarked(RuleMaker.Field.AMOUNT)
+
+    fun confirmAll(): MakerForm = if (canConfirmAll) {
+        copy(step = null, selection = null, revisiting = false, guessed = emptySet())
+    } else {
+        this
+    }
+
+    /** On to the next field (confirming its guess), or back to the rest after a chip's step. */
     fun next(): MakerForm = copy(
         step = if (revisiting) null else step?.let { fieldNumber(it.ordinal + 1) },
         selection = null,
-        revisiting = false
+        revisiting = false,
+        guessed = guessed - setOfNotNull(step)
     )
 
     /** Leaves the step's field unmarked and goes on. */
@@ -164,19 +182,24 @@ data class MakerForm(
 
     companion object {
         /**
-         * A new form for this SMS, with the direction and account type guessed from its words.
-         * [knownBank] is the bank the rules already name for [sender]; otherwise its sender ID.
+         * A new form for this SMS, with its fields, direction and account type guessed from its
+         * words ([FieldGuesser]). [knownBank] is the bank the rules already name for [sender];
+         * otherwise its sender ID.
          */
         fun start(sender: String?, body: String, receivedAt: Long, knownBank: String?): MakerForm {
             val header = sender?.let(SenderId::parse)?.header.orEmpty()
+            val guesses = FieldGuesser.guess(body)
             return MakerForm(
                 sender = sender,
                 body = body,
                 receivedAt = receivedAt,
-                direction = RuleMaker.guessDirection(body),
-                accountType = RuleMaker.guessAccountType(body),
+                marks = guesses.marks,
+                direction = guesses.direction ?: RuleMaker.guessDirection(body),
+                accountType = guesses.accountType,
                 bank = knownBank ?: header,
-                senders = header
+                senders = header,
+                dateFormat = guesses.dateFormat,
+                guessed = guesses.fields.keys
             )
         }
     }

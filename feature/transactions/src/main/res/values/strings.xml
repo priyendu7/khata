@@ -68,6 +68,17 @@
     <string name="review_unparsed_body">It has an amount, but its format is new to Khata.</string>
     <string name="review_add_by_hand">Add by hand</string>
     <string name="review_make_parser">Make a parser</string>
+    <string name="review_guess_title">Khata thinks:</string>
+    <string name="review_guess_paid">%1$s paid to %2$s</string>
+    <string name="review_guess_paid_only">%1$s paid</string>
+    <string name="review_guess_received">%1$s received from %2$s</string>
+    <string name="review_guess_received_only">%1$s received</string>
+    <string name="review_guess_refund">%1$s refund from %2$s</string>
+    <string name="review_guess_refund_only">%1$s refund</string>
+    <string name="review_guess_account">A/c ··%1$s</string>
+    <string name="review_guess_question">Is that right?</string>
+    <string name="review_guess_yes">Yes, save</string>
+    <string name="review_guess_fix">Fix it</string>
     <string name="review_dismiss">Dismiss</string>
     <string name="review_copy">Copy for a bug report</string>
     <string name="review_copied_title">SMS copied</string>
