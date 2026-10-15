@@ -127,7 +127,6 @@
     <string name="card_statement_total">कुल देय</string>
     <string name="card_statement_minimum">न्यूनतम देय</string>
     <string name="card_statement_due_date">देय तिथि</string>
-    <string name="card_statement_status">स्थिति</string>
     <string name="card_payments">भुगतान</string>
     <string name="card_payment">%2$s को %1$s</string>
     <string name="card_no_payments">अभी कोई भुगतान नहीं</string>

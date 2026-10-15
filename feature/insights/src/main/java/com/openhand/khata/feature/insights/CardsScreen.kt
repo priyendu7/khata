@@ -1,7 +1,9 @@
 package com.openhand.khata.feature.insights
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -10,20 +12,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.data.CardSummary
 import com.openhand.khata.core.data.DebitCardSummary
+import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.ui.EmptyState
+import com.openhand.khata.core.ui.IconTile
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
 import com.openhand.khata.core.ui.SectionHeader
-import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.Segments
+import com.openhand.khata.core.ui.StatusChip
+import com.openhand.khata.core.ui.SurfaceCard
+import com.openhand.khata.core.ui.Tone
 import com.openhand.khata.core.ui.segment
 import java.time.LocalDate
 
@@ -67,12 +75,14 @@ fun CardsContent(
                 title = stringResource(R.string.cards_empty_title),
                 body = stringResource(R.string.cards_empty_body)
             )
-            else -> Column(Modifier.padding(horizontal = Segments.Inset)) {
+            else -> Column(
+                Modifier.padding(start = Segments.Inset, end = Segments.Inset, bottom = 24.dp)
+            ) {
                 if (state.credit.isNotEmpty()) {
                     SectionHeader(stringResource(R.string.cards_credit))
-                    state.credit.forEachIndexed { index, card ->
-                        CreditCardRow(card, state.today, index, state.credit.size) {
-                            onOpenCreditCard(card.card.id)
+                    Column(verticalArrangement = Arrangement.spacedBy(CARD_GAP)) {
+                        state.credit.forEach { card ->
+                            CreditCardRow(card, state.today) { onOpenCreditCard(card.card.id) }
                         }
                     }
                     SectionHeader(stringResource(R.string.card_reminder_section))
@@ -80,9 +90,9 @@ fun CardsContent(
                 }
                 if (state.debit.isNotEmpty()) {
                     SectionHeader(stringResource(R.string.cards_debit))
-                    state.debit.forEachIndexed { index, card ->
-                        DebitCardRow(card, index, state.debit.size) {
-                            onOpenDebitCard(card.card.id)
+                    Column(verticalArrangement = Arrangement.spacedBy(CARD_GAP)) {
+                        state.debit.forEach { card ->
+                            DebitCardRow(card) { onOpenDebitCard(card.card.id) }
                         }
                     }
                 }
@@ -91,64 +101,71 @@ fun CardsContent(
     }
 }
 
-/** "ICICI ··1234", "₹35,300 due 23 Oct" and its status; before any statement, this cycle. */
+/** "ICICI ··1234" and its status, then "₹35,300 due 23 Oct"; before any statement, this cycle. */
 @Composable
-private fun CreditCardRow(
-    summary: CardSummary,
-    today: LocalDate,
-    index: Int,
-    count: Int,
-    onClick: () -> Unit
-) {
+private fun CreditCardRow(summary: CardSummary, today: LocalDate, onClick: () -> Unit) {
     val bill = summary.latest
     val spent = stringResource(
         R.string.cards_spent_this_cycle,
         Money.format(summary.currentSpentPaise)
     )
-    SegmentListItem(
-        index = index,
-        count = count,
-        headlineContent = { Text(cardLabel(summary.card)) },
-        supportingContent = {
-            Column {
-                if (bill != null) Text(dueLabel(bill))
-                Text(spent)
-            }
-        },
-        trailingContent = bill?.let {
-            {
-                Text(
+    SurfaceCard(onClick = onClick) {
+        CardHeading(summary.card) {
+            bill?.let {
+                // Shares the line with the name, so a long status can't push it off.
+                StatusChip(
                     statusLabel(it),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = BillTone.of(it, today).color()
+                    BillTone.of(it, today).tone(),
+                    Modifier.weight(1f, fill = false)
                 )
             }
-        },
-        modifier = Modifier.clickable(onClick = onClick)
-    )
+        }
+        if (bill != null) {
+            Text(dueLabel(bill), style = MaterialTheme.typography.headlineSmall)
+        }
+        Text(
+            spent,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
 /** "HDFC Debit ··5678", its bank account and "₹12,400 this month". */
 @Composable
-private fun DebitCardRow(summary: DebitCardSummary, index: Int, count: Int, onClick: () -> Unit) {
+private fun DebitCardRow(summary: DebitCardSummary, onClick: () -> Unit) {
     val linked = summary.linkedAccount?.let {
         stringResource(R.string.cards_linked_to, accountLabel(it))
     } ?: stringResource(R.string.cards_not_linked)
-    SegmentListItem(
-        index = index,
-        count = count,
-        headlineContent = { Text(cardLabel(summary.card)) },
-        supportingContent = {
-            Column {
-                Text(linked)
-                Text(
-                    stringResource(
-                        R.string.cards_spent_this_month,
-                        Money.format(summary.spentPaise)
-                    )
-                )
-            }
-        },
-        modifier = Modifier.clickable(onClick = onClick)
-    )
+    SurfaceCard(onClick = onClick) {
+        CardHeading(summary.card) {}
+        Text(
+            stringResource(R.string.cards_spent_this_month, Money.format(summary.spentPaise)),
+            style = MaterialTheme.typography.titleMedium
+        )
+        Text(
+            linked,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
+
+/** A card's tile and name, with [trailing] (its status) at the end. */
+@Composable
+private fun CardHeading(card: Account, trailing: @Composable RowScope.() -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        IconTile(painterResource(UiR.drawable.ic_credit_card), Tone.NEUTRAL)
+        Text(
+            cardLabel(card),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.weight(1f)
+        )
+        trailing()
+    }
+}
+
+private val CARD_GAP = 10.dp

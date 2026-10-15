@@ -78,7 +78,7 @@ fun WelcomeContent(
 ) {
     var smsStep by rememberSaveable { mutableStateOf(false) }
     // Always Khata's red and marigold, not the phone's dynamic colours: it's the first impression.
-    KhataTheme(dynamicColor = false) {
+    KhataTheme {
         MarigoldInTheDark {
             Surface(color = MaterialTheme.colorScheme.background) {
                 val modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)

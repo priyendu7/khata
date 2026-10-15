@@ -23,9 +23,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.StatementSummary
 import com.openhand.khata.core.model.TransactionFilter
+import com.openhand.khata.core.ui.AmountText
 import com.openhand.khata.core.ui.SectionHeader
 import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.Segments
+import com.openhand.khata.core.ui.StatusChip
 import com.openhand.khata.core.ui.SubScreen
 import java.time.Instant
 import java.time.LocalDate
@@ -103,19 +105,18 @@ private fun NoStatementCard() {
 private fun StatementCard(bill: StatementSummary, state: CreditCardState) {
     val statement = bill.statement
     ChartCard(stringResource(R.string.card_statement_title)) {
-        DetailLine(
+        // The total, large, with its status beside it, as the design leads with them.
+        Text(
             stringResource(R.string.card_statement_total),
-            Money.format(statement.totalPaise)
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        AmountText(statement.totalPaise, style = MaterialTheme.typography.displaySmall)
+        StatusChip(statusLabel(bill), BillTone.of(bill, state.today).tone())
         statement.minDuePaise?.let {
             DetailLine(stringResource(R.string.card_statement_minimum), Money.format(it))
         }
         DetailLine(stringResource(R.string.card_statement_due_date), longDate(statement.dueDate))
-        DetailLine(
-            stringResource(R.string.card_statement_status),
-            statusLabel(bill),
-            BillTone.of(bill, state.today).color()
-        )
         Text(stringResource(R.string.card_payments), style = MaterialTheme.typography.titleSmall)
         if (bill.payments.isEmpty()) {
             Text(
@@ -210,11 +211,7 @@ private fun PastStatements(state: CreditCardState, onShow: (Long?) -> Unit) {
                 headlineContent = { Text(longDate(bill.statement.statementDate)) },
                 supportingContent = { Text(Money.format(bill.statement.totalPaise)) },
                 trailingContent = {
-                    Text(
-                        statusLabel(bill),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = BillTone.of(bill, state.today).color()
-                    )
+                    StatusChip(statusLabel(bill), BillTone.of(bill, state.today).tone())
                 },
                 modifier = Modifier.clickable { onShow(bill.statement.id) }
             )

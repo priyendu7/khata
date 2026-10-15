@@ -90,8 +90,9 @@ class CardsContentTest {
         compose.onNodeWithText("ICICI ··1234").assertIsDisplayed()
         compose.onNodeWithText("₹35,300 due 23 Oct").assertIsDisplayed()
         compose.onNodeWithText("Not paid").assertIsDisplayed()
-        compose.onNodeWithText("Partly paid (₹5,000 of ₹20,000)").assertIsDisplayed()
-        compose.onNodeWithText("Paid").assertIsDisplayed()
+        compose.onNodeWithText("Partly paid (₹5,000 of ₹20,000)").performScrollTo()
+            .assertIsDisplayed()
+        compose.onNodeWithText("Paid").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Overdue").performScrollTo().assertIsDisplayed()
     }
 

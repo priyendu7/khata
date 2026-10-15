@@ -19,6 +19,7 @@
 
     <!-- Add and edit -->
     <string name="transactions_add">लेन-देन जोड़ें</string>
+    <string name="transactions_add_short">जोड़ें</string>
     <string name="transactions_edit">लेन-देन बदलें</string>
     <string name="transfer_side_out">इस खाते से पैसे गए</string>
     <string name="transfer_side_in">इस खाते में पैसे आए</string>

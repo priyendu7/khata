@@ -36,16 +36,16 @@ class SegmentedListTest {
     @get:Rule val compose = createComposeRule()
 
     @Test
-    fun darkListIsBlackOnNearBlack() = checkColours(dark = true)
+    fun darkListIsOneCardWithHairlines() = checkColours(dark = true)
 
     @Test
-    fun lightListIsWhiteOnGrey() = checkColours(dark = false)
+    fun lightListIsOneCardWithHairlines() = checkColours(dark = false)
 
     @Test
     fun itemsStayClickable() {
         compose.setContent {
             var clicked by remember { mutableStateOf("") }
-            KhataTheme(darkTheme = true, dynamicColor = false) {
+            KhataTheme(darkTheme = true) {
                 Column {
                     ROWS.forEachIndexed { index, row ->
                         SegmentListItem(
@@ -63,14 +63,16 @@ class SegmentedListTest {
         compose.onNodeWithText("clicked:Second").assertExists()
     }
 
-    /** Down the left of the list: three runs of the card colour, with the background between. */
+    /** Down the left of the list: three runs of the card colour, with a hairline between. */
     private fun checkColours(dark: Boolean) {
         var background = Color.Unspecified
         var card = Color.Unspecified
+        var line = Color.Unspecified
         compose.setContent {
-            KhataTheme(darkTheme = dark, dynamicColor = false) {
+            KhataTheme(darkTheme = dark) {
                 background = MaterialTheme.colorScheme.background
                 card = MaterialTheme.colorScheme.surfaceContainerLowest
+                line = MaterialTheme.colorScheme.outlineVariant
                 Column(
                     Modifier
                         .testTag(LIST)
@@ -87,13 +89,13 @@ class SegmentedListTest {
         // Inside the items, left of their text.
         val x = with(compose.density) { (Segments.Inset + INSIDE).roundToPx() }
         val runs = (0 until pixels.height).map { pixels[x, it] }
-            .filter { it == card || it == background }
+            .filter { it == card || it == line }
             .fold(emptyList<Color>()) { seen, color ->
                 if (seen.lastOrNull() == color) seen else seen + color
             }
         assertEquals(ROWS.size, runs.count { it == card })
         assertEquals(
-            listOf(card, background, card, background, card),
+            listOf(card, line, card, line, card),
             runs.dropWhile {
                 it != card
             }.dropLastWhile {

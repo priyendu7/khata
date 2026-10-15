@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.ui.incomeColor
+import com.openhand.khata.core.ui.segmentCardBorder
 import com.openhand.khata.core.ui.segmentCardColors
 import java.time.Instant
 import java.time.ZoneId
@@ -36,7 +37,11 @@ internal fun PreviewStep(
     onChooseFile: () -> Unit
 ) {
     val preview = state.preview
-    Card(Modifier.fillMaxWidth(), colors = segmentCardColors()) {
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = segmentCardColors(),
+        border = segmentCardBorder()
+    ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 pluralStringResource(R.plurals.preview_new, preview.newCount, preview.newCount),

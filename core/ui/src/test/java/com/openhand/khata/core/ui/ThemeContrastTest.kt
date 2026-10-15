@@ -1,62 +1,45 @@
 package com.openhand.khata.core.ui
 
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.test.core.app.ApplicationProvider
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
-/** WCAG AA on both surfaces (the background and the cards), in both modes, for both palettes. */
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+/** WCAG AA on both surfaces (the background and the cards), in both modes. */
 class ThemeContrastTest {
-    private val context get() = ApplicationProvider.getApplicationContext<android.content.Context>()
-
     @Test
-    fun darkModeIsNearBlackBehindBlackCards() {
-        val scheme = KhataDark.withKhataSurfaces(dark = true)
-        assertEquals(Color(0xFF121212), scheme.background)
-        assertEquals(Color.Black, scheme.surfaceContainerLowest)
+    fun cardsSitAboveTheBackground() {
+        assertTrue(KhataDark.surfaceContainerLowest.luminance() > KhataDark.background.luminance())
+        assertTrue(
+            KhataLight.surfaceContainerLowest.luminance() > KhataLight.background.luminance()
+        )
     }
 
     @Test
-    fun lightModeIsGreyBehindWhiteCards() {
-        val scheme = KhataLight.withKhataSurfaces(dark = false)
-        assertTrue(scheme.background.luminance() < 1f)
-        assertEquals(Color.White, scheme.surfaceContainerLowest)
-    }
-
-    @Test
-    fun dynamicColourKeepsTheWallpaperAccents() {
-        val dynamic = dynamicDarkColorScheme(context)
-        assertEquals(dynamic.primary, dynamic.withKhataSurfaces(dark = true).primary)
+    fun darkIsDarkAndLightIsLight() {
+        assertTrue(KhataDark.background.luminance() < HALF)
+        assertTrue(KhataLight.background.luminance() > HALF)
     }
 
     @Test
     fun khataColoursMeetContrast() {
-        assertContrast(KhataDark.withKhataSurfaces(dark = true), "Khata dark")
-        assertContrast(KhataLight.withKhataSurfaces(dark = false), "Khata light")
+        assertContrast(KhataDark, "Khata dark")
+        assertContrast(KhataLight, "Khata light")
     }
 
     @Test
-    fun dynamicColoursMeetContrast() {
-        assertContrast(dynamicDarkColorScheme(context).withKhataSurfaces(dark = true), "dark")
-        assertContrast(dynamicLightColorScheme(context).withKhataSurfaces(dark = false), "light")
+    fun accentButtonsAreReadable() {
+        listOf(KhataDark, KhataLight).forEach {
+            assertAtLeast(TEXT, it.onPrimary, it.primary, "button")
+        }
     }
 
     private fun assertContrast(scheme: ColorScheme, name: String) {
         listOf(scheme.background, scheme.surfaceContainerLowest).forEach { surface ->
-            // Text, including the section names drawn in the primary colour.
-            listOf(scheme.onSurface, scheme.onSurfaceVariant, scheme.primary).forEach {
-                assertAtLeast(TEXT, it, surface, name)
-            }
+            // Text, including links and amounts drawn in the accent.
+            listOf(scheme.onSurface, scheme.onSurfaceVariant, scheme.primary, scheme.error)
+                .forEach { assertAtLeast(TEXT, it, surface, name) }
             // Icons, outlines and dividers that carry meaning.
             assertAtLeast(GRAPHICS, scheme.outline, surface, name)
         }
@@ -76,5 +59,6 @@ class ThemeContrastTest {
         const val TEXT = 4.5f
         const val GRAPHICS = 3f
         const val FLARE = 0.05f
+        const val HALF = 0.5f
     }
 }

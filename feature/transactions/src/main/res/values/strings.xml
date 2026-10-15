@@ -17,6 +17,7 @@
 
     <!-- Add and edit -->
     <string name="transactions_add">Add transaction</string>
+    <string name="transactions_add_short">Add</string>
     <string name="transactions_edit">Edit transaction</string>
     <string name="transfer_side_out">Money out of this account</string>
     <string name="transfer_side_in">Money into this account</string>

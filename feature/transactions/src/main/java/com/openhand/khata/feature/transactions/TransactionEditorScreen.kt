@@ -21,6 +21,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,12 +31,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -51,6 +55,7 @@ import com.openhand.khata.core.ui.DateDialog
 import com.openhand.khata.core.ui.NewCategoryRow
 import com.openhand.khata.core.ui.PickerField
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.SegmentedTabs
 import com.openhand.khata.core.ui.SubScreen
 import com.openhand.khata.core.ui.TagInput
 import com.openhand.khata.core.ui.TimeDialog
@@ -58,6 +63,7 @@ import com.openhand.khata.core.ui.categoryName
 import com.openhand.khata.core.ui.dateLabel
 import com.openhand.khata.core.ui.defaultCategoryNames
 import com.openhand.khata.core.ui.focusOnAppear
+import com.openhand.khata.core.ui.incomeColor
 import com.openhand.khata.core.ui.label
 import com.openhand.khata.core.ui.monthLabel
 import com.openhand.khata.core.ui.newCategory
@@ -355,18 +361,14 @@ private fun PayeeMemory(form: EditorForm, onChange: (EditorForm) -> Unit) {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DirectionChips(selected: Direction, onSelect: (Direction) -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Direction.entries.forEach { direction ->
-            FilterChip(
-                selected = direction == selected,
-                onClick = { onSelect(direction) },
-                label = { Text(stringResource(direction.label())) }
-            )
-        }
-    }
+    SegmentedTabs(
+        options = Direction.entries,
+        selected = selected,
+        label = { stringResource(it.label()) },
+        onSelect = onSelect
+    )
 }
 
 /** Which way a transfer went on its account (#113); neither is picked when it isn't known. */
@@ -401,12 +403,27 @@ private fun AmountField(
     onChange: (String) -> Unit
 ) {
     val error = form.amountError.takeIf { showErrors }
-    OutlinedTextField(
+    val incoming = form.direction == Direction.CREDIT || form.direction == Direction.REFUND
+    val big = MaterialTheme.typography.displaySmall
+    // Large and centred, as the one thing this screen is about; no box around it.
+    TextField(
         value = form.amount,
         onValueChange = { if (EditorForm.isAmountInput(it)) onChange(it) },
         label = { Text(stringResource(R.string.field_amount)) },
-        prefix = { Text("₹") },
-        textStyle = MaterialTheme.typography.headlineSmall,
+        prefix = {
+            Text("₹", style = big, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        },
+        textStyle = big.copy(
+            textAlign = TextAlign.Center,
+            color = if (incoming) incomeColor() else MaterialTheme.colorScheme.onSurface
+        ),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            errorContainerColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+        ),
         isError = error != null,
         supportingText = error?.let { { Text(stringResource(it.message())) } },
         singleLine = true,

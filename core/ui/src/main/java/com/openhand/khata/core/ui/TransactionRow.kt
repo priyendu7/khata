@@ -8,7 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.TransactionListItem
 import java.time.Instant
@@ -40,9 +42,16 @@ fun TransactionRow(
     SegmentListItem(
         index = index,
         count = count,
-        leadingContent = { CategoryBadge(item.category.icon, item.category.color) },
+        leadingContent = {
+            CategoryBadge(item.category.icon, item.category.color, size = 42.dp)
+        },
         headlineContent = {
-            Text(item.payeeName ?: category, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                item.payeeName ?: category,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         },
         supportingContent = if (details.isEmpty()) {
             null
@@ -58,7 +67,8 @@ fun TransactionRow(
                 )
                 Text(
                     if (showDay) dayLabel(at.toLocalDate()) + " · " + time else time,
-                    style = MaterialTheme.typography.labelSmall
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 item.countsIn?.let {
                     Text(

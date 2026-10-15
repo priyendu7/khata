@@ -2,7 +2,6 @@ package com.openhand.khata.feature.insights
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,9 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.CategoryBreakdown
 import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.Money
+import com.openhand.khata.core.ui.SegmentedTabs
+import com.openhand.khata.core.ui.ShareBar
 import com.openhand.khata.core.ui.categoryName
 
 /** The category donut, its period switch and its legend (PRD feature 5). */
@@ -53,18 +52,13 @@ internal fun DonutCard(
 
 @Composable
 internal fun PeriodChips(selected: ChartPeriod, onSelect: (ChartPeriod) -> Unit) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
-    ) {
-        ChartPeriod.entries.forEach { period ->
-            FilterChip(
-                selected = period == selected,
-                onClick = { onSelect(period) },
-                label = { Text(stringResource(period.label())) }
-            )
-        }
-    }
+    SegmentedTabs(
+        options = ChartPeriod.entries,
+        selected = selected,
+        label = { stringResource(it.label()) },
+        onSelect = onSelect,
+        trackColor = MaterialTheme.colorScheme.background
+    )
 }
 
 private fun ChartPeriod.label(): Int = when (this) {
@@ -145,7 +139,10 @@ internal fun <K> SpendingDonut(
                 .align(Alignment.CenterHorizontally)
                 .padding(vertical = 8.dp)
         )
-        slices.forEach { LegendRow(it) { onOpen(it.key) } }
+        val biggest = slices.maxOfOrNull { it.paise }?.takeIf { it > 0 }
+        slices.forEach { entry ->
+            LegendRow(entry, biggest?.let { entry.paise.toFloat() / it }) { onOpen(entry.key) }
+        }
         if (refunded.isNotEmpty()) RefundedSection(refunded, onOpen)
     }
 }
@@ -164,7 +161,7 @@ private fun <K> RefundedSection(entries: List<LegendEntry<K>>, onOpen: (K) -> Un
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
-    entries.forEach { LegendRow(it) { onOpen(it.key) } }
+    entries.forEach { LegendRow(it, bar = null) { onOpen(it.key) } }
 }
 
 @Composable
@@ -176,34 +173,42 @@ private fun CategorySpend.toEntry(theme: ChartTheme, charted: Long?) = LegendEnt
     share = charted?.let { shareOf(spentPaise, it) }
 )
 
-/** A legend line; TalkBack reads it as name, amount and share, and it opens the transactions. */
+/**
+ * A legend line, with a bar under it of [bar] (its share of the biggest entry) when it has one.
+ * TalkBack reads it as name, amount and share, and it opens the transactions.
+ */
 @Composable
-private fun LegendRow(entry: LegendEntry<*>, onClick: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+private fun LegendRow(entry: LegendEntry<*>, bar: Float?, onClick: () -> Unit) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 4.dp)
     ) {
-        Box(Modifier.size(12.dp).background(entry.color, CircleShape))
-        Text(
-            entry.name,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f)
-        )
-        Column(horizontalAlignment = Alignment.End) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(Modifier.size(10.dp).background(entry.color, RoundedCornerShape(3.dp)))
+            Text(
+                entry.name,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
+            )
+            entry.share?.let {
+                Text(
+                    stringResource(R.string.insights_share, it),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Text(
                 Money.format(entry.paise),
                 style = MaterialTheme.typography.titleSmall,
                 maxLines = 1,
                 softWrap = false
             )
-            entry.share?.let {
-                Text(
-                    stringResource(R.string.insights_share, it),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        }
+        bar?.let {
+            ShareBar(it, entry.color, Modifier.padding(start = 20.dp), height = 4.dp)
         }
     }
 }

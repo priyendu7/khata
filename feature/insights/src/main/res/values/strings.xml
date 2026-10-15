@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="home_this_month">This month</string>
+    <!-- Home's app mark: the rupee sign on the accent. -->
+    <string name="home_mark" translatable="false">₹</string>
     <string name="home_spent">Spent</string>
     <string name="home_income">Income</string>
     <string name="home_empty_title">No transactions yet</string>
@@ -143,7 +145,6 @@
     <string name="card_statement_total">Total due</string>
     <string name="card_statement_minimum">Minimum due</string>
     <string name="card_statement_due_date">Due date</string>
-    <string name="card_statement_status">Status</string>
     <string name="card_payments">Payments</string>
     <!-- A payment towards the bill, e.g. "₹5,000 on 12 Oct 2026". -->
     <string name="card_payment">%1$s on %2$s</string>

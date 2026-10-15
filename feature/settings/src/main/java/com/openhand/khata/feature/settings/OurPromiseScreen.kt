@@ -19,7 +19,7 @@ fun OurPromiseScreen(@DrawableRes appIcon: Int, onBack: () -> Unit) {
     // Changing it recreates the activity, so this is read afresh in the new language.
     var language by remember { mutableStateOf(AppLanguage.current()) }
     // Khata's own colours, as on the welcome.
-    KhataTheme(dynamicColor = false) { Promise(appIcon, onBack, language, { language = it }) }
+    KhataTheme { Promise(appIcon, onBack, language, { language = it }) }
 }
 
 @Composable

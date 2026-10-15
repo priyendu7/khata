@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.SubScreen
+import com.openhand.khata.core.ui.segmentCardBorder
 import com.openhand.khata.core.ui.segmentCardColors
 import com.openhand.khata.sms.ingest.SmsInbox
 import com.openhand.khata.sms.parser.CodeCheck
@@ -150,7 +151,11 @@ fun AddParserContent(
 /** Most people make a rule from an SMS on the phone rather than paste one. */
 @Composable
 private fun MakeCard(onMake: () -> Unit) {
-    Card(Modifier.fillMaxWidth(), colors = segmentCardColors()) {
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = segmentCardColors(),
+        border = segmentCardBorder()
+    ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 stringResource(R.string.parser_add_make_title),
@@ -172,7 +177,11 @@ internal fun ErrorText(text: String) {
 
 @Composable
 private fun RuleSummary(rule: CompiledRule, replaces: Boolean) {
-    Card(Modifier.fillMaxWidth(), colors = segmentCardColors()) {
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = segmentCardColors(),
+        border = segmentCardBorder()
+    ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(rule.rule.bank, style = MaterialTheme.typography.titleMedium)
             Text(rule.rule.id, style = MaterialTheme.typography.bodyMedium)

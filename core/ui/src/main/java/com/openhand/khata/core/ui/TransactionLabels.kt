@@ -35,6 +35,11 @@ fun dateLabel(date: LocalDate, today: LocalDate = LocalDate.now()): String {
     return date.format(DateTimeFormatter.ofPattern(pattern, locale()))
 }
 
+/** "Friday, 16 October": today, as Home's header shows it. */
+@Composable
+fun longDateLabel(date: LocalDate): String =
+    date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", locale()))
+
 /** "October", with the year added when it isn't this year. */
 @Composable
 fun monthLabel(month: YearMonth, today: LocalDate = LocalDate.now()): String {
