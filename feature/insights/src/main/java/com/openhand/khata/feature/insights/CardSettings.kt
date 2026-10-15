@@ -15,12 +15,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import com.openhand.khata.core.model.CardCycles
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
+import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.RowChevron
+import com.openhand.khata.core.ui.RowIcon
 import com.openhand.khata.core.ui.SectionHeader
 import com.openhand.khata.core.ui.SegmentListItem
 import com.openhand.khata.core.ui.Segments
+import com.openhand.khata.core.ui.Tone
 
 /** The card's billing day (#154) and its due date reminders (#156). */
 @Composable
@@ -43,7 +48,10 @@ private fun ReminderSetting(state: CreditCardState, onSet: (Boolean) -> Unit) {
     SegmentListItem(
         index = 1,
         count = CARD_SETTINGS,
-        headlineContent = { Text(stringResource(R.string.card_reminder_setting)) },
+        leadingContent = { RowIcon(UiR.drawable.ic_notifications, Tone.INFO) },
+        headlineContent = {
+            Text(stringResource(R.string.card_reminder_setting), fontWeight = FontWeight.SemiBold)
+        },
         supportingContent = {
             Text(
                 if (settings.enabled) {
@@ -71,7 +79,11 @@ private fun BillingDaySetting(billingDay: Int?, onSet: (Int?) -> Unit) {
     SegmentListItem(
         index = 0,
         count = CARD_SETTINGS,
-        headlineContent = { Text(stringResource(R.string.card_billing_day)) },
+        leadingContent = { RowIcon(UiR.drawable.ic_calendar, Tone.INFO) },
+        headlineContent = {
+            Text(stringResource(R.string.card_billing_day), fontWeight = FontWeight.SemiBold)
+        },
+        trailingContent = { RowChevron() },
         supportingContent = {
             Column {
                 Text(billingDayLabel(billingDay))

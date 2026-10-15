@@ -2,6 +2,8 @@ package com.openhand.khata.feature.insights
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -88,7 +90,9 @@ class CardsContentTest {
         show()
 
         compose.onNodeWithText("ICICI ··1234").assertIsDisplayed()
-        compose.onNodeWithText("₹35,300 due 23 Oct").assertIsDisplayed()
+        // The statement's total, and its due date beside it.
+        compose.onAllNodesWithText("Statement due").onFirst().assertIsDisplayed()
+        compose.onNodeWithText("23 Oct").assertIsDisplayed()
         compose.onNodeWithText("Not paid").assertIsDisplayed()
         compose.onNodeWithText("Partly paid (₹5,000 of ₹20,000)").performScrollTo()
             .assertIsDisplayed()
@@ -101,7 +105,8 @@ class CardsContentTest {
         show()
 
         compose.onNodeWithText("Kotak ··3333").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("₹8,120 spent this cycle").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Spent this cycle").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("₹8,120").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -120,7 +125,7 @@ class CardsContentTest {
         var debitCard: Long? = null
         show(onCredit = { credit = it }, onDebit = { debitCard = it })
 
-        compose.onNodeWithText("Axis ··5678").performClick()
+        compose.onNodeWithText("Axis ··5678").performScrollTo().performClick()
         compose.onNodeWithText("HDFC Debit ··5678").performScrollTo().performClick()
 
         assertEquals(2L, credit)

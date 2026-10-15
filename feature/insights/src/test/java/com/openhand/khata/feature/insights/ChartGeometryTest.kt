@@ -34,6 +34,16 @@ class ChartGeometryTest {
     }
 
     @Test
+    fun axisAmountsAreShortInLakhsAndCrores() {
+        assertEquals("₹0", compactRupees(0))
+        assertEquals("₹500", compactRupees(500_00))
+        assertEquals("₹50K", compactRupees(50_000_00))
+        assertEquals("₹2L", compactRupees(2_00_000_00))
+        assertEquals("₹1.5L", compactRupees(1_50_000_00))
+        assertEquals("₹1.2Cr", compactRupees(1_20_00_000_00))
+    }
+
+    @Test
     fun axisTicksAreRoundAndCoverTheMax() {
         assertEquals(listOf(0L, 100L), axisTicks(0))
         assertEquals(listOf(0L, 100L), axisTicks(1))

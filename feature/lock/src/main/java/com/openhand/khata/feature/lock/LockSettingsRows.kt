@@ -1,5 +1,6 @@
 package com.openhand.khata.feature.lock
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Switch
@@ -9,11 +10,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.security.lock.LockMethod
 import com.openhand.khata.core.security.lock.LockTimeout
+import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.RowChevron
+import com.openhand.khata.core.ui.RowIcon
 import com.openhand.khata.core.ui.SegmentListItem
+import com.openhand.khata.core.ui.Tone
 
 /** The Security rows of Settings: App lock, which opens [LockSettingsPage], and Block screenshots. */
 @Composable
@@ -31,8 +37,12 @@ fun LockSettingsRows(
     SegmentListItem(
         index = 0,
         count = 2,
-        headlineContent = { Text(stringResource(R.string.settings_app_lock)) },
+        leadingContent = { RowIcon(UiR.drawable.ic_lock, Tone.INFO) },
+        headlineContent = {
+            Text(stringResource(R.string.settings_app_lock), fontWeight = FontWeight.SemiBold)
+        },
         supportingContent = { Text(lockSummary(state)) },
+        trailingContent = { RowChevron() },
         modifier = Modifier.clickable(onClick = onOpenLock)
     )
     SwitchRow(
@@ -41,7 +51,8 @@ fun LockSettingsRows(
         checked = state.blockScreenshots,
         onCheckedChange = onBlockScreenshots,
         index = 1,
-        count = 2
+        count = 2,
+        icon = UiR.drawable.ic_shield
     )
 }
 
@@ -72,12 +83,15 @@ internal fun SwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     index: Int,
-    count: Int
+    count: Int,
+    /** Drawn as a tile before the title, as on the Settings tab. */
+    @DrawableRes icon: Int? = null
 ) {
     SegmentListItem(
         index = index,
         count = count,
-        headlineContent = { Text(title) },
+        leadingContent = icon?.let { { RowIcon(it, Tone.INFO) } },
+        headlineContent = { Text(title, fontWeight = FontWeight.SemiBold) },
         supportingContent = { Text(summary) },
         trailingContent = { Switch(checked = checked, onCheckedChange = null) },
         modifier = Modifier.toggleable(

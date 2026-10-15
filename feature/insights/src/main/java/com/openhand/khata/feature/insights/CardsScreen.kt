@@ -1,12 +1,16 @@
 package com.openhand.khata.feature.insights
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -14,7 +18,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -23,17 +30,18 @@ import com.openhand.khata.core.data.CardSummary
 import com.openhand.khata.core.data.DebitCardSummary
 import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Money
+import com.openhand.khata.core.ui.AmountText
 import com.openhand.khata.core.ui.EmptyState
-import com.openhand.khata.core.ui.IconTile
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
 import com.openhand.khata.core.ui.SectionHeader
 import com.openhand.khata.core.ui.Segments
+import com.openhand.khata.core.ui.StackedBar
 import com.openhand.khata.core.ui.StatusChip
 import com.openhand.khata.core.ui.SurfaceCard
-import com.openhand.khata.core.ui.Tone
 import com.openhand.khata.core.ui.segment
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 /** Cards tab (#155), wired to its [CardsViewModel]. The rows open each card's page by its id. */
 @Composable
@@ -79,6 +87,7 @@ fun CardsContent(
                 Modifier.padding(start = Segments.Inset, end = Segments.Inset, bottom = 24.dp)
             ) {
                 if (state.credit.isNotEmpty()) {
+                    DueSummary(state)
                     SectionHeader(stringResource(R.string.cards_credit))
                     Column(verticalArrangement = Arrangement.spacedBy(CARD_GAP)) {
                         state.credit.forEach { card ->
@@ -101,14 +110,48 @@ fun CardsContent(
     }
 }
 
-/** "ICICI ··1234" and its status, then "₹35,300 due 23 Oct"; before any statement, this cycle. */
+/**
+ * What's owed across the cards with an unpaid bill, as one total and a bar split by card, and
+ * which is due next. Nothing when every bill is paid.
+ */
+@Composable
+private fun DueSummary(state: CardsState) {
+    val unpaid = state.credit.mapNotNull { card ->
+        card.latest?.takeIf { !it.status.isPaid && it.owedPaise > 0 }?.let { card to it }
+    }
+    if (unpaid.isEmpty()) return
+    val next = unpaid.minBy { (_, bill) -> bill.statement.dueDate }
+    val days = ChronoUnit.DAYS.between(state.today, next.second.statement.dueDate)
+    SurfaceCard(Modifier.padding(top = 4.dp)) {
+        Text(
+            pluralStringResource(R.plurals.cards_due_across, unpaid.size, unpaid.size),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        AmountText(
+            unpaid.sumOf { (_, bill) -> bill.owedPaise },
+            style = MaterialTheme.typography.displaySmall
+        )
+        val tones = unpaid.map { (_, bill) -> BillTone.of(bill, state.today).color() }
+        StackedBar(
+            unpaid.mapIndexed { i, (_, bill) -> bill.owedPaise.toFloat() to tones[i] },
+            height = 8.dp
+        )
+        Text(
+            stringResource(R.string.cards_next_due, cardLabel(next.first.card), dueIn(days)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+/**
+ * A credit card: its chip, name and status, then what the statement wants and by when. Before
+ * any statement, what this cycle has spent so far.
+ */
 @Composable
 private fun CreditCardRow(summary: CardSummary, today: LocalDate, onClick: () -> Unit) {
     val bill = summary.latest
-    val spent = stringResource(
-        R.string.cards_spent_this_cycle,
-        Money.format(summary.currentSpentPaise)
-    )
     SurfaceCard(onClick = onClick) {
         CardHeading(summary.card) {
             bill?.let {
@@ -121,14 +164,57 @@ private fun CreditCardRow(summary: CardSummary, today: LocalDate, onClick: () ->
             }
         }
         if (bill != null) {
-            Text(dueLabel(bill), style = MaterialTheme.typography.headlineSmall)
+            LabelledPair(
+                stringResource(R.string.cards_statement_due),
+                Money.format(bill.statement.totalPaise),
+                stringResource(R.string.card_statement_due_date),
+                shortDate(bill.statement.dueDate),
+                BillTone.of(bill, today).color()
+            )
+        } else {
+            val cycle = summary.currentCycle
+            LabelledPair(
+                stringResource(R.string.cards_spent_cycle_label),
+                Money.format(summary.currentSpentPaise),
+                stringResource(R.string.card_this_cycle),
+                stringResource(R.string.card_cycle, shortDate(cycle.first), shortDate(cycle.last)),
+                MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
-        Text(
-            spent,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
+}
+
+/** A large amount under its label on the left, a smaller value under its label on the right. */
+@Composable
+private fun LabelledPair(
+    label: String,
+    amount: String,
+    rightLabel: String,
+    right: String,
+    rightColor: Color
+) {
+    Row(verticalAlignment = Alignment.Bottom) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            SmallLabel(label)
+            Text(amount, style = MaterialTheme.typography.headlineSmall, maxLines = 1)
+        }
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            SmallLabel(rightLabel)
+            Text(right, style = MaterialTheme.typography.titleSmall, color = rightColor)
+        }
+    }
+}
+
+@Composable
+private fun SmallLabel(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }
 
 /** "HDFC Debit ··5678", its bank account and "₹12,400 this month". */
@@ -141,13 +227,9 @@ private fun DebitCardRow(summary: DebitCardSummary, onClick: () -> Unit) {
         CardHeading(summary.card) {}
         Text(
             stringResource(R.string.cards_spent_this_month, Money.format(summary.spentPaise)),
-            style = MaterialTheme.typography.titleMedium
+            style = MaterialTheme.typography.headlineSmall
         )
-        Text(
-            linked,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        SmallLabel(linked)
     }
 }
 
@@ -158,7 +240,7 @@ private fun CardHeading(card: Account, trailing: @Composable RowScope.() -> Unit
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        IconTile(painterResource(UiR.drawable.ic_credit_card), Tone.NEUTRAL)
+        CardChip(card.name)
         Text(
             cardLabel(card),
             style = MaterialTheme.typography.titleSmall,
@@ -169,3 +251,38 @@ private fun CardHeading(card: Account, trailing: @Composable RowScope.() -> Unit
 }
 
 private val CARD_GAP = 10.dp
+
+/**
+ * A small card shape in a colour picked from the card's name, so each card keeps its own colour
+ * without Khata knowing the bank's brand.
+ */
+@Composable
+private fun CardChip(name: String) {
+    val colour = ChipColours[Math.floorMod(name.lowercase().hashCode(), ChipColours.size)]
+    Box(
+        contentAlignment = Alignment.BottomEnd,
+        modifier = Modifier
+            .size(width = 44.dp, height = 30.dp)
+            .clip(RoundedCornerShape(7.dp))
+            .background(colour)
+            .padding(horizontal = 5.dp, vertical = 4.dp)
+    ) {
+        Box(
+            Modifier
+                .size(width = 10.dp, height = 7.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(Color.White.copy(alpha = CHIP_SHINE))
+        )
+    }
+}
+
+private val ChipColours = listOf(
+    Color(0xFF8A3B2E),
+    Color(0xFF7A2A4A),
+    Color(0xFF1F3F78),
+    Color(0xFF3B4A57),
+    Color(0xFF2E5E4E),
+    Color(0xFF6B4A1F)
+)
+
+private const val CHIP_SHINE = 0.55f

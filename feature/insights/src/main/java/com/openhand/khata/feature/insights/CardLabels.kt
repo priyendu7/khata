@@ -2,6 +2,7 @@ package com.openhand.khata.feature.insights
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Money
@@ -41,6 +42,21 @@ internal fun dueLabel(bill: StatementSummary): String = stringResource(
     Money.format(bill.statement.totalPaise),
     shortDate(bill.statement.dueDate)
 )
+
+/** "in 7 days", "today" or "3 days overdue", for a bill due in [days]. */
+@Composable
+internal fun dueIn(days: Long): String {
+    val n = days.toInt()
+    return when {
+        n < 0 -> pluralStringResource(R.plurals.home_bill_overdue, -n, -n)
+        n == 0 -> stringResource(R.string.home_bill_today)
+        else -> pluralStringResource(R.plurals.home_bill_in_days, n, n)
+    }
+}
+
+/** What's still owed on a bill: never below zero, whatever was overpaid. */
+internal val StatementSummary.owedPaise: Long
+    get() = (statement.totalPaise - paidPaise).coerceAtLeast(0)
 
 /** "23 Oct", in the app's language. */
 @Composable

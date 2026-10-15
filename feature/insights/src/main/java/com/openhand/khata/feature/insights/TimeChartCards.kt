@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,11 +30,15 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.openhand.khata.core.model.Change
 import com.openhand.khata.core.model.MonthlyComparison
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.SegmentedTabs
+import com.openhand.khata.core.ui.Segments
+import com.openhand.khata.core.ui.Tone
 import com.openhand.khata.core.ui.categoriesLabel
 import com.openhand.khata.core.ui.categoryName
 import java.text.NumberFormat
@@ -77,20 +82,18 @@ internal fun MonthlyCard(
     val comparison = state.comparison
     val picked = state.categories.filter { it.id in state.picked }
     ChartCard(stringResource(R.string.insights_monthly_title)) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
-        ) {
-            listOf(InsightsViewModel.SHORT_MONTHS, InsightsViewModel.LONG_MONTHS).forEach {
-                FilterChip(
-                    selected = state.months == it,
-                    onClick = { onSelectMonths(it) },
-                    label = { Text(pluralStringResource(R.plurals.insights_months, it, it)) }
-                )
-            }
+        SegmentedTabs(
+            options = listOf(InsightsViewModel.SHORT_MONTHS, InsightsViewModel.LONG_MONTHS),
+            selected = state.months,
+            label = { pluralStringResource(R.plurals.insights_months, it, it) },
+            onSelect = onSelectMonths,
+            trackColor = MaterialTheme.colorScheme.background
+        )
+        Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
             FilterChip(
                 selected = picked.isNotEmpty(),
                 onClick = { picking = true },
+                shape = Segments.SmallShape,
                 label = {
                     Text(
                         categoriesLabel(picked)
@@ -121,6 +124,7 @@ internal fun MonthlyCard(
         } else {
             MonthlyBars(comparison, onOpenMonth)
             MonthlyLegend(comparison)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Changes(comparison)
         }
     }
@@ -181,7 +185,7 @@ private fun Changes(comparison: MonthlyComparison) {
     val bars = comparison.bars
     if (bars.size < 2 || (comparison.change == null && comparison.categoryChanges.isEmpty())) return
     val format = DateTimeFormatter.ofPattern("LLLL", LocalConfiguration.current.locales[0])
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
             stringResource(
                 R.string.insights_change_title,
@@ -195,25 +199,37 @@ private fun Changes(comparison: MonthlyComparison) {
         } else {
             R.string.insights_change_all
         }
-        comparison.change?.let { ChangeRow(stringResource(total), it) }
+        comparison.change?.let { ChangeRow(stringResource(total), it, overall = true) }
         comparison.categoryChanges.forEach {
             ChangeRow(categoryName(it.category.name, it.category.seedKey), it.change)
         }
     }
 }
 
+/** A name and its change: less spent in green, more in the warning colour. */
 @Composable
-private fun ChangeRow(name: String, change: Change) {
+private fun ChangeRow(name: String, change: Change, overall: Boolean = false) {
+    val tone = when {
+        change is Change.Percent && change.value < 0 -> Tone.POSITIVE
+        change is Change.Percent && change.value > 0 -> Tone.WARNING
+        else -> Tone.NEUTRAL
+    }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-        Text(changeLabel(change), style = MaterialTheme.typography.labelLarge)
+        Text(
+            name,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = if (overall) FontWeight.Bold else null,
+            modifier = Modifier.weight(1f)
+        )
+        Text(changeLabel(change), style = MaterialTheme.typography.labelLarge, color = tone.color())
     }
 }
 
-/** "+18%", "−5%" or "New", with the number written for the phone's language. */
+/** "↑ 18%", "↓ 5%", "No change" or "New", with the number written for the phone's language. */
 @Composable
 internal fun changeLabel(change: Change): String = when (change) {
     Change.New -> stringResource(R.string.insights_change_new)
+    Change.Percent(0) -> stringResource(R.string.insights_change_none)
     is Change.Percent -> {
         val number = NumberFormat.getIntegerInstance(LocalConfiguration.current.locales[0])
             .format(change.value.absoluteValue)

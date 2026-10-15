@@ -223,7 +223,7 @@ class InsightsContentTest {
         compose.onNodeWithText("September vs August").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("All spending").performScrollTo().assertIsDisplayed()
         // All spending and Food.
-        compose.onAllNodesWithText("+18%").assertCountEquals(2)
+        compose.onAllNodesWithText("↑ 18%").assertCountEquals(2)
         val chart = compose.onNodeWithContentDescription(
             "September 2026: spent ₹1,180, income ₹0",
             substring = true
@@ -318,7 +318,7 @@ class InsightsContentTest {
         show(null, monthly = pickedMonthly())
 
         compose.onNodeWithText("Together").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("+50%").assertIsDisplayed()
+        compose.onNodeWithText("↑ 50%").assertIsDisplayed()
         compose.onNodeWithText("New").performScrollTo().assertIsDisplayed()
         // The legend: only the picked categories.
         compose.onNodeWithText("Other").assertDoesNotExist()
@@ -338,7 +338,7 @@ class InsightsContentTest {
             labels += changeLabel(Change.New)
         }
         compose.waitForIdle()
-        assertEquals(listOf("+1,250%", "−5%", "+0%", "New"), labels.take(4))
+        assertEquals(listOf("↑ 1,250%", "↓ 5%", "No change", "New"), labels.take(4))
     }
 
     @Test

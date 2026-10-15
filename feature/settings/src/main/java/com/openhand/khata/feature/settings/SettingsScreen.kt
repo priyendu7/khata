@@ -16,7 +16,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,8 +23,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.ui.Choice
 import com.openhand.khata.core.ui.ChoiceDialog
-import com.openhand.khata.core.ui.IconTile
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.RowChevron
+import com.openhand.khata.core.ui.RowIcon
 import com.openhand.khata.core.ui.ScreenTitle
 import com.openhand.khata.core.ui.SectionHeader
 import com.openhand.khata.core.ui.SegmentListItem
@@ -339,9 +339,10 @@ private fun Row(
     SegmentListItem(
         index = index,
         count = count,
-        leadingContent = { IconTile(painterResource(icon), tone, size = 36.dp) },
+        leadingContent = { RowIcon(icon, tone) },
         headlineContent = { Text(title, fontWeight = FontWeight.SemiBold) },
         supportingContent = { Text(value) },
+        trailingContent = onClick?.let { { RowChevron() } },
         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
     )
 }

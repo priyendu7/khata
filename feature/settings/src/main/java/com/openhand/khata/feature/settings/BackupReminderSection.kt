@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -43,6 +44,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.openhand.khata.core.model.ReminderInterval
 import com.openhand.khata.core.model.ReminderSettings
 import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.RowChevron
+import com.openhand.khata.core.ui.RowIcon
+import com.openhand.khata.core.ui.Tone
 
 /**
  * The Settings row for the backup reminder (PRD feature 6). Turning it on asks for the notification
@@ -100,7 +104,11 @@ fun BackupReminderRows(
         stringResource(R.string.settings_off)
     }
     ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_reminder)) },
+        leadingContent = { RowIcon(UiR.drawable.ic_notifications, Tone.ACCENT) },
+        headlineContent = {
+            Text(stringResource(R.string.settings_reminder), fontWeight = FontWeight.SemiBold)
+        },
+        trailingContent = { RowChevron() },
         supportingContent = {
             Text(
                 if (settings.enabled && !notificationsAllowed) {

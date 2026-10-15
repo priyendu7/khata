@@ -74,8 +74,9 @@
     <string name="insights_change_title">%1$s vs %2$s</string>
     <string name="insights_change_all">All spending</string>
     <string name="insights_change_picked">Together</string>
-    <string name="insights_change_up">+%1$s%%</string>
-    <string name="insights_change_down">−%1$s%%</string>
+    <string name="insights_change_up">↑ %1$s%%</string>
+    <string name="insights_change_down">↓ %1$s%%</string>
+    <string name="insights_change_none">No change</string>
     <string name="insights_change_new">New</string>
     <plurals name="insights_months">
         <item quantity="one">%d month</item>
@@ -152,7 +153,6 @@
     <string name="card_no_statement_title">No statement yet</string>
     <string name="card_no_statement_body">The bill shows here once the bank\'s statement SMS arrives. Until then, here\'s what you\'ve spent this cycle.</string>
     <!-- The statement's total, then the spends Khata recorded in its cycle. -->
-    <string name="card_bank_vs_khata">Bank says %1$s due · Khata recorded %2$s of spends this cycle</string>
     <string name="card_bank_vs_khata_note">Interest, fees, EMIs or a missed SMS can make these differ.</string>
     <string name="card_spending">Spending by category</string>
     <!-- A billing cycle's first and last days, e.g. "18 Sep – 17 Oct 2026". -->
@@ -215,4 +215,19 @@
     <string name="card_reminder_text_today">%1$s: %2$s due today</string>
     <!-- On a lock screen that hides private content: no card or amount. -->
     <string name="card_reminder_public">A credit card bill is due soon</string>
+    <plurals name="cards_due_across">
+        <item quantity="one">Due across %d card</item>
+        <item quantity="other">Due across %d cards</item>
+    </plurals>
+    <string name="cards_next_due">Next: %1$s %2$s</string>
+    <string name="cards_statement_due">Statement due</string>
+    <string name="cards_spent_cycle_label">Spent this cycle</string>
+    <string name="card_due_line">Due %1$s · %2$s</string>
+    <string name="card_paid_so_far">Paid so far</string>
+    <string name="card_check_title">Statement check</string>
+    <string name="card_check_apart">%1$s apart</string>
+    <string name="card_check_match">Matches</string>
+    <string name="card_check_bank">Bank says due</string>
+    <string name="card_check_khata">Khata recorded this cycle</string>
+    <string name="card_payments_help">Payments to this card show here as they arrive.</string>
 </resources>
