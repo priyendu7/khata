@@ -16,22 +16,20 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -56,6 +55,11 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.openhand.khata.core.ui.IconTile
+import com.openhand.khata.core.ui.Segments
+import com.openhand.khata.core.ui.Tone
+import com.openhand.khata.core.ui.segmentCardBorder
+import com.openhand.khata.core.ui.segmentCardColors
 
 /**
  * Our promise (#128): the first thing Khata shows, and again from Settings > About. Privacy is the
@@ -76,28 +80,25 @@ fun PromiseContent(
     var played by rememberSaveable { mutableStateOf(false) }
     val enter = remember { animate && !played }
     LaunchedEffect(Unit) { played = true }
-    Box(modifier.fillMaxSize()) {
+    Box(modifier.fillMaxSize().marigoldGlow()) {
         // Clear of the language switch, which sits over the top-right corner.
         WelcomeColumn(Modifier.padding(top = LANGUAGE_ROOM.dp)) {
             Appear(0, enter) { WelcomeIllustration(appIcon) }
             Text(
                 stringResource(R.string.welcome_title),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.headlineLarge,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 12.dp).semantics { heading() }
+                modifier = Modifier.padding(top = 10.dp).semantics { heading() }
             )
             Text(
                 stringResource(R.string.welcome_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = SUBTITLE_ALPHA),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(max = SUBTITLE_WIDTH.dp)
             )
-            Appear(1, enter) { PromiseBox() }
-            onGetStarted?.let {
-                Button(onClick = it, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                    Text(stringResource(R.string.welcome_get_started))
-                }
-            }
+            Appear(1, enter) { PromiseBox(Modifier.padding(top = 20.dp)) }
+            onGetStarted?.let { WelcomeButton(R.string.welcome_get_started, it) }
         }
         LanguageChoice(
             language,
@@ -107,75 +108,52 @@ fun PromiseContent(
     }
 }
 
-/** The three promises side by side, each an icon and a short title. */
+/** The three promises in one outlined card, each an icon tile, a title and its line. */
 @Composable
-private fun PromiseBox() {
+private fun PromiseBox(modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        // The same as the choice cards on the next step, so the two read as one welcome.
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-        )
+        modifier = modifier.fillMaxWidth(),
+        shape = WelcomeCardShape,
+        colors = segmentCardColors(),
+        border = segmentCardBorder()
     ) {
-        Column(Modifier.padding(vertical = 20.dp, horizontal = 8.dp)) {
+        Column(Modifier.padding(vertical = 8.dp)) {
             Text(
-                stringResource(R.string.promise_title),
-                style = MaterialTheme.typography.titleMedium,
+                stringResource(R.string.promise_title).uppercase(),
+                style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 12.dp, bottom = 16.dp)
+                modifier = Modifier.padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 6.dp)
             )
-            Row(Modifier.fillMaxWidth()) {
-                Promise(
-                    R.drawable.ic_cloud_off,
-                    R.string.promise_offline_title,
-                    R.string.promise_offline_body
-                )
-                Promise(
-                    R.drawable.ic_lock,
-                    R.string.promise_encrypted_title,
-                    R.string.promise_encrypted_body
-                )
-                Promise(
-                    R.drawable.ic_code,
-                    R.string.promise_open_title,
-                    R.string.promise_open_body
-                )
-            }
+            Promise(
+                R.drawable.ic_cloud_off,
+                R.string.promise_offline_title,
+                R.string.promise_offline_body
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Promise(
+                R.drawable.ic_lock,
+                R.string.promise_encrypted_title,
+                R.string.promise_encrypted_body
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Promise(R.drawable.ic_code, R.string.promise_open_title, R.string.promise_open_body)
         }
     }
 }
 
-/** One promise; TalkBack reads its title and the longer [body] the screen leaves out. */
+/** One promise; TalkBack reads its title and line as one. */
 @Composable
-private fun RowScope.Promise(@DrawableRes icon: Int, @StringRes title: Int, @StringRes body: Int) {
+private fun Promise(@DrawableRes icon: Int, @StringRes title: Int, @StringRes body: Int) {
     val description = stringResource(title) + " " + stringResource(body)
-    Column(
+    Row(
         modifier = Modifier
-            .weight(1f)
-            .clearAndSetSemantics { contentDescription = description },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .fillMaxWidth()
+            .clearAndSetSemantics { contentDescription = description }
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painterResource(icon),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary
-            )
-        }
-        Text(
-            stringResource(title).trimEnd('.', '।'),
-            style = MaterialTheme.typography.labelLarge,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 4.dp)
-        )
+        IconTile(painterResource(icon), Tone.ACCENT, size = TILE_SIZE.dp)
+        WelcomeText(stringResource(title).trimEnd('.', '।'), stringResource(body))
     }
 }
 
@@ -231,50 +209,51 @@ private fun LanguageChoice(
         }
         else -> language
     }
+    val colors = MaterialTheme.colorScheme
     Row(
         modifier
-            .clip(CircleShape)
-            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-            .selectableGroup()
+            .clip(Segments.SmallShape)
+            .background(colors.surfaceContainerLowest)
+            .border(Segments.Hairline, colors.surfaceContainerHighest, Segments.SmallShape)
+            .padding(3.dp)
+            .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         listOf(AppLanguage.ENGLISH, AppLanguage.HINDI).forEach { choice ->
             val selected = choice == shown
             Text(
                 languageName(choice),
-                style = MaterialTheme.typography.labelMedium,
-                color = if (selected) {
-                    MaterialTheme.colorScheme.onSecondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
+                style = MaterialTheme.typography.labelLarge,
+                color = if (selected) colors.onSurface else colors.onSurfaceVariant,
                 modifier = Modifier
+                    .clip(LanguageShape)
                     .selectable(selected, role = Role.RadioButton) {
                         if (!selected) onLanguage(choice)
                     }
-                    .background(
-                        if (selected) {
-                            MaterialTheme.colorScheme.secondaryContainer
-                        } else {
-                            Color.Unspecified
-                        }
-                    )
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .background(if (selected) colors.surfaceContainerHighest else Color.Unspecified)
+                    .padding(horizontal = 12.dp, vertical = 7.dp)
             )
         }
     }
 }
 
-/** [icon], drawn like the launcher icon, on its marigold circle. Decorative. */
+/** [icon], drawn like the launcher icon, on its marigold tile with a warm shadow. Decorative. */
 @Composable
-internal fun WelcomeIllustration(@DrawableRes icon: Int, size: Int = ICON_SIZE) {
+internal fun WelcomeIllustration(@DrawableRes icon: Int) {
     Box(
         modifier = Modifier
-            .size(size.dp)
-            .clip(CircleShape)
+            .size(ICON_SIZE.dp)
+            .shadow(SHADOW.dp, IllustrationShape, spotColor = MARIGOLD, ambientColor = MARIGOLD)
+            .clip(IllustrationShape)
             .background(MARIGOLD),
         contentAlignment = Alignment.Center
     ) {
-        Image(painterResource(icon), contentDescription = null, Modifier.size(size.dp))
+        // Larger than its tile: the launcher drawing keeps a wide margin for the launcher's mask.
+        Image(
+            painterResource(icon),
+            contentDescription = null,
+            Modifier.requiredSize((ICON_SIZE * ICON_ZOOM).dp)
+        )
     }
 }
 
@@ -294,9 +273,17 @@ internal fun Appear(index: Int, animate: Boolean, content: @Composable () -> Uni
 }
 
 /** The launcher icon's background. */
-private val MARIGOLD = Color(0xFFF9A825)
-private const val LANGUAGE_ROOM = 48
-private const val ICON_SIZE = 96
+internal val MARIGOLD = Color(0xFFF9A825)
+internal val WelcomeCardShape = RoundedCornerShape(24.dp)
+private val IllustrationShape = RoundedCornerShape(28.dp)
+private val LanguageShape = RoundedCornerShape(9.dp)
+private const val LANGUAGE_ROOM = 64
+private const val ICON_SIZE = 92
+private const val ICON_ZOOM = 1.5f
+private const val SHADOW = 16
+private const val SUBTITLE_ALPHA = 0.88f
+private const val SUBTITLE_WIDTH = 280
+internal const val TILE_SIZE = 42
 private const val MAX_WIDTH = 560
 private const val ENTER_MS = 450
 private const val STAGGER_MS = 150
