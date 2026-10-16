@@ -83,8 +83,44 @@ class TransactionsViewModelTest {
         AccountRepository(lazyDb)
     )
 
-    private suspend fun TransactionsViewModel.shownIds() =
-        days.first { it != null }!!.days!!.flatMap { day -> day.items.map { it.id } }.toSet()
+    private suspend fun TransactionsViewModel.shownIds() = days.first {
+        it?.filter == filter.value
+    }!!.days!!.flatMap { day -> day.items.map { it.id } }
+        .toSet()
+
+    @Test
+    fun opensWithTypesAndARange() = runTest {
+        val spent = add(AT)
+        val salary = transactions.save(
+            Transaction(amountPaise = 500_00, direction = Direction.CREDIT, timestamp = AT + 1)
+        )
+        transactions.save(
+            Transaction(amountPaise = 500_00, direction = Direction.CREDIT, timestamp = UNTIL)
+        )
+
+        val viewModel = list(
+            mapOf(
+                FILTER_DIRECTIONS_ARG to directionsArg(listOf(Direction.CREDIT)),
+                FILTER_FROM_ARG to AT,
+                FILTER_UNTIL_ARG to UNTIL
+            )
+        )
+
+        assertEquals(setOf(Direction.CREDIT), viewModel.filter.value.directions)
+        assertEquals(setOf(salary), viewModel.shownIds())
+
+        // Clearing the type shows every type again.
+        viewModel.setDirections(emptySet())
+        assertEquals(setOf(spent, salary), viewModel.shownIds())
+    }
+
+    @Test
+    fun readsTypeArguments() {
+        val spending = setOf(Direction.DEBIT, Direction.REFUND)
+        assertEquals(spending, parseDirections(directionsArg(spending)))
+        assertEquals(emptySet<Direction>(), parseDirections(null))
+        assertEquals(setOf(Direction.CREDIT), parseDirections("CREDIT,unknown"))
+    }
 
     @Test
     fun opensWithATagAndARange() = runTest {

@@ -12,6 +12,7 @@ import com.openhand.khata.core.model.CardReminderSettings
 import com.openhand.khata.core.model.CategoryBreakdown
 import com.openhand.khata.core.model.StatementSummary
 import com.openhand.khata.core.model.TransactionFilter
+import com.openhand.khata.core.model.UnlinkedPayment
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.ZoneId
@@ -41,7 +42,9 @@ data class CreditCardState(
     val spending: CategoryBreakdown,
     val today: LocalDate,
     /** Due date reminders (#156), for this card's switch. */
-    val reminders: CardReminderSettings = CardReminderSettings()
+    val reminders: CardReminderSettings = CardReminderSettings(),
+    /** Card bills paid from other accounts that "Add a payment" offers (#166). */
+    val unlinked: List<UnlinkedPayment> = emptyList()
 ) {
     val shownCycle: CardCycle get() = shownStatement?.cycle ?: summary.currentCycle
 }
@@ -84,14 +87,16 @@ class CreditCardViewModel internal constructor(
                 val cycle = shown.statement?.cycle ?: shown.summary.currentCycle
                 combine(
                     cards.observeCycleSpending(shown.summary.card, cycle, zone),
-                    reminders.settings
-                ) { spending, settings ->
+                    reminders.settings,
+                    cards.observeUnlinkedPayments()
+                ) { spending, settings, unlinked ->
                     CreditCardState(
                         shown.summary,
                         shown.statement,
                         CategoryBreakdown.of(spending),
                         date,
-                        settings
+                        settings,
+                        unlinked
                     )
                 }
             }
@@ -107,6 +112,19 @@ class CreditCardViewModel internal constructor(
     fun setBillingDay(day: Int?) {
         viewModelScope.launch { accounts.setBillingDay(cardId, day) }
     }
+
+    /** Links "card not known" bill payment [transactionId] to this card (#166). */
+    fun linkPayment(transactionId: Long) {
+        viewModelScope.launch { cards.linkPayment(transactionId, cardId) }
+    }
+
+    /** Takes a payment linked by [linkPayment] off this card again, by its card side's id. */
+    fun unlinkPayment(cardSideId: Long) {
+        viewModelScope.launch { cards.unlinkPayment(cardSideId) }
+    }
+
+    /** The current statement's total, which a new payment starts at; null with no statement. */
+    fun paymentAmount(): Long? = state.value?.summary?.latest?.statement?.totalPaise
 
     /** Turns this card's due date reminders (#156) on or off. */
     fun setReminders(on: Boolean) = reminders.setCardEnabled(cardId, on)

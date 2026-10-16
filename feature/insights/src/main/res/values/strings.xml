@@ -5,6 +5,8 @@
     <string name="home_mark" translatable="false">₹</string>
     <string name="home_spent">Spent</string>
     <string name="home_income">Income</string>
+    <string name="home_see_spent">See this month\'s spending</string>
+    <string name="home_see_income">See this month\'s income</string>
     <string name="home_empty_title">No transactions yet</string>
     <string name="home_empty_body">Add your first expense or income by hand, or let Khata record your bank SMS. Everything stays on this phone.</string>
     <string name="home_more_than_last_month">%1$s more than this time last month (%2$d%%)</string>
@@ -67,6 +69,7 @@
     <string name="insights_categories_all_option">All</string>
     <string name="insights_done">Done</string>
     <string name="insights_month_description">%1$s: spent %2$s, income %3$s</string>
+    <string name="insights_month_income_action">%1$s: see income</string>
     <string name="insights_month_picked_description">%1$s: spent %2$s</string>
     <string name="insights_no_months_title">Nothing in these months</string>
     <string name="insights_no_months_body">Spending and income show here, month by month, as you add them.</string>
@@ -106,6 +109,8 @@
     <string name="insights_card_unknown">Card bill · card not known · %1$s</string>
     <!-- A card payment with no payee and no card. -->
     <string name="insights_card_unknown_no_payee">Card bill</string>
+    <string name="insights_choose_card">Choose card</string>
+    <string name="insights_no_credit_cards">There are no credit cards yet. Add one in Settings &gt; Accounts.</string>
     <plurals name="insights_payment_count">
         <item quantity="one">%d payment</item>
         <item quantity="other">%d payments</item>
@@ -150,6 +155,12 @@
     <!-- A payment towards the bill, e.g. "₹5,000 on 12 Oct 2026". -->
     <string name="card_payment">%1$s on %2$s</string>
     <string name="card_no_payments">No payments yet</string>
+    <string name="card_add_payment">Add a payment</string>
+    <string name="card_add_payment_body">Card bills paid from your other accounts that Khata couldn\'t match to a card. Pick the one that paid this bill.</string>
+    <string name="card_add_payment_none">No unmatched card bill payments. Record one if it had no SMS.</string>
+    <string name="card_record_payment">Record a new payment</string>
+    <string name="card_matches_bill">Matches the bill</string>
+    <string name="card_unlink">Unlink</string>
     <string name="card_no_statement_title">No statement yet</string>
     <string name="card_no_statement_body">The bill shows here once the bank\'s statement SMS arrives. Until then, here\'s what you\'ve spent this cycle.</string>
     <!-- The statement's total, then the spends Khata recorded in its cycle. -->

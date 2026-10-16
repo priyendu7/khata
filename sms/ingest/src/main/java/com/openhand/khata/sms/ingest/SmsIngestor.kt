@@ -185,7 +185,8 @@ class SmsIngestor @Inject constructor(
             dueDate = statement.dueDate,
             statementDate = statement.statementDate
                 ?: Instant.ofEpochMilli(receivedAt).atZone(ZoneId.systemDefault()).toLocalDate(),
-            rawSms = body
+            rawSms = body,
+            dateFromSms = statement.statementDate != null
         )
         return when (cards.save(sms)) {
             is StatementSaveResult.Saved -> IngestOutcome.STATEMENT

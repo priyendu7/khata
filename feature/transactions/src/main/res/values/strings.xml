@@ -12,6 +12,14 @@
     <string name="filter_any_category">All categories</string>
     <string name="filter_any_tag">All tags</string>
     <string name="filter_any_account">All accounts</string>
+    <string name="filter_type">Type</string>
+    <string name="filter_type_debit">Spent</string>
+    <string name="filter_type_credit">Received</string>
+    <string name="filter_type_refund">Refund</string>
+    <string name="filter_type_transfer">Transfer</string>
+    <string name="filter_any_type">All types</string>
+    <string name="filter_types_count">%1$d types</string>
+    <string name="filter_done">Done</string>
     <string name="day_spent">Spent %1$s</string>
     <string name="day_received">Received %1$s</string>
 

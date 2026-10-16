@@ -40,13 +40,15 @@ data class TransactionListItem(
 
 /**
  * What the transactions list shows. Every field left null (or blank) means "any", and set fields
- * combine: category AND tag AND account AND date range AND search text.
+ * combine: type AND category AND tag AND account AND date range AND search text.
  */
 data class TransactionFilter(
     /** Matches the payee's name or the note, ignoring case. */
     val query: String = "",
     /** Any of these categories; empty means any category. */
     val categoryIds: Set<Long> = emptySet(),
+    /** Any of these types (#164); empty means any type. */
+    val directions: Set<Direction> = emptySet(),
     val tagId: Long? = null,
     /** Only transactions with no tag at all; used instead of [tagId]. */
     val untagged: Boolean = false,
@@ -61,6 +63,7 @@ data class TransactionFilter(
     val isFiltered: Boolean
         get() = query.isNotBlank() ||
             categoryIds.isNotEmpty() ||
+            directions.isNotEmpty() ||
             tagId != null ||
             untagged ||
             accountId != null ||

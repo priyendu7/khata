@@ -43,8 +43,9 @@ class CardRepositoryTest : RepositoryTest() {
         minDue: Long? = 3_450_00,
         bank: String = "ICICI",
         last4: String = "1234",
-        body: String = "ICICI Bank Credit Card XX$last4 Statement: total $total due by $due"
-    ) = SmsStatement(bank, last4, total, minDue, day(due), day(statementDate), body)
+        body: String = "ICICI Bank Credit Card XX$last4 Statement: total $total due by $due",
+        dateFromSms: Boolean = true
+    ) = SmsStatement(bank, last4, total, minDue, day(due), day(statementDate), body, dateFromSms)
 
     private suspend fun saved(sms: SmsStatement) = cards.save(sms) as StatementSaveResult.Saved
 
@@ -179,12 +180,47 @@ class CardRepositoryTest : RepositoryTest() {
     }
 
     @Test
-    fun aPaymentBeforeTheStatementDateDoesNotCount() = runTest {
-        val card = saved(statement("2026-10-01")).cardId
-        pay(card, 35_299_72, at("2026-10-01", hour = 23))
+    fun aPaymentOnTheStatementDateCounts() = runTest {
+        val card = saved(statement("2026-10-09")).cardId
+        pay(card, 35_299_72, at("2026-10-09", hour = 1))
 
-        assertEquals(PaymentStatus.NOT_PAID, latest(card).status)
+        assertEquals(PaymentStatus.PAID_IN_FULL, latest(card).status)
+    }
+
+    @Test
+    fun beforeAStatementDatedByItsSmsOnlyFiveDaysCount() = runTest {
+        // The SMS had no date: the statement is dated the day it arrived.
+        val card = saved(statement("2026-10-09", dateFromSms = false)).cardId
+        pay(card, 100_00, at("2026-09-29")) // 10 days before.
         assertTrue(latest(card).payments.isEmpty())
+
+        pay(card, 200_00, at("2026-10-06")) // 3 days before.
+        assertEquals(200_00L, latest(card).paidPaise)
+    }
+
+    @Test
+    fun beforeAStatementWithItsOwnDateOnlyItsTotalOrMinimumCounts() = runTest {
+        val card = saved(statement("2026-10-09", total = 35_299_72, minDue = 3_450_00)).cardId
+        pay(card, 100_00, at("2026-10-06"))
+        assertTrue(latest(card).payments.isEmpty())
+
+        pay(card, 3_450_00, at("2026-10-05")) // The minimum, 4 days before.
+        assertEquals(3_450_00L, latest(card).paidPaise)
+        pay(card, 35_299_72, at("2026-10-02")) // The total, but 7 days before.
+        assertEquals(3_450_00L, latest(card).paidPaise)
+    }
+
+    @Test
+    fun aPaymentOfTheTotalJustBeforeTheStatementCountsTowardItOnly() = runTest {
+        val card = saved(statement("2026-09-09", due = "2026-09-28", total = 1_000_00)).cardId
+        pay(card, 1_000_00, at("2026-09-20"))
+        saved(statement("2026-10-09", due = "2026-10-28", total = 2_000_00))
+        pay(card, 2_000_00, at("2026-10-07"))
+
+        val (october, september) = card(card).statements
+        assertEquals(listOf(2_000_00L), october.payments.map { it.amountPaise })
+        assertEquals(listOf(1_000_00L), september.payments.map { it.amountPaise })
+        assertEquals(PaymentStatus.PAID_IN_FULL, october.status)
     }
 
     @Test

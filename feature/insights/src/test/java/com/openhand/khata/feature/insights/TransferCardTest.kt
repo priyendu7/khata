@@ -36,6 +36,7 @@ class TransferCardTest {
 
     private val opened = mutableListOf<Long>()
     private val periods = mutableListOf<ChartPeriod>()
+    private val links = mutableListOf<Pair<Long, Long>>()
 
     private fun show(entries: List<TransferEntry>) = compose.setContent {
         InsightsContent(
@@ -48,7 +49,7 @@ class TransferCardTest {
             onOpenCategory = {},
             onOpenDay = {},
             onSelectMonths = {},
-            onOpenMonth = {},
+            onOpenMonth = { _, _ -> },
             transfers = TransfersState(
                 ChartPeriod.MONTH,
                 october,
@@ -59,7 +60,9 @@ class TransferCardTest {
             transferActions = CardActions(
                 onSelectPeriod = { periods += it },
                 onOpen = { opened += it }
-            )
+            ),
+            creditCards = listOf(card),
+            onLinkPayment = { payment, card -> links += payment to card }
         )
     }
 
@@ -154,5 +157,34 @@ class TransferCardTest {
         show(emptyList())
 
         compose.onNodeWithText("Nothing moved in this period").assertIsDisplayed()
+    }
+
+    @Test
+    fun aCardsBillListsItsPaymentsWhichOpen() {
+        show(
+            listOf(
+                entry(2, TransferSide.IN, card, pair = 1L to savings),
+                entry(1, TransferSide.OUT, savings, payee = "CRED", pair = 2L to card)
+            )
+        )
+
+        compose.onNodeWithText("1 payment").performScrollTo().performClick()
+        compose.onNodeWithText("₹18,400 on 3 Oct 2026").assertIsDisplayed().performClick()
+
+        assertEquals(listOf(1L), opened)
+    }
+
+    @Test
+    fun aCardNotKnownPaymentCanBeLinkedToACard() {
+        show(listOf(entry(1, TransferSide.OUT, savings, payee = "CRED")))
+
+        compose.onNodeWithText("Card bill · card not known · 1 payment")
+            .performScrollTo()
+            .performClick()
+        compose.onNodeWithText("₹18,400 on 3 Oct 2026").assertIsDisplayed()
+        compose.onNodeWithText("Choose card").performClick()
+        compose.onNodeWithText("HDFC Card ··5678").performClick()
+
+        assertEquals(listOf(1L to 2L), links)
     }
 }

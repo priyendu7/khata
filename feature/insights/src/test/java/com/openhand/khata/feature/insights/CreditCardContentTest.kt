@@ -1,5 +1,6 @@
 package com.openhand.khata.feature.insights
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -7,18 +8,22 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import com.openhand.khata.core.model.CardPayment
 import com.openhand.khata.core.model.CardReminderSettings
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.CategoryBreakdown
 import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.PaymentStatus
+import com.openhand.khata.core.model.UnlinkedPayment
 import com.openhand.khata.feature.insights.CardSamples.TODAY
 import com.openhand.khata.feature.insights.CardSamples.bill
 import com.openhand.khata.feature.insights.CardSamples.creditCard
+import com.openhand.khata.feature.insights.CardSamples.millis
 import com.openhand.khata.feature.insights.CardSamples.summary
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -166,5 +171,58 @@ class CreditCardContentTest {
 
         compose.onNodeWithText("No statement yet").assertIsDisplayed()
         compose.onNodeWithText("Food").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun paymentsOpenAndALinkedOneCanBeUnlinked() {
+        val opened = mutableListOf<Long>()
+        val unlinked = mutableListOf<Long>()
+        val linked = CardPayment(99, 1_000_00, millis(LocalDate.of(2026, 10, 14)), linked = true)
+        val withLinked = current.copy(payments = current.payments + linked)
+        compose.setContent {
+            CreditCardContent(
+                state.copy(summary = state.summary.copy(statements = listOf(withLinked, past))),
+                CreditCardActions(
+                    onOpenPayment = { opened += it },
+                    onUnlinkPayment = { unlinked += it }
+                )
+            )
+        }
+
+        compose.onNodeWithText("₹2,000 on 13 Oct 2026").performScrollTo().performClick()
+        // Only the linked one can be unlinked.
+        compose.onAllNodesWithText("Unlink").assertCountEquals(1)
+        compose.onNodeWithText("Unlink").performScrollTo().performClick()
+
+        assertEquals(listOf(current.payments.single().transactionId), opened)
+        assertEquals(listOf(99L), unlinked)
+    }
+
+    @Test
+    fun addAPaymentLinksOneOrRecordsANewOne() {
+        val linked = mutableListOf<Long>()
+        var recorded = false
+        val unmatched = listOf(
+            UnlinkedPayment(5, 1_000_00, millis(LocalDate.of(2026, 10, 20)), "CRED", "HDFC 9999"),
+            UnlinkedPayment(6, 8_695_00, millis(LocalDate.of(2026, 10, 10)), "CRED", "HDFC 9999")
+        )
+        compose.setContent {
+            CreditCardContent(
+                state.copy(unlinked = unmatched),
+                CreditCardActions(
+                    onLinkPayment = { linked += it },
+                    onRecordPayment = { recorded = true }
+                )
+            )
+        }
+
+        compose.onNodeWithText("Add a payment").performScrollTo().performClick()
+        compose.onNodeWithText("Matches the bill").assertIsDisplayed()
+        compose.onNodeWithText("₹8,695 on 10 Oct 2026").performClick()
+        assertEquals(listOf(6L), linked)
+
+        compose.onNodeWithText("Add a payment").performScrollTo().performClick()
+        compose.onNodeWithText("Record a new payment").performClick()
+        assertTrue(recorded)
     }
 }

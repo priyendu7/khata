@@ -89,6 +89,7 @@ import com.openhand.khata.feature.settings.TestMessageScreen
 import com.openhand.khata.feature.transactions.AddTransactionButton
 import com.openhand.khata.feature.transactions.FILTER_ACCOUNT_ARG
 import com.openhand.khata.feature.transactions.FILTER_CATEGORY_ARG
+import com.openhand.khata.feature.transactions.FILTER_DIRECTIONS_ARG
 import com.openhand.khata.feature.transactions.FILTER_FROM_ARG
 import com.openhand.khata.feature.transactions.FILTER_NO_ACCOUNT
 import com.openhand.khata.feature.transactions.FILTER_TAG_ARG
@@ -99,11 +100,13 @@ import com.openhand.khata.feature.transactions.NO_FILTER
 import com.openhand.khata.feature.transactions.NO_PREFILL
 import com.openhand.khata.feature.transactions.PREFILL_AMOUNT_ARG
 import com.openhand.khata.feature.transactions.PREFILL_AT_ARG
+import com.openhand.khata.feature.transactions.PREFILL_CARD_ARG
 import com.openhand.khata.feature.transactions.ReviewCountViewModel
 import com.openhand.khata.feature.transactions.ReviewScreen
 import com.openhand.khata.feature.transactions.TRANSACTION_ID_ARG
 import com.openhand.khata.feature.transactions.TransactionEditorScreen
 import com.openhand.khata.feature.transactions.TransactionsScreen
+import com.openhand.khata.feature.transactions.directionsArg
 import kotlinx.coroutines.launch
 
 /**
@@ -161,7 +164,11 @@ private fun KhataNavHost(
         ) {
             CreditCardScreen(
                 onBack = back,
-                onOpenTransactions = { navController.navigate(Route.transactions(it)) }
+                onOpenTransactions = { navController.navigate(Route.transactions(it)) },
+                onOpenTransaction = { navController.navigate(Route.transaction(it)) },
+                onRecordPayment = { card, amount ->
+                    navController.navigate(Route.newTransaction(amount, cardId = card))
+                }
             )
         }
         composable(
@@ -176,12 +183,15 @@ private fun KhataNavHost(
         composable(
             Route.TRANSACTIONS,
             arguments = listOf(
-                navArgument(FILTER_CATEGORY_ARG) {
+                FILTER_CATEGORY_ARG,
+                FILTER_DIRECTIONS_ARG
+            ).map {
+                navArgument(it) {
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
                 }
-            ) + listOf(
+            } + listOf(
                 FILTER_TAG_ARG,
                 FILTER_ACCOUNT_ARG,
                 FILTER_FROM_ARG,
@@ -201,7 +211,12 @@ private fun KhataNavHost(
         composable(
             Route.TRANSACTION,
             arguments = listOf(navArgument(TRANSACTION_ID_ARG) { type = NavType.LongType }) +
-                listOf(PREFILL_AMOUNT_ARG, PREFILL_AT_ARG, FROM_UNPARSED_ARG).map {
+                listOf(
+                    PREFILL_AMOUNT_ARG,
+                    PREFILL_AT_ARG,
+                    FROM_UNPARSED_ARG,
+                    PREFILL_CARD_ARG
+                ).map {
                     navArgument(it) {
                         type = NavType.LongType
                         defaultValue = NO_PREFILL
@@ -321,7 +336,7 @@ private fun KhataNavHost(
             ReviewScreen(
                 onBack = back,
                 onAddByHand = { amount, at, unparsedId ->
-                    navController.navigate(Route.addFromSms(amount, at, unparsedId))
+                    navController.navigate(Route.newTransaction(amount, at, unparsedId))
                 },
                 onMakeParser = { unparsedId ->
                     navController.navigate(Route.makeParser(unparsedId))
@@ -395,31 +410,40 @@ internal object Route {
     /** Add (id 0) or edit a transaction. */
     const val TRANSACTION = "transaction/{$TRANSACTION_ID_ARG}" +
         "?$PREFILL_AMOUNT_ARG={$PREFILL_AMOUNT_ARG}&$PREFILL_AT_ARG={$PREFILL_AT_ARG}" +
-        "&$FROM_UNPARSED_ARG={$FROM_UNPARSED_ARG}"
+        "&$FROM_UNPARSED_ARG={$FROM_UNPARSED_ARG}&$PREFILL_CARD_ARG={$PREFILL_CARD_ARG}"
 
     fun transaction(id: Long) = "transaction/$id"
 
-    /** Add a transaction for an SMS no rule could read, with what's known filled in. */
-    fun addFromSms(amountPaise: Long?, at: Long, unparsedId: Long) =
-        "transaction/0?$PREFILL_AMOUNT_ARG=${amountPaise ?: NO_PREFILL}" +
-            "&$PREFILL_AT_ARG=$at&$FROM_UNPARSED_ARG=$unparsedId"
+    /**
+     * Add a transaction with what's known filled in: for an SMS no rule could read, or a payment
+     * into credit card [cardId] (#166).
+     */
+    fun newTransaction(
+        amountPaise: Long?,
+        at: Long = NO_PREFILL,
+        unparsedId: Long = NO_PREFILL,
+        cardId: Long = NO_PREFILL
+    ) = "transaction/0?$PREFILL_AMOUNT_ARG=${amountPaise ?: NO_PREFILL}&$PREFILL_AT_ARG=$at" +
+        "&$FROM_UNPARSED_ARG=$unparsedId&$PREFILL_CARD_ARG=$cardId"
 
     /**
-     * The transactions list, filtered by categories (ids joined by commas), a tag, an account and
-     * dates (each optional).
+     * The transactions list, filtered by categories (ids joined by commas), types (names joined
+     * by commas), a tag, an account and dates (each optional).
      */
     const val TRANSACTIONS = "transactions?$FILTER_CATEGORY_ARG={$FILTER_CATEGORY_ARG}" +
+        "&$FILTER_DIRECTIONS_ARG={$FILTER_DIRECTIONS_ARG}" +
         "&$FILTER_TAG_ARG={$FILTER_TAG_ARG}&$FILTER_ACCOUNT_ARG={$FILTER_ACCOUNT_ARG}" +
         "&$FILTER_FROM_ARG={$FILTER_FROM_ARG}&$FILTER_UNTIL_ARG={$FILTER_UNTIL_ARG}"
 
     /**
-     * Opens the list with [filter]'s categories, tag (or untagged), account (or none) and dates;
+     * Opens the list with [filter]'s categories, types, tag (or untagged), account (or none) and dates;
      * search isn't kept.
      */
     fun transactions(filter: TransactionFilter): String {
         val tag = if (filter.untagged) FILTER_UNTAGGED else filter.tagId
         val account = if (filter.noAccount) FILTER_NO_ACCOUNT else filter.accountId
         return "transactions?$FILTER_CATEGORY_ARG=${filter.categoryIds.joinToString(",")}" +
+            "&$FILTER_DIRECTIONS_ARG=${directionsArg(filter.directions)}" +
             "&$FILTER_TAG_ARG=${tag ?: NO_FILTER}&$FILTER_ACCOUNT_ARG=${account ?: NO_FILTER}" +
             "&$FILTER_FROM_ARG=${filter.from ?: NO_FILTER}" +
             "&$FILTER_UNTIL_ARG=${filter.until ?: NO_FILTER}"
@@ -489,7 +513,8 @@ private fun MainTabs(
                     onTurnOnSms = { onOpen(SettingsPage.SMS_IMPORT) },
                     onSeeAllTransactions = { current = Destination.TRANSACTIONS },
                     onSeeAllInsights = { current = Destination.INSIGHTS },
-                    onOpenCard = { onOpenCard(it, true) }
+                    onOpenCard = { onOpenCard(it, true) },
+                    onOpenTransactions = onOpenTransactions
                 )
             )
             Destination.TRANSACTIONS -> TransactionsScreen(

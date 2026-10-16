@@ -66,7 +66,7 @@ class PeriodSwipeTest {
             onOpenCategory = {},
             onOpenDay = {},
             onSelectMonths = {},
-            onOpenMonth = {},
+            onOpenMonth = { _, _ -> },
             tags = TagsState(
                 period,
                 september,

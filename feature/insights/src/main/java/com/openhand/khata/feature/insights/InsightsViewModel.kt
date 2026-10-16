@@ -9,6 +9,7 @@ import com.openhand.khata.core.model.AccountSpend
 import com.openhand.khata.core.model.AmountEntry
 import com.openhand.khata.core.model.Category
 import com.openhand.khata.core.model.CategoryBreakdown
+import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.HeatLevels
 import com.openhand.khata.core.model.MonthlyComparison
 import com.openhand.khata.core.model.Tag
@@ -354,10 +355,23 @@ class InsightsViewModel internal constructor(
         pickedCategories.value = ids
     }
 
-    /** The transactions list for [month]'s bar: that month, and only the picked categories. */
-    fun monthFilter(month: YearMonth): TransactionFilter = rangeOf(month).let { (from, until) ->
-        TransactionFilter(categoryIds = pickedCategories.value, from = from, until = until)
-    }
+    /**
+     * The transactions list for one of [month]'s bars: that month's received transactions for
+     * [income], or else its expenses and refunds in the picked categories (#164).
+     */
+    fun monthFilter(month: YearMonth, income: Boolean = false): TransactionFilter =
+        rangeOf(month).let { (from, until) ->
+            if (income) {
+                TransactionFilter(directions = setOf(Direction.CREDIT), from = from, until = until)
+            } else {
+                TransactionFilter(
+                    categoryIds = pickedCategories.value,
+                    directions = setOf(Direction.DEBIT, Direction.REFUND),
+                    from = from,
+                    until = until
+                )
+            }
+        }
 
     /** [date] as the `[from, until)` milliseconds the transactions list filters by. */
     fun rangeOf(date: LocalDate): Pair<Long, Long> = rangeOf(DateSpan(date, date))

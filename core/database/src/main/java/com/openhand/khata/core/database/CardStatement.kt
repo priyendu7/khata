@@ -11,6 +11,7 @@ import androidx.room.Query
 import com.openhand.khata.core.database.entity.AccountEntity
 import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.Direction
+import com.openhand.khata.core.model.TransactionSource
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -38,7 +39,9 @@ data class CardStatementEntity(
     @ColumnInfo(name = "total_paise") val totalPaise: Long,
     @ColumnInfo(name = "min_due_paise") val minDuePaise: Long?,
     /** The SMS with its links taken out. */
-    @ColumnInfo(name = "raw_sms") val rawSms: String
+    @ColumnInfo(name = "raw_sms") val rawSms: String,
+    /** Whether the SMS gave [statementDate]; otherwise it's the day the SMS arrived (#166). */
+    @ColumnInfo(name = "date_from_sms", defaultValue = "0") val dateFromSms: Boolean = false
 )
 
 /**
@@ -50,7 +53,18 @@ data class CardPaymentRow(
     @ColumnInfo(name = "account_id") val accountId: Long?,
     @ColumnInfo(name = "account_type") val accountType: AccountType?,
     @ColumnInfo(name = "amount_paise") val amountPaise: Long,
-    val timestamp: Long
+    val timestamp: Long,
+    val source: TransactionSource,
+    @ColumnInfo(name = "pair_id") val pairId: Long?
+)
+
+/** A card bill payment from another account that isn't linked to any card (#166). */
+data class UnlinkedPaymentRow(
+    @ColumnInfo(name = "transaction_id") val transactionId: Long,
+    @ColumnInfo(name = "amount_paise") val amountPaise: Long,
+    val timestamp: Long,
+    @ColumnInfo(name = "payee_name") val payeeName: String?,
+    @ColumnInfo(name = "account_name") val accountName: String?
 )
 
 /** An expense or refund on a credit card, for its cycles' spending. */
@@ -92,7 +106,8 @@ interface CardStatementDao {
      */
     @Query(
         "SELECT t.id AS transaction_id, t.account_id, a.type AS account_type, t.amount_paise, " +
-            "t.timestamp FROM transactions t LEFT JOIN accounts a ON a.id = t.account_id " +
+            "t.timestamp, t.source, t.transfer_pair_id AS pair_id " +
+            "FROM transactions t LEFT JOIN accounts a ON a.id = t.account_id " +
             "WHERE t.direction = 'transfer' AND ((a.type = 'credit_card' " +
             "AND COALESCE(t.transfer_side, 'in') = 'in') " +
             "OR (t.transfer_kind = 'card_payment' AND t.transfer_side = 'out' " +
@@ -100,6 +115,22 @@ interface CardStatementDao {
             "ORDER BY t.timestamp, t.id"
     )
     fun observePayments(): Flow<List<CardPaymentRow>>
+
+    /**
+     * Card bills paid from another account whose card isn't known ("card not known" on Insights),
+     * newest first: the payments "Add a payment" offers to link to a card (#166).
+     */
+    @Query(
+        "SELECT t.id AS transaction_id, t.amount_paise, t.timestamp, " +
+            "p.display_name AS payee_name, a.name AS account_name FROM transactions t " +
+            "LEFT JOIN accounts a ON a.id = t.account_id " +
+            "LEFT JOIN payees p ON p.id = t.payee_id " +
+            "WHERE t.direction = 'transfer' AND t.transfer_kind = 'card_payment' " +
+            "AND t.transfer_side = 'out' AND t.transfer_pair_id IS NULL " +
+            "AND (a.type IS NULL OR a.type != 'credit_card') " +
+            "ORDER BY t.timestamp DESC, t.id DESC"
+    )
+    fun observeUnlinkedPayments(): Flow<List<UnlinkedPaymentRow>>
 
     /**
      * Expenses and refunds on credit cards from [from] on, by the time they count at, with the

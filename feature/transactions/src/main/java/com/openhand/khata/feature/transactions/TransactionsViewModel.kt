@@ -9,6 +9,7 @@ import com.openhand.khata.core.data.TagRepository
 import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Category
+import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Tag
 import com.openhand.khata.core.model.TransactionFilter
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,6 +40,9 @@ const val FILTER_TAG_ARG = "tag"
 const val FILTER_ACCOUNT_ARG = "account"
 const val FILTER_FROM_ARG = "from"
 const val FILTER_UNTIL_ARG = "until"
+
+/** Types as [Direction] names joined by commas (#164); blank means any. */
+const val FILTER_DIRECTIONS_ARG = "directions"
 const val NO_FILTER = -1L
 
 /** A tag filter value meaning transactions with no tag at all. */
@@ -63,6 +67,7 @@ class TransactionsViewModel @Inject constructor(
         TransactionFilter(
             categoryIds = savedState.get<String>(FILTER_CATEGORY_ARG).orEmpty().split(',')
                 .mapNotNull { it.toLongOrNull() }.toSet(),
+            directions = parseDirections(savedState.get<String>(FILTER_DIRECTIONS_ARG)),
             from = savedState.filterArg(FILTER_FROM_ARG),
             until = savedState.filterArg(FILTER_UNTIL_ARG)
         ).withTag(savedState.filterArg(FILTER_TAG_ARG))
@@ -96,6 +101,10 @@ class TransactionsViewModel @Inject constructor(
 
     /** Just one category, or null for any. */
     fun setCategory(id: Long?) = _filter.update { it.copy(categoryIds = setOfNotNull(id)) }
+
+    /** Any of [directions], or every type when empty. */
+    fun setDirections(directions: Set<Direction>) =
+        _filter.update { it.copy(directions = directions) }
 
     /** A tag's id, [FILTER_UNTAGGED], or null for any. */
     fun setTag(id: Long?) = _filter.update { it.withTag(id) }
@@ -133,3 +142,11 @@ private fun TransactionFilter.withAccount(id: Long?) = copy(
 
 private fun SavedStateHandle.filterArg(key: String): Long? =
     get<Long>(key)?.takeUnless { it == NO_FILTER }
+
+/** The [FILTER_DIRECTIONS_ARG] value for [directions]. */
+fun directionsArg(directions: Collection<Direction>): String =
+    directions.joinToString(",") { it.name }
+
+/** Reads a [FILTER_DIRECTIONS_ARG] value, skipping names it doesn't know. */
+internal fun parseDirections(arg: String?): Set<Direction> = arg.orEmpty().split(',')
+    .mapNotNull { name -> Direction.entries.firstOrNull { it.name == name } }.toSet()

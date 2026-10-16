@@ -14,6 +14,14 @@
     <string name="filter_any_category">सभी श्रेणियाँ</string>
     <string name="filter_any_tag">सभी टैग</string>
     <string name="filter_any_account">सभी खाते</string>
+    <string name="filter_type">प्रकार</string>
+    <string name="filter_type_debit">खर्च</string>
+    <string name="filter_type_credit">आय</string>
+    <string name="filter_type_refund">रिफ़ंड</string>
+    <string name="filter_type_transfer">ट्रांसफ़र</string>
+    <string name="filter_any_type">सभी प्रकार</string>
+    <string name="filter_types_count">%1$d प्रकार</string>
+    <string name="filter_done">हो गया</string>
     <string name="day_spent">खर्च %1$s</string>
     <string name="day_received">आय %1$s</string>
 

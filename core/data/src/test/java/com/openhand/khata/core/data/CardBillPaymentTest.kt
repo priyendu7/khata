@@ -64,6 +64,40 @@ class CardBillPaymentTest {
     }
 
     @Test
+    fun aCardCreditIsAPaymentOnlyWhenItSaysSo() {
+        fun credit(body: String) =
+            sms(body, direction = Direction.CREDIT, type = AccountType.CREDIT_CARD)
+        listOf(
+            "Payment of Rs.1000 received on your credit card XX1234",
+            "We have received Rs.1,000.00 towards your ICICI Bank Credit Card XX1234",
+            "Your payment of Rs.1000.50 has been credited to your card XX1234",
+            "BBPS payment of Rs 1000 for card XX1234 successful"
+        ).forEach { assertTrue(it, CardBillPayment.matches(credit(it))) }
+        listOf(
+            "Cashback of Rs.163 credited to your Axis Bank card XX1234",
+            "Refund of Rs.163 from AMAZON credited to card XX1234",
+            "Reversal of Rs.163 processed on card XX1234",
+            "Your payment of Rs.163 was reversed on card XX1234",
+            "Rs.163 credited to your card XX1234 by Flipkart"
+        ).forEach { assertFalse(it, CardBillPayment.matches(credit(it))) }
+    }
+
+    @Test
+    fun cashbackRefundsAndReversalsOnACardAreRefunds() {
+        fun credit(body: String) =
+            sms(body, direction = Direction.CREDIT, type = AccountType.CREDIT_CARD)
+        listOf("Cashback of Rs.163", "Refund of Rs.163", "Reversal of Rs.163", "Rs.163 reversed")
+            .forEach { assertTrue(it, CardBillPayment.isCardRefund(credit("$it on card XX1234"))) }
+        val other = credit("Rs.163 credited to your card XX1234 by Flipkart")
+        assertFalse(CardBillPayment.isCardRefund(other))
+        assertTrue(CardBillPayment.isUnclearCardCredit(other))
+        // Into a bank account, cashback is just income.
+        assertFalse(
+            CardBillPayment.isCardRefund(sms("Cashback of Rs.163", direction = Direction.CREDIT))
+        )
+    }
+
+    @Test
     fun spendingOnACreditCardIsNot() {
         val spent = sms(
             "Rs.1000 spent on your credit card at CRED store",

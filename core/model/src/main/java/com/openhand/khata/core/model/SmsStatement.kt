@@ -14,5 +14,7 @@ data class SmsStatement(
     /** The date the SMS gives, or else the day it arrived. */
     val statementDate: LocalDate,
     /** The whole SMS text; links are taken out before it's saved. */
-    val rawSms: String
+    val rawSms: String,
+    /** Whether [statementDate] is the SMS's own, not the day it arrived (#166). */
+    val dateFromSms: Boolean = false
 )

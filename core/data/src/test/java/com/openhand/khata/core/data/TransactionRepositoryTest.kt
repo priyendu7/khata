@@ -11,6 +11,9 @@ import com.openhand.khata.core.model.SmsTransaction
 import com.openhand.khata.core.model.Transaction
 import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.model.TransactionSource
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -240,6 +243,82 @@ class TransactionRepositoryTest : RepositoryTest() {
             emptyList<Long>(),
             ids(TransactionFilter(query = "lunch", accountId = null, tagId = 999))
         )
+    }
+
+    @Test
+    fun filtersByType() = runTest {
+        val food = db.categoryDao().getBySeedKey("food")!!.id
+        fun of(direction: Direction, at: Long, amount: Long = 100_00) =
+            expense(amount, at) { copy(direction = direction) }
+        val lunch = transactions.save(of(Direction.DEBIT, DAY).copy(categoryId = food))
+        val salary = transactions.save(of(Direction.CREDIT, 2 * DAY))
+        val refund = transactions.save(of(Direction.REFUND, 3 * DAY).copy(categoryId = food))
+        val move = transactions.save(of(Direction.TRANSFER, 4 * DAY))
+        val bonus = transactions.save(of(Direction.CREDIT, 5 * DAY))
+
+        suspend fun ids(filter: TransactionFilter) = transactions.observe(filter).first().map {
+            it.id
+        }
+
+        // Empty means any type.
+        assertEquals(listOf(bonus, move, refund, salary, lunch), ids(TransactionFilter()))
+        assertEquals(listOf(lunch), ids(TransactionFilter(directions = setOf(Direction.DEBIT))))
+        assertEquals(
+            listOf(bonus, salary),
+            ids(TransactionFilter(directions = setOf(Direction.CREDIT)))
+        )
+        assertEquals(listOf(refund), ids(TransactionFilter(directions = setOf(Direction.REFUND))))
+        assertEquals(listOf(move), ids(TransactionFilter(directions = setOf(Direction.TRANSFER))))
+        assertEquals(
+            listOf(refund, lunch),
+            ids(TransactionFilter(directions = setOf(Direction.DEBIT, Direction.REFUND)))
+        )
+        // With categories and dates.
+        assertEquals(
+            listOf(refund),
+            ids(
+                TransactionFilter(
+                    directions = setOf(Direction.DEBIT, Direction.REFUND),
+                    categoryIds = setOf(food),
+                    from = 2 * DAY,
+                    until = 5 * DAY
+                )
+            )
+        )
+        assertEquals(
+            listOf(salary),
+            ids(TransactionFilter(directions = setOf(Direction.CREDIT), until = 3 * DAY))
+        )
+    }
+
+    @Test
+    fun receivedInAMonthAddsUpToThatMonthsIncome() = runTest {
+        val zone = ZoneId.systemDefault()
+        val october = LocalDate.of(2026, 10, 1).atStartOfDay(zone).toInstant()
+            .toEpochMilli()
+        val november = LocalDate.of(2026, 11, 1).atStartOfDay(zone).toInstant()
+            .toEpochMilli()
+        fun credit(at: Long, amount: Long) =
+            expense(amount, at) { copy(direction = Direction.CREDIT) }
+        transactions.save(credit(october + DAY, 50_000_00))
+        transactions.save(credit(october + 2 * DAY, 1_234_50))
+        transactions.save(expense(9_000_00, october + 3 * DAY))
+        transactions.save(credit(november + DAY, 7_00))
+        // Dated September but counted in October (#93).
+        transactions.save(
+            credit(october - DAY, 2_000_00).copy(countsIn = YearMonth.of(2026, 10))
+        )
+
+        val received = transactions.observe(
+            TransactionFilter(
+                directions = setOf(Direction.CREDIT),
+                from = october,
+                until = november
+            )
+        ).first()
+        val income = transactions.observeTotals(october, november).first().incomePaise
+
+        assertEquals(income, received.sumOf { it.amountPaise })
     }
 
     @Test

@@ -4,6 +4,8 @@
     <string name="home_this_month">इस महीने</string>
     <string name="home_spent">खर्च</string>
     <string name="home_income">आय</string>
+    <string name="home_see_spent">इस महीने के खर्च देखें</string>
+    <string name="home_see_income">इस महीने की आय देखें</string>
     <string name="home_empty_title">अभी कोई लेन-देन नहीं</string>
     <string name="home_empty_body">पहला खर्च या आय खुद जोड़ें, या खाता को अपने बैंक SMS दर्ज करने दें। सब कुछ इसी फ़ोन पर रहता है।</string>
     <string name="home_more_than_last_month">पिछले महीने के इसी समय से %1$s ज़्यादा (%2$d%%)</string>
@@ -61,6 +63,7 @@
     <string name="insights_categories_all_option">सभी</string>
     <string name="insights_done">हो गया</string>
     <string name="insights_month_description">%1$s: खर्च %2$s, आय %3$s</string>
+    <string name="insights_month_income_action">%1$s: आय देखें</string>
     <string name="insights_month_picked_description">%1$s: खर्च %2$s</string>
     <string name="insights_no_months_title">इन महीनों में कुछ नहीं</string>
     <string name="insights_no_months_body">खर्च और आय जोड़ते ही यहाँ महीने-दर-महीने दिखेंगे।</string>
@@ -97,6 +100,8 @@
     <string name="insights_card_bills">चुकाए गए कार्ड बिल</string>
     <string name="insights_card_unknown">कार्ड बिल · कार्ड पता नहीं · %1$s</string>
     <string name="insights_card_unknown_no_payee">कार्ड बिल</string>
+    <string name="insights_choose_card">कार्ड चुनें</string>
+    <string name="insights_no_credit_cards">अभी कोई क्रेडिट कार्ड नहीं है। सेटिंग्स &gt; खाते में जोड़ें।</string>
     <plurals name="insights_payment_count">
         <item quantity="one">%d भुगतान</item>
         <item quantity="other">%d भुगतान</item>
@@ -131,6 +136,12 @@
     <string name="card_payments">भुगतान</string>
     <string name="card_payment">%2$s को %1$s</string>
     <string name="card_no_payments">अभी कोई भुगतान नहीं</string>
+    <string name="card_add_payment">भुगतान जोड़ें</string>
+    <string name="card_add_payment_body">आपके दूसरे खातों से भरे गए कार्ड बिल, जिन्हें Khata किसी कार्ड से नहीं मिला पाया। जिससे यह बिल भरा गया, उसे चुनें।</string>
+    <string name="card_add_payment_none">कोई बिना मिलाया कार्ड बिल भुगतान नहीं। अगर उसका SMS नहीं आया था, तो नया दर्ज करें।</string>
+    <string name="card_record_payment">नया भुगतान दर्ज करें</string>
+    <string name="card_matches_bill">बिल से मेल खाता है</string>
+    <string name="card_unlink">अलग करें</string>
     <string name="card_no_statement_title">अभी कोई स्टेटमेंट नहीं</string>
     <string name="card_no_statement_body">बैंक का स्टेटमेंट SMS आने पर बिल यहाँ दिखेगा। तब तक, इस साइकिल में आपका खर्च यह है।</string>
     <string name="card_bank_vs_khata_note">ब्याज, शुल्क, EMI या छूटा हुआ SMS इनमें अंतर ला सकते हैं।</string>

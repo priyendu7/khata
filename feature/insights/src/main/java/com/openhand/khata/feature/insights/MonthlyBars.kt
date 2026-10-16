@@ -38,13 +38,13 @@ import java.time.format.DateTimeFormatter
 
 /**
  * A bar for each of [comparison]'s months with the spending split by category, and beside it
- * income unless categories are picked. Tapping a month (or choosing it in TalkBack) calls
- * [onMonthClick].
+ * income unless categories are picked. Tapping a month's spending or income (or choosing it in
+ * TalkBack) calls [onMonthClick] with the month and whether it was the income bar (#164).
  */
 @Composable
 fun MonthlyBars(
     comparison: MonthlyComparison,
-    onMonthClick: (YearMonth) -> Unit,
+    onMonthClick: (month: YearMonth, income: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     theme: ChartTheme = chartTheme()
 ) {
@@ -56,6 +56,9 @@ fun MonthlyBars(
     val bars = comparison.bars
     val picked = comparison.picked
     val descriptions = bars.map { monthDescription(it, picked, longFormat) }
+    val incomeActions = bars.map {
+        stringResource(R.string.insights_month_income_action, it.month.format(longFormat))
+    }
     val categoryColors = comparison.stacked.map { theme.categoryColor(it.color) }
     val segmentColors = if (picked) categoryColors else categoryColors + theme.other
     val ticks = axisTicks(bars.maxOfOrNull { maxOf(it.spentPaise, it.incomePaise) } ?: 0L)
@@ -77,20 +80,17 @@ fun MonthlyBars(
         modifier
             .fillMaxWidth()
             .height(CHART_HEIGHT)
-            .pointerInput(bars.size, gutter) {
+            .pointerInput(bars.size, gutter, picked) {
                 detectTapGestures { tap ->
-                    val group = (size.width - gutter) / bars.size
-                    val index = ((tap.x - gutter) / group).toInt()
-                    if (tap.x >= gutter && index in bars.indices) onClick(bars[index].month)
+                    barAt(tap.x - gutter, size.width - gutter, bars.size, !picked)
+                        ?.let { (index, income) -> onClick(bars[index].month, income) }
                 }
             }
             .semantics {
                 contentDescription = descriptions.joinToString("; ")
-                customActions = bars.mapIndexed { i, bar ->
-                    CustomAccessibilityAction(descriptions[i]) {
-                        onClick(bar.month)
-                        true
-                    }
+                val incomeLabels = incomeActions.takeUnless { picked }
+                customActions = monthActions(bars, descriptions, incomeLabels) { month, income ->
+                    onClick(month, income)
                 }
             }
     ) {
@@ -125,6 +125,37 @@ fun MonthlyBars(
             }
         }
     }
+}
+
+/**
+ * TalkBack's actions: each month's spending under its [descriptions], and its income under
+ * [incomeLabels] unless that's null (no income bars).
+ */
+private fun monthActions(
+    bars: List<MonthBar>,
+    descriptions: List<String>,
+    incomeLabels: List<String>?,
+    onClick: (YearMonth, Boolean) -> Unit
+): List<CustomAccessibilityAction> = bars.flatMapIndexed { i, bar ->
+    listOfNotNull(descriptions[i] to false, incomeLabels?.let { it[i] to true })
+        .map { (label, income) ->
+            CustomAccessibilityAction(label) {
+                onClick(bar.month, income)
+                true
+            }
+        }
+}
+
+/**
+ * Which of [count] months a tap [x] pixels into a plot [width] wide falls on, and whether it's
+ * on the income bar: the right half, when there are income bars ([hasIncome]). Null when it's
+ * off the plot.
+ */
+private fun barAt(x: Float, width: Float, count: Int, hasIncome: Boolean): Pair<Int, Boolean>? {
+    val group = width / count
+    val index = (x / group).toInt()
+    if (x < 0 || index !in 0 until count) return null
+    return index to (hasIncome && x % group > group / 2)
 }
 
 /** What TalkBack says for a month: its spending, and its income unless categories are picked. */
