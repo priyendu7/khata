@@ -61,7 +61,8 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
             category = memory?.categoryId?.let { database.categoryDao().getById(it) }?.toModel(),
             tags = tagIds(database, sms, memory).mapNotNull { database.tagDao().getById(it)?.name },
             transfer = plan.transfer,
-            needsReview = memory == null && plan.transfer == null
+            needsReview = plan.transfer == null &&
+                (memory == null || CardBillPayment.isUnclearCardCredit(sms))
         )
     }
 
@@ -73,8 +74,12 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
         val account = AccountMatch.find(database.accountDao(), sms.bank, sms.accountLast4)
         val payee = payeeIdentifier(sms.payee)?.let { database.payeeDao().findByName(it) }
         val duplicate = duplicateOf(database, sms, account?.id)
-        val otherSide =
-            if (duplicate == null) otherSideOfTransfer(database, sms, account?.id) else null
+        // Cashback or a refund on a card is never half of a transfer (#166).
+        val otherSide = if (duplicate == null && !CardBillPayment.isCardRefund(sms)) {
+            otherSideOfTransfer(database, sms, account?.id)
+        } else {
+            null
+        }
         return Plan(
             account = account,
             duplicate = duplicate,
@@ -168,11 +173,16 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
         val payee = plan.payee ?: payeeIdentifier(sms.payee)?.let { newPayee(database, it) }
         val memory = plan.memory
         val transfer = plan.transfer != null
+        val direction = when {
+            transfer -> Direction.TRANSFER
+            CardBillPayment.isCardRefund(sms) -> Direction.REFUND
+            else -> sms.direction
+        }
         val uncategorizedId =
             database.categoryDao().getBySeedKey(DefaultCategory.UNCATEGORIZED.key)!!.id
         val entity = TransactionEntity(
             amountPaise = sms.amountPaise,
-            direction = if (transfer) Direction.TRANSFER else sms.direction,
+            direction = direction,
             timestamp = sms.timestamp,
             accountId = accountId,
             payeeId = payee?.id,
@@ -181,8 +191,9 @@ class SmsImporter @Inject constructor(private val db: Lazy<KhataDatabase>) {
             referenceNo = sms.referenceNo,
             source = TransactionSource.SMS,
             rawSms = sms.rawSms,
-            // A transfer has no category to ask about.
-            needsReview = memory == null && !transfer,
+            // A transfer has no category to ask about; an unclear card credit asks what it was.
+            needsReview = !transfer &&
+                (memory == null || CardBillPayment.isUnclearCardCredit(sms)),
             transferSide = if (transfer) sideOf(sms.direction) else null,
             transferPairId = plan.otherSide,
             transferKind = plan.transfer?.kind

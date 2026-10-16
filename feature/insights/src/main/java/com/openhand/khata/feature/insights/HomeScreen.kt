@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -23,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -33,18 +31,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.TransactionListItem
-import com.openhand.khata.core.ui.AmountText
 import com.openhand.khata.core.ui.IconTile
 import com.openhand.khata.core.ui.NoticeCard
 import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.Segments
-import com.openhand.khata.core.ui.StatusChip
 import com.openhand.khata.core.ui.SurfaceCard
 import com.openhand.khata.core.ui.Tone
 import com.openhand.khata.core.ui.TransactionRow
-import com.openhand.khata.core.ui.incomeColor
 import com.openhand.khata.core.ui.longDateLabel
 import java.time.LocalDate
 
@@ -95,7 +89,7 @@ fun HomeContent(
             if (reviewCount > 0) ReviewCard(reviewCount, actions.onReview)
             billDue?.let { BillDueCard(it) { actions.onOpenCard(it.due.card.id) } }
             if (summary.hasTransactions) {
-                MonthCard(summary)
+                MonthCard(summary, actions.onOpenTransactions)
                 TopCategoriesCard(summary, actions.onSeeAllInsights)
                 RecentTransactions(
                     summary.recent,
@@ -199,61 +193,6 @@ private fun StartCard(onAddTransaction: () -> Unit, onTurnOnSms: () -> Unit) {
             }
         }
     }
-}
-
-/** This month's spending, large, against last month's; income below. */
-@Composable
-private fun MonthCard(summary: HomeSummary) {
-    SurfaceCard {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(R.string.home_spent),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f)
-            )
-            StatusChip(stringResource(R.string.home_this_month), Tone.NEUTRAL)
-        }
-        AmountText(summary.month.spentPaise)
-        summary.change?.let { StatusChip(changeText(it), it.tone()) }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                stringResource(R.string.home_income),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                Money.format(summary.month.incomePaise),
-                style = MaterialTheme.typography.headlineSmall,
-                color = if (summary.month.incomePaise > 0) incomeColor() else Color.Unspecified,
-                maxLines = 1,
-                softWrap = false
-            )
-        }
-    }
-}
-
-/** Less spent is good news; more is a warning. */
-private fun MonthChange.tone(): Tone = when (this) {
-    is MonthChange.More -> Tone.WARNING
-    is MonthChange.Less -> Tone.POSITIVE
-    MonthChange.Same -> Tone.NEUTRAL
-}
-
-@Composable
-private fun changeText(change: MonthChange): String = when (change) {
-    is MonthChange.More -> stringResource(
-        R.string.home_more_than_last_month,
-        Money.format(change.paise),
-        change.percent
-    )
-    is MonthChange.Less -> stringResource(
-        R.string.home_less_than_last_month,
-        Money.format(change.paise),
-        change.percent
-    )
-    MonthChange.Same -> stringResource(R.string.home_same_as_last_month)
 }
 
 /** The last few transactions as the Transactions tab draws them, with their days. */

@@ -53,8 +53,10 @@ fun InsightsScreen(
     onOpenTransactions: (TransactionFilter) -> Unit,
     onOpenTransaction: (Long) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: InsightsViewModel = hiltViewModel()
+    viewModel: InsightsViewModel = hiltViewModel(),
+    cardLinks: CardLinkViewModel = hiltViewModel()
 ) {
+    val creditCards by cardLinks.creditCards.collectAsStateWithLifecycle()
     val donut by viewModel.donut.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
@@ -95,7 +97,9 @@ fun InsightsScreen(
         },
         onOpenDay = { openRange(viewModel.rangeOf(it)) },
         onSelectMonths = viewModel::selectMonths,
-        onOpenMonth = { onOpenTransactions(viewModel.monthFilter(it)) },
+        onOpenMonth = { month, income ->
+            onOpenTransactions(viewModel.monthFilter(month, income))
+        },
         onPickCategories = viewModel::pickCategories,
         tags = tags,
         accounts = accounts,
@@ -121,7 +125,9 @@ fun InsightsScreen(
         ),
         onCloseBreakdown = viewModel::closeBreakdown,
         onOpenTransactions = onOpenTransactions,
-        modifier = modifier
+        modifier = modifier,
+        creditCards = creditCards,
+        onLinkPayment = cardLinks::link
     )
     pickingDates?.let { card ->
         val span = when (card) {
@@ -161,7 +167,7 @@ fun InsightsContent(
     onOpenCategory: (Long?) -> Unit,
     onOpenDay: (LocalDate) -> Unit,
     onSelectMonths: (Int) -> Unit,
-    onOpenMonth: (YearMonth) -> Unit,
+    onOpenMonth: (month: YearMonth, income: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     tags: TagsState? = null,
     accounts: AccountsState? = null,
@@ -172,7 +178,10 @@ fun InsightsContent(
     transferActions: CardActions<Long> = CardActions(),
     onCloseBreakdown: () -> Unit = {},
     onOpenTransactions: (TransactionFilter) -> Unit = {},
-    onPickCategories: (Set<Long>) -> Unit = {}
+    onPickCategories: (Set<Long>) -> Unit = {},
+    /** The credit cards a "card not known" bill payment can be linked to (#166). */
+    creditCards: List<Account> = emptyList(),
+    onLinkPayment: (transactionId: Long, cardId: Long) -> Unit = { _, _ -> }
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -184,7 +193,7 @@ fun InsightsContent(
         accounts?.let { AccountCard(it, accountActions) }
         heatmap?.let { HeatmapCard(it, onOpenDay) }
         monthly?.let { MonthlyCard(it, onSelectMonths, onPickCategories, onOpenMonth) }
-        transfers?.let { TransferCard(it, transferActions) }
+        transfers?.let { TransferCard(it, transferActions, creditCards, onLinkPayment) }
         Spacer(Modifier.height(8.dp))
     }
     breakdown?.let { BreakdownSheet(it, onCloseBreakdown, onOpenTransactions) }

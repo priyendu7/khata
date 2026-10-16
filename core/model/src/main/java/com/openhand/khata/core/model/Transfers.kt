@@ -47,6 +47,12 @@ data class UnknownCardBill(val payeeName: String?, val paidPaise: Long, val coun
 }
 
 /**
+ * A card bill payment behind [CardBill] (into card [cardId]) or [UnknownCardBill] (to
+ * [payeeName], with [cardId] null), so tapping a line can list its payments (#166).
+ */
+data class BillMove(val move: TransferMove, val cardId: Long?, val payeeName: String? = null)
+
+/**
  * What moved between accounts over a period (PRD features 1 and 5). None of it is spending or
  * income: card purchases were counted when they were made, so the bill paying them isn't.
  */
@@ -55,9 +61,19 @@ data class TransferSummary(
     val cards: List<CardBill>,
     val unknownCards: List<UnknownCardBill>,
     /** Newest first. */
-    val moves: List<TransferMove>
+    val moves: List<TransferMove>,
+    /** The payments behind [cards] and [unknownCards], newest first. */
+    val billMoves: List<BillMove> = emptyList()
 ) {
     val isEmpty: Boolean get() = moves.isEmpty()
+
+    /** The payments into credit card [cardId], newest first. */
+    fun paymentsTo(cardId: Long): List<TransferMove> =
+        billMoves.filter { it.cardId == cardId }.map { it.move }
+
+    /** The card bill payments to [payeeName] whose card isn't known, newest first. */
+    fun unknownPaymentsTo(payeeName: String?): List<TransferMove> =
+        billMoves.filter { it.cardId == null && it.payeeName == payeeName }.map { it.move }
 
     companion object {
         val EMPTY = TransferSummary(0, emptyList(), emptyList(), emptyList())
@@ -72,15 +88,20 @@ data class TransferSummary(
             val moves = shown.map(::moveOf)
             val cards = mutableMapOf<Long, CardBill>()
             val unknown = mutableMapOf<String?, UnknownCardBill>()
+            val billMoves = mutableListOf<BillMove>()
             shown.zip(moves).forEach { (entry, move) ->
                 val card = paidCard(entry, move)
                 when {
-                    card != null -> cards[card.id] = cards[card.id]?.plus(move.amountPaise)
-                        ?: CardBill(card, move.amountPaise, 1)
+                    card != null -> {
+                        cards[card.id] = cards[card.id]?.plus(move.amountPaise)
+                            ?: CardBill(card, move.amountPaise, 1)
+                        billMoves += BillMove(move, card.id)
+                    }
                     entry.kind == TransferKind.CARD_PAYMENT && entry.pairId == null -> {
                         val name = entry.payeeName
                         unknown[name] = unknown[name]?.plus(move.amountPaise)
                             ?: UnknownCardBill(name, move.amountPaise, 1)
+                        billMoves += BillMove(move, null, name)
                     }
                 }
             }
@@ -88,7 +109,8 @@ data class TransferSummary(
                 totalPaise = moves.sumOf { it.amountPaise },
                 cards = cards.values.sortedByDescending { it.paidPaise },
                 unknownCards = unknown.values.sortedByDescending { it.paidPaise },
-                moves = moves
+                moves = moves,
+                billMoves = billMoves
             )
         }
 
@@ -122,15 +144,14 @@ data class TransferSummary(
 
         /**
          * The credit card [move] paid: the card it went into, or the card the transfer is on when
-         * its side couldn't be read but it's a card payment (only a card's "payment received" is).
+         * its side couldn't be read, as a card's transfer is almost always its payment. The card
+         * pages count the same ones (#166).
          */
         private fun paidCard(entry: TransferEntry, move: TransferMove): Account? {
             val to = move.to.account?.takeIf { move.sideKnown }
             return when {
                 to?.type == AccountType.CREDIT_CARD -> to
-                !move.sideKnown &&
-                    entry.kind == TransferKind.CARD_PAYMENT &&
-                    entry.account?.type == AccountType.CREDIT_CARD -> entry.account
+                !move.sideKnown && entry.account?.type == AccountType.CREDIT_CARD -> entry.account
                 else -> null
             }
         }

@@ -13,7 +13,9 @@ import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.database.DefaultCategorySeeder
 import com.openhand.khata.core.database.KhataDatabase
+import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Event
+import com.openhand.khata.core.model.TransferSide
 import dagger.Lazy
 import java.time.Instant
 import java.time.LocalTime
@@ -131,6 +133,17 @@ class AddFromSmsTest {
         vm.update(vm.form.value!!.copy(time = LocalTime.of(19, 0)))
 
         assertEquals(listOf("Trip"), vm.form.first { it?.eventTags?.isNotEmpty() == true }!!.tags)
+    }
+
+    @Test
+    fun aNewCardPaymentStartsAsATransferIntoTheCard() {
+        val vm = editor(mapOf(PREFILL_CARD_ARG to 7L, PREFILL_AMOUNT_ARG to 3_529_972L))
+
+        val form = vm.form.value!!
+        assertEquals(Direction.TRANSFER, form.direction)
+        assertEquals(7L, form.accountId)
+        assertEquals(TransferSide.IN, form.transferSide)
+        assertEquals("35299.72", form.amount)
     }
 
     @Test

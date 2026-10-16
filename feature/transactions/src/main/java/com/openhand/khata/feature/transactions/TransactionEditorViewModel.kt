@@ -12,7 +12,9 @@ import com.openhand.khata.core.data.TransactionRepository
 import com.openhand.khata.core.data.UnparsedSmsRepository
 import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Category
+import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.Money
+import com.openhand.khata.core.model.TransferSide
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import java.time.ZoneId
@@ -47,6 +49,9 @@ const val PREFILL_AT_ARG = "at"
 
 /** …and that SMS, deleted from the review inbox once the transaction is saved. */
 const val FROM_UNPARSED_ARG = "unparsed"
+
+/** For a new payment into a credit card (#166): the card, which the transfer goes into. */
+const val PREFILL_CARD_ARG = "card"
 
 /** The value an optional editor argument has when it isn't given. */
 const val NO_PREFILL = -1L
@@ -216,9 +221,17 @@ class TransactionEditorViewModel @Inject constructor(
     private fun newForm(savedState: SavedStateHandle): EditorForm {
         val at = savedState.get<Long>(PREFILL_AT_ARG)?.takeIf { it != NO_PREFILL }
         val amount = savedState.get<Long>(PREFILL_AMOUNT_ARG)?.takeIf { it > 0 }
-        val form = EditorForm.new(
+        val card = savedState.get<Long>(PREFILL_CARD_ARG)?.takeIf { it != NO_PREFILL }
+        val new = EditorForm.new(
             at?.let { Instant.ofEpochMilli(it).atZone(zone) } ?: ZonedDateTime.now()
         )
+        val form = card?.let {
+            new.copy(
+                direction = Direction.TRANSFER,
+                accountId = it,
+                transferSide = TransferSide.IN
+            )
+        } ?: new
         return amount?.let { form.copy(amount = Money.toInput(it)) } ?: form
     }
 

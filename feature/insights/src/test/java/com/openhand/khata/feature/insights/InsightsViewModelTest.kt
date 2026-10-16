@@ -294,15 +294,33 @@ class InsightsViewModelTest {
         val viewModel = viewModel()
         val september = YearMonth.of(2026, 9)
         val (from, until) = viewModel.rangeOf(september)
+        val spending = setOf(Direction.DEBIT, Direction.REFUND)
         assertEquals(
-            TransactionFilter(from = from, until = until),
+            TransactionFilter(directions = spending, from = from, until = until),
             viewModel.monthFilter(september)
         )
 
         viewModel.pickCategories(setOf(3L, 5L))
         assertEquals(
-            TransactionFilter(categoryIds = setOf(3L, 5L), from = from, until = until),
+            TransactionFilter(
+                categoryIds = setOf(3L, 5L),
+                directions = spending,
+                from = from,
+                until = until
+            ),
             viewModel.monthFilter(september)
+        )
+    }
+
+    @Test
+    fun aMonthsIncomeBarOpensThatMonthsReceivedTransactions() = runTest {
+        val viewModel = viewModel()
+        val september = YearMonth.of(2026, 9)
+        val (from, until) = viewModel.rangeOf(september)
+        viewModel.pickCategories(setOf(3L))
+        assertEquals(
+            TransactionFilter(directions = setOf(Direction.CREDIT), from = from, until = until),
+            viewModel.monthFilter(september, income = true)
         )
     }
 

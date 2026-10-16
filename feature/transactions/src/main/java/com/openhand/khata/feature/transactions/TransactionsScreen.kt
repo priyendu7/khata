@@ -1,18 +1,12 @@
 package com.openhand.khata.feature.transactions
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -40,7 +34,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.ui.AccentFab
 import com.openhand.khata.core.ui.CategoryBadge
@@ -52,11 +45,9 @@ import com.openhand.khata.core.ui.R as UiR
 import com.openhand.khata.core.ui.ScreenTitle
 import com.openhand.khata.core.ui.Segments
 import com.openhand.khata.core.ui.SubScreen
-import com.openhand.khata.core.ui.TransactionRow
 import com.openhand.khata.core.ui.categoriesLabel
 import com.openhand.khata.core.ui.categoryName
 import com.openhand.khata.core.ui.dateLabel
-import com.openhand.khata.core.ui.dayLabel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -120,7 +111,11 @@ private fun TransactionList(onOpen: (Long) -> Unit, viewModel: TransactionsViewM
                 title = stringResource(R.string.transactions_empty_title),
                 body = stringResource(R.string.transactions_empty_body)
             )
-            else -> DayList(days, onOpen)
+            else -> {
+                // A filtered list adds up what it shows, e.g. October's income (#164).
+                if (state?.filter?.copy(query = "")?.isFiltered == true) ListTotals(days)
+                DayList(days, onOpen)
+            }
         }
     }
 }
@@ -156,7 +151,7 @@ private fun SearchField(query: String, onChange: (String) -> Unit) {
     )
 }
 
-private enum class FilterDialog { CATEGORY, TAG, ACCOUNT, DATES }
+private enum class FilterDialog { TYPE, CATEGORY, TAG, ACCOUNT, DATES }
 
 @Composable
 private fun FilterRow(filter: TransactionFilter, viewModel: TransactionsViewModel) {
@@ -182,6 +177,10 @@ private fun FilterRow(filter: TransactionFilter, viewModel: TransactionsViewMode
             .horizontalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
+        FilterButton(
+            label = typeLabel(filter.directions),
+            selected = filter.directions.isNotEmpty()
+        ) { dialog = FilterDialog.TYPE }
         FilterButton(
             label = categoriesLabel(picked) ?: stringResource(R.string.field_category),
             selected = picked.isNotEmpty()
@@ -212,6 +211,14 @@ private fun FilterRow(filter: TransactionFilter, viewModel: TransactionsViewMode
 
     when (dialog) {
         null -> Unit
+        FilterDialog.TYPE -> TypeDialog(
+            picked = filter.directions,
+            onDone = {
+                viewModel.setDirections(it)
+                close()
+            },
+            onDismiss = close
+        )
         FilterDialog.CATEGORY -> ChoiceDialog(
             title = stringResource(R.string.field_category),
             choices = listOf(Choice<Long?>(null, stringResource(R.string.filter_any_category))) +
@@ -283,55 +290,4 @@ private fun FilterButton(label: String, selected: Boolean, onClick: () -> Unit) 
             Icon(painterResource(UiR.drawable.ic_arrow_drop_down), contentDescription = null)
         }
     )
-}
-
-@Composable
-private fun DayList(days: List<DaySection>, onOpen: (Long) -> Unit) {
-    // Room for the "+" button so it never covers the last row.
-    LazyColumn(contentPadding = PaddingValues(bottom = 88.dp), modifier = Modifier.fillMaxSize()) {
-        days.forEach { day ->
-            stickyHeader(key = "day-${day.date}", contentType = "day") { DayHeader(day) }
-            itemsIndexed(
-                day.items,
-                key = { _, row -> row.id },
-                contentType = { _, _ -> "transaction" }
-            ) { index, item ->
-                // Inset here rather than in the list, so the sticky header spans the screen.
-                Box(Modifier.padding(horizontal = Segments.Inset)) {
-                    TransactionRow(item, index, day.items.size) { onOpen(item.id) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DayHeader(day: DaySection) {
-    val totals = listOfNotNull(
-        day.totals.spentPaise.takeIf { it > 0 }?.let {
-            stringResource(R.string.day_spent, Money.format(it))
-        },
-        day.totals.incomePaise.takeIf { it > 0 }?.let {
-            stringResource(R.string.day_received, Money.format(it))
-        }
-    ).joinToString(" · ")
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            // Hides the rows scrolling under it.
-            .background(MaterialTheme.colorScheme.background)
-            .padding(start = 24.dp, end = 24.dp, top = 18.dp, bottom = 8.dp)
-    ) {
-        Text(
-            dayLabel(day.date),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            totals,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
 }

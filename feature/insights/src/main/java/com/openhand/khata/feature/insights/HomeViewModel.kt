@@ -33,6 +33,9 @@ import kotlinx.coroutines.flow.stateIn
  */
 data class HomeSummary(
     val month: Totals,
+    /** This month as epoch milliseconds, [monthFrom] inclusive and [monthUntil] exclusive. */
+    val monthFrom: Long,
+    val monthUntil: Long,
     /** Against last month by the same day; null when nothing was spent by then. */
     val change: MonthChange?,
     /** This month's donut. */
@@ -88,6 +91,8 @@ class HomeViewModel internal constructor(
             ) { month, lastMonth, spending, recent, any ->
                 HomeSummary(
                     month = month,
+                    monthFrom = periods.monthFrom,
+                    monthUntil = periods.monthUntil,
                     change = MonthChange.of(month.spentPaise, lastMonth.spentPaise),
                     categories = CategoryBreakdown.of(spending),
                     recent = recent,

@@ -598,7 +598,8 @@ interface TransactionDao {
 
     /**
      * The transactions list, newest first. Each null argument means "any"; the rest combine.
-     * [categoryIds] is ignored when [anyCategory]; SQLite reads an empty `IN ()` as no match.
+     * [categoryIds] is ignored when [anyCategory], and [directions] when [anyDirection]; SQLite
+     * reads an empty `IN ()` as no match.
      * [query] matches the payee name or note and must have `%`, `_` and `\` escaped with `\`.
      * An [accountId] includes its linked debit cards' transactions (#155).
      * [limit] keeps only the newest ones.
@@ -616,6 +617,7 @@ interface TransactionDao {
             "LEFT JOIN payees p ON p.id = t.payee_id " +
             "LEFT JOIN accounts a ON a.id = t.account_id " +
             "WHERE (:anyCategory OR t.category_id IN (:categoryIds)) " +
+            "AND (:anyDirection OR t.direction IN (:directions)) " +
             "AND (:accountId IS NULL OR t.account_id = :accountId " +
             "OR t.account_id IN (SELECT id FROM accounts WHERE linked_account_id = :accountId)) " +
             "AND (NOT :noAccount OR t.account_id IS NULL) " +
@@ -635,6 +637,8 @@ interface TransactionDao {
         query: String?,
         anyCategory: Boolean,
         categoryIds: Set<Long>,
+        anyDirection: Boolean,
+        directions: Set<Direction>,
         tagId: Long?,
         untagged: Boolean,
         accountId: Long?,

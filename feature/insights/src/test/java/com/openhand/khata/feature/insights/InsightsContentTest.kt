@@ -95,7 +95,7 @@ class InsightsContentTest {
     private val pasts = mutableListOf<Int>()
 
     private val days = mutableListOf<LocalDate>()
-    private val months = mutableListOf<YearMonth>()
+    private val months = mutableListOf<Pair<YearMonth, Boolean>>()
     private val monthCounts = mutableListOf<Int>()
 
     private val openedTags = mutableListOf<Tag?>()
@@ -124,7 +124,7 @@ class InsightsContentTest {
             onOpenCategory = { opened += it },
             onOpenDay = { days += it },
             onSelectMonths = { monthCounts += it },
-            onOpenMonth = { months += it },
+            onOpenMonth = { month, income -> months += month to income },
             tags = tags,
             accounts = accounts,
             breakdown = breakdown,
@@ -232,9 +232,13 @@ class InsightsContentTest {
             chart.config[SemanticsActions.CustomActions]
                 .first { it.label.startsWith("September") }
                 .action()
+            chart.config[SemanticsActions.CustomActions]
+                .first { it.label == "September 2026: see income" }
+                .action()
         }
         compose.onNodeWithText("12 months").performClick()
-        assertEquals(listOf(YearMonth.of(2026, 9)), months)
+        val september = YearMonth.of(2026, 9)
+        assertEquals(listOf(september to false, september to true), months)
         assertEquals(listOf(12), monthCounts)
     }
 
@@ -303,7 +307,7 @@ class InsightsContentTest {
                 onOpenCategory = {},
                 onOpenDay = {},
                 onSelectMonths = {},
-                onOpenMonth = {}
+                onOpenMonth = { _, _ -> }
             )
         }
         compose.onNode(hasText("Food") and hasClickAction()).assertIsDisplayed()

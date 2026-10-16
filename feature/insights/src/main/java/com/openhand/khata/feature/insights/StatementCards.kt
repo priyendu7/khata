@@ -1,12 +1,15 @@
 package com.openhand.khata.feature.insights
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -17,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.openhand.khata.core.model.CardPayment
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.StatementSummary
 import com.openhand.khata.core.ui.IconTile
@@ -89,9 +93,18 @@ private fun CheckBar(label: String, paise: Long, fraction: Float, color: Color) 
     }
 }
 
-/** Payments made to this statement, or a line saying where they'll show. */
+/**
+ * Payments made to this statement, or a line saying where they'll show. Tapping one opens it
+ * ([onOpen]), and one "Add a payment" linked has Unlink ([onUnlink], #166). [onAdd], when set,
+ * offers to add a payment Khata didn't match to the card.
+ */
 @Composable
-internal fun PaymentsCard(bill: StatementSummary) {
+internal fun PaymentsCard(
+    bill: StatementSummary,
+    onOpen: (Long) -> Unit = {},
+    onUnlink: (Long) -> Unit = {},
+    onAdd: (() -> Unit)? = null
+) {
     PageCard {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -119,16 +132,36 @@ internal fun PaymentsCard(bill: StatementSummary) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                bill.payments.forEach {
-                    Text(
-                        stringResource(
-                            R.string.card_payment,
-                            Money.format(it.amountPaise),
-                            longDate(it.timestamp.toLocalDate())
-                        ),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+            }
+        }
+        bill.payments.forEach { PaymentRow(it, onOpen, onUnlink) }
+        onAdd?.let {
+            TextButton(onClick = it) { Text(stringResource(R.string.card_add_payment)) }
+        }
+    }
+}
+
+@Composable
+private fun PaymentRow(payment: CardPayment, onOpen: (Long) -> Unit, onUnlink: (Long) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onOpen(payment.transactionId) }
+            .padding(vertical = 4.dp)
+    ) {
+        Text(
+            stringResource(
+                R.string.card_payment,
+                Money.format(payment.amountPaise),
+                longDate(payment.timestamp.toLocalDate())
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f)
+        )
+        if (payment.linked) {
+            TextButton(onClick = { onUnlink(payment.transactionId) }) {
+                Text(stringResource(R.string.card_unlink))
             }
         }
     }

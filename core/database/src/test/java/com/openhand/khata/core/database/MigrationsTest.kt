@@ -311,4 +311,28 @@ class MigrationsTest {
             }
         }
     }
+
+    @Test
+    fun version12To13AddsDateFromSmsAndKeepsStatements() {
+        helper.createDatabase(dbName, 12).use { db ->
+            db.execSQL(
+                "INSERT INTO accounts (id, name, type, bank, last4) " +
+                    "VALUES (3, 'ICICI 1234', 'credit_card', 'ICICI', '1234')"
+            )
+            db.execSQL(
+                "INSERT INTO card_statements (id, account_id, statement_date, due_date, " +
+                    "total_paise, min_due_paise, raw_sms) " +
+                    "VALUES (7, 3, 20743, 20749, 3529972, 345000, 'Statement')"
+            )
+        }
+
+        helper.runMigrationsAndValidate(dbName, 13, true, *KhataMigrations.ALL).use { db ->
+            db.query("SELECT total_paise, date_from_sms FROM card_statements WHERE id = 7").use {
+                it.moveToFirst()
+                assertEquals(3529972L, it.getLong(0))
+                // Saved before: taken as dated the day its SMS arrived.
+                assertEquals(0, it.getInt(1))
+            }
+        }
+    }
 }

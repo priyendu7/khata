@@ -6,6 +6,7 @@ import com.openhand.khata.core.database.CardSpendRow
 import com.openhand.khata.core.database.CardStatementEntity
 import com.openhand.khata.core.database.KhataDatabase
 import com.openhand.khata.core.database.entity.AccountEntity
+import com.openhand.khata.core.database.entity.TransactionEntity
 import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.AccountType
 import com.openhand.khata.core.model.CardCycle
@@ -16,8 +17,14 @@ import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.PaymentStatus
 import com.openhand.khata.core.model.SmsStatement
+import com.openhand.khata.core.model.StatementPayments
 import com.openhand.khata.core.model.StatementSummary
+import com.openhand.khata.core.model.TransactionSource
+import com.openhand.khata.core.model.TransferKind
+import com.openhand.khata.core.model.TransferSide
+import com.openhand.khata.core.model.UnlinkedPayment
 import dagger.Lazy
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
@@ -33,8 +40,8 @@ import kotlinx.coroutines.flow.map
  * Credit cards' statements, cycles and whether they're paid (#154), for the Cards screens (#155)
  * and due date reminders (#156).
  *
- * A statement is paid by transfers into its card dated after its statement date and before the
- * next statement's. A bill paid from a bank account counts through its card side, so a CRED
+ * A statement is paid by transfers into its card from around its statement date until the next
+ * statement's, as [StatementPayments] decides. A bill paid from a bank account counts through its card side, so a CRED
  * payment and the card's "payment received" that #113 linked count once; one with no card side
  * saved counts only when there's a single credit card it can be for.
  */
@@ -73,7 +80,8 @@ class CardRepository @Inject constructor(
                     dueDate = dueDay,
                     totalPaise = sms.totalPaise,
                     minDuePaise = sms.minDuePaise,
-                    rawSms = rawSms
+                    rawSms = rawSms,
+                    dateFromSms = sms.dateFromSms
                 )
             )
             StatementSaveResult.Saved(id, cardId)
@@ -174,6 +182,70 @@ class CardRepository @Inject constructor(
         }
     }
 
+    /** Card bills paid from other accounts whose card isn't known, newest first (#166). */
+    fun observeUnlinkedPayments(): Flow<List<UnlinkedPayment>> =
+        db.observe { it.cardStatementDao().observeUnlinkedPayments() }.map { rows ->
+            rows.map {
+                UnlinkedPayment(
+                    it.transactionId,
+                    it.amountPaise,
+                    it.timestamp,
+                    it.payeeName,
+                    it.accountName
+                )
+            }
+        }
+
+    /**
+     * Links bill payment [transactionId], made from another account, to credit card [cardId]
+     * (#166): its card side is saved as the payment into the card, paired with it as #113 pairs
+     * the two sides of a move, so it counts toward the card's statement.
+     */
+    suspend fun linkPayment(transactionId: Long, cardId: Long) {
+        db.io { database ->
+            database.withTransaction {
+                val dao = database.transactionDao()
+                val paid = requireNotNull(dao.getById(transactionId)) { "No such payment" }
+                require(paid.direction == Direction.TRANSFER && paid.transferPairId == null) {
+                    "Only a transfer on its own can be linked"
+                }
+                val card = requireNotNull(database.accountDao().getById(cardId)) { "No card" }
+                require(card.type == AccountType.CREDIT_CARD) { "Payments go to credit cards" }
+                val cardSide = dao.insert(
+                    TransactionEntity(
+                        amountPaise = paid.amountPaise,
+                        direction = Direction.TRANSFER,
+                        timestamp = paid.timestamp,
+                        accountId = cardId,
+                        payeeId = paid.payeeId,
+                        categoryId = paid.categoryId,
+                        note = null,
+                        referenceNo = null,
+                        source = TransactionSource.MANUAL,
+                        rawSms = null,
+                        transferSide = TransferSide.IN,
+                        transferKind = TransferKind.CARD_PAYMENT
+                    )
+                )
+                database.transferDao().linkTransfers(transactionId, cardSide)
+            }
+        }
+    }
+
+    /**
+     * Undoes [linkPayment] for its card side [cardSideId]: the card side goes, and the payment
+     * it was linked to is "card not known" again.
+     */
+    suspend fun unlinkPayment(cardSideId: Long) {
+        db.io { database ->
+            val cardSide = database.transactionDao().getById(cardSideId)
+            // Anything else is a real transaction, never deleted from here.
+            if (cardSide?.isLinkedPayment() == true) {
+                database.transferDao().deleteUnlinking(cardSideId)
+            }
+        }
+    }
+
     /** [card]'s spending by category in [cycle], with the same rules as Insights (#108). */
     fun observeCycleSpending(
         card: Account,
@@ -195,12 +267,12 @@ class CardRepository @Inject constructor(
     ): List<StatementSummary> {
         val oldestFirst = statements.map { it.toModel() }
             .sortedWith(compareBy({ it.statementDate }, { it.id }))
+        val byStatement = StatementPayments.allocate(oldestFirst, payments) {
+            Instant.ofEpochMilli(it.timestamp).atZone(zone).toLocalDate()
+        }
         return oldestFirst.mapIndexed { index, statement ->
             val previous = oldestFirst.getOrNull(index - 1)?.statementDate
-            val next = oldestFirst.getOrNull(index + 1)?.statementDate
-            val from = startOf(statement.statementDate.plusDays(1), zone)
-            val until = next?.let { startOf(it.plusDays(1), zone) } ?: Long.MAX_VALUE
-            val paid = payments.filter { it.timestamp in from until until }
+            val paid = byStatement[statement.id].orEmpty()
             StatementSummary(
                 statement = statement,
                 cycle = CardCycles.statementCycle(
@@ -230,7 +302,14 @@ class CardRepository @Inject constructor(
         payments: List<CardPaymentRow>
     ): List<CardPayment> = payments.filter {
         if (it.accountType == AccountType.CREDIT_CARD) it.accountId == card.id else cardCount == 1
-    }.map { CardPayment(it.transactionId, it.amountPaise, it.timestamp) }
+    }.map {
+        CardPayment(
+            transactionId = it.transactionId,
+            amountPaise = it.amountPaise,
+            timestamp = it.timestamp,
+            linked = it.source == TransactionSource.MANUAL && it.pairId != null
+        )
+    }
 
     /** A card worked out up to its spending, which comes from a query of its own. */
     private class CardPlan(
@@ -260,6 +339,12 @@ class CardRepository @Inject constructor(
     }
 
     private companion object {
+        /** A card side [linkPayment] saved: made by hand, and paired with a payment. */
+        fun TransactionEntity.isLinkedPayment() = source == TransactionSource.MANUAL &&
+            transferPairId != null &&
+            transferSide == TransferSide.IN &&
+            transferKind == TransferKind.CARD_PAYMENT
+
         fun startOf(day: LocalDate, zone: ZoneId): Long =
             day.atStartOfDay(zone).toInstant().toEpochMilli()
 
@@ -270,7 +355,8 @@ class CardRepository @Inject constructor(
             dueDate = LocalDate.ofEpochDay(dueDate),
             totalPaise = totalPaise,
             minDuePaise = minDuePaise,
-            rawSms = rawSms
+            rawSms = rawSms,
+            dateFromSms = dateFromSms
         )
     }
 }

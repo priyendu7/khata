@@ -14,6 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -42,6 +45,9 @@ import java.time.temporal.ChronoUnit
 fun CreditCardScreen(
     onBack: () -> Unit,
     onOpenTransactions: (TransactionFilter) -> Unit,
+    onOpenTransaction: (Long) -> Unit = {},
+    /** A new payment into this card: its id, and the amount to start at (null for none). */
+    onRecordPayment: (cardId: Long, amountPaise: Long?) -> Unit = { _, _ -> },
     viewModel: CreditCardViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -56,7 +62,13 @@ fun CreditCardScreen(
                 viewModel.setReminders(on)
                 if (on) askNotifications()
             },
-            onOpenCategory = { id -> viewModel.filter(id)?.let(onOpenTransactions) }
+            onOpenCategory = { id -> viewModel.filter(id)?.let(onOpenTransactions) },
+            onOpenPayment = onOpenTransaction,
+            onLinkPayment = viewModel::linkPayment,
+            onUnlinkPayment = viewModel::unlinkPayment,
+            onRecordPayment = {
+                state?.let { onRecordPayment(it.summary.card.id, viewModel.paymentAmount()) }
+            }
         )
     )
 }
@@ -86,7 +98,28 @@ fun CreditCardContent(state: CreditCardState?, actions: CreditCardActions = Cred
             } else {
                 StatementCard(latest, state.today)
                 state.summary.latestSpentPaise?.let { StatementCheck(latest, it) }
-                PaymentsCard(latest)
+                var adding by rememberSaveable { mutableStateOf(false) }
+                PaymentsCard(
+                    latest,
+                    onOpen = actions.onOpenPayment,
+                    onUnlink = actions.onUnlinkPayment,
+                    onAdd = { adding = true }
+                )
+                if (adding) {
+                    AddPaymentDialog(
+                        statement = latest.statement,
+                        unlinked = state.unlinked,
+                        onLink = {
+                            adding = false
+                            actions.onLinkPayment(it)
+                        },
+                        onRecord = {
+                            adding = false
+                            actions.onRecordPayment()
+                        },
+                        onDismiss = { adding = false }
+                    )
+                }
             }
             CycleSpendingCard(state, actions)
             PastStatements(state, actions.onShowStatement)

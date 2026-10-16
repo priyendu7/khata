@@ -20,10 +20,12 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.openhand.khata.core.model.Account
 import com.openhand.khata.core.model.Money
 import com.openhand.khata.core.model.TransferEnd
 import com.openhand.khata.core.model.TransferMove
 import com.openhand.khata.core.model.TransferSummary
+import java.io.Serializable
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -31,22 +33,41 @@ import java.time.format.DateTimeFormatter
 /**
  * Transfers (PRD features 1 and 5, #113): what moved between the user's own accounts, such as
  * card bills paid. Shown, but never counted as spending or income: the card purchases were
- * counted when they were made. Tapping a move opens its transaction ([CardActions.onOpen]).
+ * counted when they were made. Tapping a move opens its transaction ([CardActions.onOpen]);
+ * tapping a card bill lists its payments, and a "card not known" one can be linked to one of
+ * [creditCards] ([onLink], #166).
  */
 @Composable
-internal fun TransferCard(transfers: TransfersState, actions: CardActions<Long>) {
+internal fun TransferCard(
+    transfers: TransfersState,
+    actions: CardActions<Long>,
+    creditCards: List<Account> = emptyList(),
+    onLink: (transactionId: Long, cardId: Long) -> Unit = { _, _ -> }
+) {
     ChartCard(stringResource(R.string.insights_transfers)) {
         PeriodChips(transfers.period, actions.onSelectPeriod)
         PeriodStepper(transfers, actions.onStepPeriod, actions.onSelectPast)
         PeriodSwipe(transfers, actions.onStepPeriod) {
-            TransferDetails(transfers.summary, actions.onOpen)
+            TransferDetails(transfers.summary, actions.onOpen, creditCards, onLink)
         }
     }
 }
 
+/** Which "Card bills paid" line's payments are listed: a card's, or a payee's with no card. */
+private sealed interface BillLine : Serializable {
+    data class Card(val cardId: Long) : BillLine
+
+    data class Unknown(val payeeName: String?) : BillLine
+}
+
 /** The total, card bills and moves, or a note when nothing moved. */
 @Composable
-private fun TransferDetails(summary: TransferSummary, onOpen: (Long) -> Unit) {
+private fun TransferDetails(
+    summary: TransferSummary,
+    onOpen: (Long) -> Unit,
+    creditCards: List<Account>,
+    onLink: (Long, Long) -> Unit
+) {
     if (summary.isEmpty) {
         ChartEmpty(
             stringResource(R.string.insights_transfers_empty_title),
@@ -72,14 +93,36 @@ private fun TransferDetails(summary: TransferSummary, onOpen: (Long) -> Unit) {
             stringResource(R.string.insights_card_bills),
             style = MaterialTheme.typography.titleSmall
         )
+        var listed by rememberSaveable { mutableStateOf<BillLine?>(null) }
         summary.cards.forEach {
-            AmountLine(accountLabel(it.card), paymentCount(it.count), it.paidPaise)
+            AmountLine(accountLabel(it.card), paymentCount(it.count), it.paidPaise) {
+                listed = BillLine.Card(it.card.id)
+            }
         }
+        val unknownTitle = stringResource(R.string.insights_card_unknown_no_payee)
         summary.unknownCards.forEach {
             AmountLine(
-                title = it.payeeName ?: stringResource(R.string.insights_card_unknown_no_payee),
+                title = it.payeeName ?: unknownTitle,
                 detail = stringResource(R.string.insights_card_unknown, paymentCount(it.count)),
                 paise = it.paidPaise
+            ) { listed = BillLine.Unknown(it.payeeName) }
+        }
+        when (val line = listed) {
+            null -> Unit
+            is BillLine.Card -> BillPaymentsDialog(
+                title = summary.cards.firstOrNull { it.card.id == line.cardId }
+                    ?.let { accountLabel(it.card) }.orEmpty(),
+                payments = summary.paymentsTo(line.cardId),
+                onOpen = onOpen,
+                onDismiss = { listed = null }
+            )
+            is BillLine.Unknown -> BillPaymentsDialog(
+                title = line.payeeName ?: unknownTitle,
+                payments = summary.unknownPaymentsTo(line.payeeName),
+                onOpen = onOpen,
+                onDismiss = { listed = null },
+                creditCards = creditCards,
+                onLink = onLink
             )
         }
     }

@@ -16,6 +16,7 @@ import com.openhand.khata.core.model.CategorySpend
 import com.openhand.khata.core.model.Direction
 import com.openhand.khata.core.model.PaymentStatus
 import com.openhand.khata.core.model.Totals
+import com.openhand.khata.core.model.TransactionFilter
 import com.openhand.khata.core.model.TransactionListItem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -51,6 +52,8 @@ class HomeContentTest {
     )
     private val summary = HomeSummary(
         month = Totals(spentPaise = 1_23_456_50, incomePaise = 1_00_000_00),
+        monthFrom = MONTH_FROM,
+        monthUntil = MONTH_UNTIL,
         change = MonthChange.More(4_200_00, 12),
         categories = CategoryBreakdown.of(
             listOf(
@@ -63,6 +66,32 @@ class HomeContentTest {
         recent = listOf(coffee),
         hasTransactions = true
     )
+
+    @Test
+    fun spentAndIncomeOpenThisMonthsTransactionsOfThatType() {
+        val opened = mutableListOf<TransactionFilter>()
+        val actions = HomeActions(onOpenTransactions = { opened += it })
+        compose.setContent { HomeContent("Khata", summary, actions = actions) }
+
+        compose.onNodeWithText("₹1,23,456.50").performClick()
+        compose.onNodeWithText("₹1,00,000").performClick()
+
+        assertEquals(
+            listOf(
+                TransactionFilter(
+                    directions = setOf(Direction.DEBIT, Direction.REFUND),
+                    from = MONTH_FROM,
+                    until = MONTH_UNTIL
+                ),
+                TransactionFilter(
+                    directions = setOf(Direction.CREDIT),
+                    from = MONTH_FROM,
+                    until = MONTH_UNTIL
+                )
+            ),
+            opened
+        )
+    }
 
     @Test
     fun showsTheMonthAgainstLastMonth() {
@@ -160,6 +189,8 @@ class HomeContentTest {
         var sms = false
         val empty = HomeSummary(
             Totals.ZERO,
+            monthFrom = MONTH_FROM,
+            monthUntil = MONTH_UNTIL,
             change = null,
             categories = CategoryBreakdown.of(emptyList()),
             recent = emptyList(),
@@ -281,5 +312,10 @@ class HomeContentTest {
         compose.onNodeWithText("पिछले महीने के इसी समय से ₹4,200 ज़्यादा (12%)").assertIsDisplayed()
         compose.onNodeWithText("हाल के लेन-देन").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("₹1,23,456.50").assertExists()
+    }
+
+    private companion object {
+        const val MONTH_FROM = 1_000L
+        const val MONTH_UNTIL = 2_000L
     }
 }

@@ -50,6 +50,8 @@ class TransactionRepository @Inject constructor(private val db: Lazy<KhataDataba
                 query = query,
                 anyCategory = filter.categoryIds.isEmpty(),
                 categoryIds = filter.categoryIds,
+                anyDirection = filter.directions.isEmpty(),
+                directions = filter.directions,
                 tagId = filter.tagId,
                 untagged = filter.untagged,
                 accountId = filter.accountId,

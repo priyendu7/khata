@@ -76,7 +76,7 @@ internal fun MonthlyCard(
     state: MonthlyState,
     onSelectMonths: (Int) -> Unit,
     onPickCategories: (Set<Long>) -> Unit,
-    onOpenMonth: (YearMonth) -> Unit
+    onOpenMonth: (month: YearMonth, income: Boolean) -> Unit
 ) {
     var picking by rememberSaveable { mutableStateOf(false) }
     val comparison = state.comparison
