@@ -153,6 +153,7 @@ This phase is for using the app day to day, testing it, and acting on what comes
 - [ ] Fix: reviewing a transaction removes its event tag and other tags (#144)
 - [ ] Insights: swipe the period cards to change week, month or year (#146)
 - [ ] Smart parser: Khata guesses the fields, you confirm (#150)
+- [ ] Filter transactions by type (income, spending), and open them from Home (#164)
 
 **Cards** (PRD feature 1). Credit cards with their statements, dues and whether they're paid; debit cards linked to their bank account.
 
