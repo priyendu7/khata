@@ -153,6 +153,7 @@ This phase is for using the app day to day, testing it, and acting on what comes
 - [ ] Fix: reviewing a transaction removes its event tag and other tags (#144)
 - [ ] Insights: swipe the period cards to change week, month or year (#146)
 - [ ] Smart parser: Khata guesses the fields, you confirm (#150)
+- [ ] Filter transactions by type (income, spending), and open them from Home (#164)
 
 **Cards** (PRD feature 1). Credit cards with their statements, dues and whether they're paid; debit cards linked to their bank account.
 
@@ -160,6 +161,7 @@ This phase is for using the app day to day, testing it, and acting on what comes
 - [ ] Card statements, cycles and payment status (#154)
 - [ ] Cards tab, card pages and a Home card for the next due bill (#155)
 - [ ] Due-date reminders (#156)
+- [ ] Card bill payments: count them right, show them, and let me fix or add one (#166)
 
 **SMS filters** (PRD feature 7). The app reads every business sender, not only banks it has rules for, so a bank without a rule shows up in the review inbox instead of being skipped. Filters decide what's worth asking about.
 
