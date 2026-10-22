@@ -2,22 +2,14 @@ package com.openhand.khata.feature.settings
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,7 +21,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -37,8 +28,12 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.openhand.khata.core.ui.IconTile
 import com.openhand.khata.core.ui.KhataTheme
-import com.openhand.khata.core.ui.R as UiR
+import com.openhand.khata.core.ui.RowChevron
+import com.openhand.khata.core.ui.Tone
+import com.openhand.khata.core.ui.segmentCardBorder
+import com.openhand.khata.core.ui.segmentCardColors
 
 /**
  * The welcome (#128), shown once on the very first open: [PromiseContent], then how to add
@@ -77,45 +72,27 @@ fun WelcomeContent(
     onDone: (smsImport: Boolean) -> Unit
 ) {
     var smsStep by rememberSaveable { mutableStateOf(false) }
-    // Always Khata's red and marigold, not the phone's dynamic colours: it's the first impression.
+    // Always Khata's own colours, not the phone's dynamic ones: it's the first impression.
     KhataTheme {
-        MarigoldInTheDark {
-            Surface(color = MaterialTheme.colorScheme.background) {
-                val modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)
-                if (smsStep) {
-                    SmsStep(animate, onDone, modifier)
-                } else {
-                    PromiseContent(
-                        appIcon = appIcon,
-                        language = language,
-                        onLanguage = onLanguage,
-                        animate = animate,
-                        modifier = modifier,
-                        onGetStarted = {
-                            onPromiseSeen()
-                            smsStep = true
-                        }
-                    )
-                }
+        Surface(color = MaterialTheme.colorScheme.background) {
+            val modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)
+            if (smsStep) {
+                SmsStep(animate, onDone, modifier)
+            } else {
+                PromiseContent(
+                    appIcon = appIcon,
+                    language = language,
+                    onLanguage = onLanguage,
+                    animate = animate,
+                    modifier = modifier,
+                    onGetStarted = {
+                        onPromiseSeen()
+                        smsStep = true
+                    }
+                )
             }
         }
     }
-}
-
-/**
- * In dark mode the brand red is drawn light enough to read on black, which looks pink; the
- * welcome uses the launcher icon's marigold for its accents there instead.
- */
-@Composable
-private fun MarigoldInTheDark(content: @Composable () -> Unit) {
-    if (!isSystemInDarkTheme()) return content()
-    val scheme = MaterialTheme.colorScheme
-    MaterialTheme(
-        colorScheme = scheme.copy(primary = scheme.secondary, onPrimary = scheme.onSecondary),
-        typography = MaterialTheme.typography,
-        shapes = MaterialTheme.shapes,
-        content = content
-    )
 }
 
 /**
@@ -124,13 +101,13 @@ private fun MarigoldInTheDark(content: @Composable () -> Unit) {
  */
 @Composable
 private fun SmsStep(animate: Boolean, onDone: (smsImport: Boolean) -> Unit, modifier: Modifier) {
-    WelcomeColumn(modifier) {
-        Appear(0, animate) { WelcomeIllustration(R.drawable.welcome_sms, SMS_ILLUSTRATION_SIZE) }
+    WelcomeColumn(modifier.marigoldGlow()) {
+        Appear(0, animate) { WelcomeIllustration(R.drawable.welcome_sms) }
         Text(
             stringResource(R.string.welcome_add_title),
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
-            modifier = Modifier.semantics { heading() }
+            modifier = Modifier.padding(top = 10.dp, bottom = 12.dp).semantics { heading() }
         )
         Appear(1, animate) {
             ChoiceCard(
@@ -149,7 +126,7 @@ private fun SmsStep(animate: Boolean, onDone: (smsImport: Boolean) -> Unit, modi
     }
 }
 
-/** A choice read by TalkBack as one button: its title and line. */
+/** A choice read by TalkBack as one button: its title and line. Outlined like the promise. */
 @Composable
 private fun ChoiceCard(
     @DrawableRes icon: Int,
@@ -160,36 +137,18 @@ private fun ChoiceCard(
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-        )
+        shape = WelcomeCardShape,
+        colors = segmentCardColors(),
+        border = segmentCardBorder()
     ) {
         Row(
-            Modifier.padding(16.dp),
+            Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painterResource(icon),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(body), style = MaterialTheme.typography.bodyMedium)
-            }
-            Icon(painterResource(UiR.drawable.ic_chevron_right), contentDescription = null)
+            IconTile(painterResource(icon), Tone.ACCENT, size = TILE_SIZE.dp)
+            WelcomeText(stringResource(title), stringResource(body))
+            RowChevron()
         }
     }
 }
-
-private const val SMS_ILLUSTRATION_SIZE = 160
