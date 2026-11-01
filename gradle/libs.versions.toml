@@ -1,8 +1,8 @@
 # Every plugin and library version lives here. Dependabot updates this file.
 # Privacy rule (docs/PRD.md): only AndroidX, Kotlin libraries and SQLCipher at runtime.
 [versions]
-agp = "9.4.1"
-kotlin = "2.4.20"
+agp = "9.5.0"
+kotlin = "2.4.21"
 ktlint = "14.2.0"
 detekt = "1.23.8"
 play-publisher = "4.1.1"
@@ -13,7 +13,7 @@ ksp = "2.3.12"
 androidx-hilt = "1.4.0"
 # Room 2.8 (not Room 3): SQLCipher plugs into Room through the SupportSQLite open-helper API.
 room = "2.8.5"
-sqlcipher = "4.19.0"
+sqlcipher = "4.20.0"
 androidx-sqlite = "2.7.1"
 androidx-test-runner = "1.7.0"
 androidx-test-ext-junit = "1.3.0"
@@ -22,7 +22,7 @@ robolectric = "4.17"
 turbine = "1.2.1"
 kotlinx-coroutines = "1.11.0"
 # Parser rules are JSON (docs/parser-rules.md); the compiler plugin generates the code, no reflection.
-kotlinx-serialization = "1.11.0"
+kotlinx-serialization = "1.12.0"
 # SMS rule patterns run on RE2J: matching time grows only with the SMS length, never exponentially,
 # so a bad custom parser pattern can't freeze the app (Android's own regex engine has no timeout).
 re2j = "1.8"
